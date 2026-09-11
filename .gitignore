@@ -1,0 +1,33 @@
+# Xcode
+build/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.xcscmblueprint
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# CocoaPods / Carthage (non usati, per sicurezza)
+Pods/
+Carthage/Build/
+
+# macOS
+.DS_Store
+
+# Claude Code — impostazioni/permessi locali della macchina, non del progetto
+.claude/settings.local.json
+
+# File personali eventualmente lasciati in cartella (nessuno attualmente nel repo)
+*.mp4
+*.mov
+*.mkv
+*.m4v
+*.avi
