@@ -58,7 +58,7 @@ struct LibraryHomeView: View {
             }
             .navigationTitle("Libreria")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         showImporter = true
                     } label: {
@@ -87,9 +87,15 @@ struct LibraryHomeView: View {
             } message: {
                 Text(importVM.lastError ?? "")
             }
+            #if os(iOS)
             .fullScreenCover(item: $playingItem) { item in
                 PlayerView(item: item, library: allItems)
             }
+            #else
+            .sheet(item: $playingItem) { item in
+                MacPlayerView(item: item, library: allItems)
+            }
+            #endif
             .confirmationDialog(
                 "Eliminare \"\(pendingDeleteMovie?.title ?? "")\"?",
                 isPresented: Binding(get: { pendingDeleteMovie != nil }, set: { if !$0 { pendingDeleteMovie = nil } }),

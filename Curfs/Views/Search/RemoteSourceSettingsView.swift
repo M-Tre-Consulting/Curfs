@@ -42,9 +42,11 @@ struct RemoteSourceSettingsView: View {
             Form {
                 Section {
                     TextField("https://nome-pi.tuo-tailnet.ts.net", text: $baseURLString)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
                         .keyboardType(.URL)
+                        #endif
+                        .autocorrectionDisabled()
                         .font(.callout.monospaced())
                 } header: {
                     Text("Indirizzo del server")
@@ -54,7 +56,9 @@ struct RemoteSourceSettingsView: View {
 
                 Section {
                     TextField("Nome utente", text: $username)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .autocorrectionDisabled()
                     SecureField("Password", text: $password)
                 } header: {
@@ -77,7 +81,9 @@ struct RemoteSourceSettingsView: View {
                 }
             }
             .navigationTitle("Fonte remota")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Annulla") { dismiss() }

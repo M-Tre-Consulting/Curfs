@@ -92,9 +92,11 @@ struct RemoteTitleDetailView: View {
             }
             .background(AppBackground())
             .navigationTitle(title.name)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Chiudi") { dismiss() }
                 }
             }
@@ -106,6 +108,25 @@ struct RemoteTitleDetailView: View {
                     }
                 }
             }
+            #if os(macOS)
+            // Il "Chiudi" nella toolbar da solo non basta come via d'uscita
+            // affidabile su Mac per questo pannello (presentato come sheet
+            // sopra Cerca): una X sempre visibile in alto a destra, separata
+            // dalla toolbar, garantisce di poter chiudere il pannello in
+            // ogni caso.
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(in: Circle())
+                .padding(14)
+            }
+            #endif
             .task {
                 let all = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? []
                 existingRemoteItems = all.filter { $0.isRemote }
@@ -119,9 +140,15 @@ struct RemoteTitleDetailView: View {
                 }
                 if title.kind == .series { await loadSeasons() }
             }
+            #if os(iOS)
             .fullScreenCover(item: $playback) { request in
                 PlayerView(item: request.item, library: request.library)
             }
+            #else
+            .sheet(item: $playback) { request in
+                MacPlayerView(item: request.item, library: request.library)
+            }
+            #endif
         }
     }
 
@@ -258,7 +285,14 @@ struct RemoteTitleDetailView: View {
             if !existingShowNames.isEmpty {
                 Menu {
                     Button {
-                        saveTargetShow = nil
+                        // Rimandata al prossimo run loop: cambiare qui lo
+                        // stesso @State che ridisegna il contenuto di questo
+                        // Menu, in modo sincrono dentro l'azione di un suo
+                        // Button, manda in confusione il tracking dell'NSMenu
+                        // su macOS (resta aperto/bloccato) — bug noto
+                        // dell'interazione SwiftUI/AppKit, non visibile su
+                        // iOS dove UIKit gestisce i menu diversamente.
+                        Task { @MainActor in saveTargetShow = nil }
                     } label: {
                         if saveTargetShow == nil {
                             Label("\(title.name) (nuova serie)", systemImage: "checkmark")
@@ -268,7 +302,7 @@ struct RemoteTitleDetailView: View {
                     }
                     ForEach(existingShowNames, id: \.self) { name in
                         Button {
-                            saveTargetShow = name
+                            Task { @MainActor in saveTargetShow = name }
                         } label: {
                             if saveTargetShow == name {
                                 Label(name, systemImage: "checkmark")

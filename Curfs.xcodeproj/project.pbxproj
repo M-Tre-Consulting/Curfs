@@ -8,18 +8,48 @@
 
 /* Begin PBXFileReference section */
 		5F75FC31302E156A00ACDDCE /* Curfs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curfs.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F994462EB342566C6EDD4768 /* CurfsMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurfsMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		89260684579D93A2D7B54BD3 /* Exceptions for "Curfs" folder in "CurfsMac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"CurfsApp.swift",
+				"Player/AppDelegate.swift",
+				"Player/OrientationController.swift",
+				"Player/VideoPlayerLayerView.swift",
+				"Player/PlayerView.swift",
+				"Player/PlayerControlsOverlay.swift",
+				"Player/PlayerGestureZones.swift",
+			);
+			target = ECFD114AC6966161FB7077D6 /* CurfsMac */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5F75FC33302E156A00ACDDCE /* Curfs */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				89260684579D93A2D7B54BD3 /* Exceptions for "Curfs" folder in "CurfsMac" target */,
+			);
 			path = Curfs;
+			sourceTree = "<group>";
+		};
+		82488C70BB11D8AFB9224CCF /* CurfsMac */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CurfsMac;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		5F75FC2E302E156900ACDDCE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		2805E9380DA62C46E283D99D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -31,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				5F75FC33302E156A00ACDDCE /* Curfs */,
+				82488C70BB11D8AFB9224CCF /* CurfsMac */,
 				5F75FC32302E156A00ACDDCE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				5F75FC31302E156A00ACDDCE /* Curfs.app */,
+				F994462EB342566C6EDD4768 /* CurfsMac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -64,6 +96,25 @@
 			productReference = 5F75FC31302E156A00ACDDCE /* Curfs.app */;
 			productType = "com.apple.product-type.application";
 		};
+		ECFD114AC6966161FB7077D6 /* CurfsMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54D1E18698CC74692B484472 /* Build configuration list for PBXNativeTarget "CurfsMac" */;
+			buildPhases = (
+				D61E32BACDFEFB161BDAA0E6 /* Sources */,
+				2805E9380DA62C46E283D99D /* Frameworks */,
+				68F6FB307BE125FF302A1FCA /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				5F75FC33302E156A00ACDDCE /* Curfs */,
+				82488C70BB11D8AFB9224CCF /* CurfsMac */,
+			);
+			name = CurfsMac;
+			productName = CurfsMac;
+			productReference = F994462EB342566C6EDD4768 /* CurfsMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -75,6 +126,9 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					5F75FC30302E156900ACDDCE = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					ECFD114AC6966161FB7077D6 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -94,6 +148,7 @@
 			projectRoot = "";
 			targets = (
 				5F75FC30302E156900ACDDCE /* Curfs */,
+				ECFD114AC6966161FB7077D6 /* CurfsMac */,
 			);
 		};
 /* End PBXProject section */
@@ -104,10 +159,20 @@
 			files = (
 			);
 		};
+		68F6FB307BE125FF302A1FCA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5F75FC2D302E156900ACDDCE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		D61E32BACDFEFB161BDAA0E6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -319,6 +384,61 @@
 			};
 			name = Release;
 		};
+		27079CA8992A79C63A4B4493 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.CurfsMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		78F4314DFD9187D8F8577E82 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.CurfsMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -335,6 +455,14 @@
 			buildConfigurations = (
 				5F75FC3D302E156A00ACDDCE /* Debug configuration for PBXNativeTarget "Curfs" */,
 				5F75FC3E302E156A00ACDDCE /* Release configuration for PBXNativeTarget "Curfs" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		54D1E18698CC74692B484472 /* Build configuration list for PBXNativeTarget "CurfsMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27079CA8992A79C63A4B4493 /* Debug */,
+				78F4314DFD9187D8F8577E82 /* Release */,
 			);
 			defaultConfigurationName = Release;
 		};

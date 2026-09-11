@@ -1,13 +1,17 @@
 # Curfs
 
-App iOS in SwiftUI/SwiftData: un media player personale. Importa video da Files, riconosce
-automaticamente stagioni ed episodi dai nomi di cartelle/file, li organizza in Film/Serie, tiene
-traccia dell'avanzamento visto, e li riproduce con un player custom basato su AVPlayer (Liquid
-Glass, tema viola scuro immersivo).
+App SwiftUI/SwiftData: un media player personale, per iPhone (**Curfs**) e Mac (**CurfsMac**,
+stesso progetto Xcode, target separato). Importa video da Files, riconosce automaticamente
+stagioni ed episodi dai nomi di cartelle/file, li organizza in Film/Serie, tiene traccia
+dell'avanzamento visto, e li riproduce con AVFoundation/AVKit (Liquid Glass, tema viola scuro
+immersivo; su Mac i controlli di riproduzione sono quelli nativi di AVKit, con Picture-in-Picture
+flottante incluso).
 
-> Nata come progetto personale per un singolo iPhone, non è pensata per l'App Store e non
-> distribuisce alcun binario: ognuno la builda e la installa sul proprio dispositivo con il
-> proprio account Apple Developer.
+> Nata come progetto personale, non è pensata per l'App Store. La versione iPhone non distribuisce
+> un binario: va buildata e installata con un proprio account Apple Developer. La versione Mac ha
+> anche una release `.dmg` già pronta (vedi [Releases](../../releases)) — non firmata con un
+> Developer ID Apple a pagamento, quindi al primo avvio va aperta con tasto destro → Apri per
+> saltare l'avviso di Gatekeeper "sviluppatore non identificato".
 
 ## Funzionalità
 
@@ -29,17 +33,23 @@ Glass, tema viola scuro immersivo).
 
 ## Requisiti
 
-- Xcode con SDK iOS 26.
-- Dispositivo o simulatore iOS **26.0+** (le API Liquid Glass usate — `.glassEffect`,
-  `GlassEffectContainer`, `.buttonStyle(.glass/.glassProminent)` — richiedono iOS 26).
+- Xcode con SDK iOS 26 / macOS 26.
+- iPhone/simulatore iOS **26.0+** per `Curfs`, Mac su **macOS 26+** per `CurfsMac` (le API Liquid
+  Glass usate — `.glassEffect`, `GlassEffectContainer`, `.buttonStyle(.glass/.glassProminent)` —
+  richiedono la versione 26 su entrambe le piattaforme).
 - Un account Apple Developer (anche gratuito) per firmare la build: apri il progetto, in
-  **Signing & Capabilities** seleziona il tuo team (il repo non include un team ID). Con un
-  account gratuito l'app installata scade dopo 7 giorni e va reinstallata.
+  **Signing & Capabilities** seleziona il tuo team per ciascun target (il repo non include un
+  team ID). Su iPhone, con un account gratuito l'app installata scade dopo 7 giorni e va
+  reinstallata; su Mac non c'è questo limite.
 
 ## Build
 
 ```
+# iPhone
 xcodebuild -project Curfs.xcodeproj -scheme Curfs -destination 'id=<simulator-id>' build
+
+# Mac
+xcodebuild -project Curfs.xcodeproj -scheme CurfsMac -destination 'platform=macOS' build
 ```
 
 Fidati solo dell'esito di `xcodebuild` (`** BUILD SUCCEEDED **`): l'indice di SourceKit in Xcode
@@ -51,10 +61,13 @@ Panoramica rapida, dettagli e decisioni non ovvie in [CLAUDE.md](CLAUDE.md):
 
 - `Models/` — modelli SwiftData (`MediaItem`, `ShowSummary`).
 - `Support/` — import, storage, miniature, riconoscimento intro/titoli di coda.
-- `Player/` — player custom e relativa logica/gesture/orientamento.
+- `Player/` — player custom iPhone (touch) e relativa logica/gesture/orientamento; la logica di
+  stato (`PlayerViewModel`) è condivisa anche col player Mac.
 - `Remote/` — sezione Cerca/streaming da server remoto e download offline.
-- `Views/` — schermate libreria, card, sezione Cerca.
+- `Views/` — schermate libreria, card, sezione Cerca (condivise tra i due target).
 - `Utilities/` — helper UI condivisi.
+- `CurfsMac/` — target Mac: entry point e player nativo AVKit (controlli, fullscreen e
+  Picture-in-Picture già pronti). Riusa Models/Support/Remote/Views/Utilities as-is.
 
 ## Bug noto
 
@@ -67,9 +80,11 @@ esclusi in [CLAUDE.md](CLAUDE.md). PR benvenute.
 
 ## Non ancora implementato
 
-Picture-in-Picture, layout dedicato iPad, sync iCloud. Nella sezione Cerca: poster/metadati (ora
-solo placeholder a icona), pull-to-refresh del catalogo remoto, riconciliazione tra un episodio
-guardato in streaming e lo stesso poi scaricato offline.
+Picture-in-Picture su iPhone (su Mac c'è già, nativo di AVKit), layout dedicato iPad, sync
+iCloud, icona Mac disegnata a mano (quella attuale è generata per ricomposizione dell'icona
+iOS). Nella sezione Cerca: poster/metadati (ora solo placeholder a icona), pull-to-refresh del
+catalogo remoto, riconciliazione tra un episodio guardato in streaming e lo stesso poi scaricato
+offline.
 
 ## Licenza
 

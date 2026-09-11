@@ -86,9 +86,11 @@ struct ShowDetailView: View {
         .safeAreaPadding(.horizontal, 16)
         .background(AppBackground())
         .navigationTitle(show.name)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button(role: .destructive) {
                     pendingDeleteSeason = selectedSeason
                 } label: {
@@ -96,9 +98,15 @@ struct ShowDetailView: View {
                 }
             }
         }
+        #if os(iOS)
         .fullScreenCover(item: $playingItem) { item in
             PlayerView(item: item, library: allItems)
         }
+        #else
+        .sheet(item: $playingItem) { item in
+            MacPlayerView(item: item, library: allItems)
+        }
+        #endif
         .task(id: "\(currentShow.id)-\(selectedSeason)-\(introCacheResetTick)") {
             await warmIntroDetection()
         }

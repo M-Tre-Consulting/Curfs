@@ -234,13 +234,19 @@ final class PlayerViewModel {
     /// silenzioso: la categoria .playback è pensata esattamente per questo
     /// (è quella che usano tutte le app di video/musica).
     private func activateAudioSession() {
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .moviePlayback)
         try? session.setActive(true)
+        #endif
+        // Su macOS non esiste AVAudioSession: il sistema gestisce la sessione
+        // audio da solo, non serve nessuna richiesta esplicita.
     }
 
     private func deactivateAudioSession() {
+        #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     /// Riprova più volte a leggere la durata reale del video: su alcuni file,
@@ -377,18 +383,25 @@ final class PlayerViewModel {
     ///   altrimenti restano nascosti (nessun timer, nessun "riappaiono da
     ///   soli"): da lì in poi torna il normale tap per mostrarli/nasconderli.
     func toggleOrientation() {
+        #if os(iOS)
         isLandscape.toggle()
         hideControlsTask?.cancel()
         let shouldShowControls = !isLandscape || !isPlaying
         withAnimation(Self.orientationControlsAnimation) { controlsVisible = shouldShowControls }
         if controlsVisible { scheduleAutoHide() }
         OrientationController.requestOrientation(isLandscape ? .landscape : .portrait)
+        #endif
+        // Su Mac non esiste un concetto di rotazione: la finestra è sempre
+        // "orizzontale" e ridimensionabile, i controlli sono quelli nativi
+        // di AVKit (vedi MacPlayerView), non c'è nulla da forzare qui.
     }
 
     func resetOrientation() {
+        #if os(iOS)
         guard isLandscape else { return }
         isLandscape = false
         OrientationController.requestOrientation(.portrait)
+        #endif
     }
 
     private func handleTick(_ time: CMTime) {

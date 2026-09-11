@@ -5,10 +5,15 @@
 //  Genera e mette in cache su disco una miniatura JPG per un MediaItem,
 //  prendendo un frame un po' dentro il video (non il primo, spesso nero).
 //
+//  Codifica JPEG via ImageIO (CGImageDestination) invece di UIImage/NSImage:
+//  è l'unica via cross-platform, così questo file è condiviso tra il target
+//  iOS e quello macOS senza bisogno di conditional compilation.
+//
 
 import Foundation
 @preconcurrency import AVFoundation
-import UIKit
+import ImageIO
+import UniformTypeIdentifiers
 
 enum ThumbnailGenerator {
     static func generateIfNeeded(for item: MediaItem) async {
@@ -30,8 +35,10 @@ enum ThumbnailGenerator {
         let time = CMTime(seconds: targetSeconds, preferredTimescale: 600)
 
         guard let cgImage = try? await generator.image(at: time).image else { return }
-        let image = UIImage(cgImage: cgImage)
-        guard let data = image.jpegData(compressionQuality: 0.7) else { return }
-        try? data.write(to: destination, options: .atomic)
+        guard let dest = CGImageDestinationCreateWithURL(
+            destination as CFURL, UTType.jpeg.identifier as CFString, 1, nil
+        ) else { return }
+        CGImageDestinationAddImage(dest, cgImage, [kCGImageDestinationLossyCompressionQuality: 0.7] as CFDictionary)
+        CGImageDestinationFinalize(dest)
     }
 }

@@ -1,9 +1,11 @@
 # Curfs
 
-App iOS SwiftUI/SwiftData: media player personale (solo per l'iPhone del proprietario, non
-destinata all'App Store). Importa video da Files, riconosce automaticamente stagioni/episodi
-dai nomi di cartelle/file, li organizza in Film/Serie, tiene traccia dell'avanzamento, e li
-riproduce con un player custom AVPlayer (Liquid Glass, tema viola scuro immersivo).
+App SwiftUI/SwiftData: media player personale (solo per i dispositivi del proprietario, non
+destinata all'App Store), con due target nello stesso progetto Xcode — **Curfs** per iPhone e
+**CurfsMac** per Mac (vedi sezione dedicata più sotto). Importa video da Files, riconosce
+automaticamente stagioni/episodi dai nomi di cartelle/file, li organizza in Film/Serie, tiene
+traccia dell'avanzamento, e li riproduce con AVFoundation/AVKit (Liquid Glass, tema viola scuro
+immersivo; su Mac il player usa i controlli nativi di AVKit invece del player custom touch).
 
 **Ex nome:** il progetto si chiamava "Mediapple", rinominato in "Curfs" il 2026-08-20 (cartella,
 progetto Xcode, target, scheme, tipi Swift). Il **bundle identifier è rimasto**
@@ -42,8 +44,78 @@ sul dispositivo reale al prossimo reinstall (iOS tratterebbe un bundle ID divers
 - `Views/` — schermate libreria (`LibraryHomeView`, `ShowDetailView`), card (`ShowCardView`,
   `MovieCardView`, `ContinueWatchingCard`, `EpisodeRowView`) e `Views/Search/` (`SearchView`,
   `SearchResultCard`, `RemoteTitleDetailView`, `RemoteSourceSettingsView`, `DownloadsOverlay`).
-- `Utilities/` — `AppBackground`, `ProgressLineView`, `ThumbnailImageView`, `TimeFormatter`,
-  `CardGrid` (colonne delle griglie di card).
+- `Utilities/` — `AppBackground`, `ProgressLineView`, `PressableButtonStyle`, `ThumbnailImageView`,
+  `TimeFormatter`, `CardGrid` (colonne delle griglie di card).
+
+## App macOS (CurfsMac)
+
+Secondo target nello stesso `Curfs.xcodeproj` (scheme `CurfsMac`), aggiunto il 2026-09-11: stessa
+libreria/import/Cerca, ma pensata per Mac invece che riadattata da iPhone — niente rotazione,
+player con i controlli nativi di AVKit invece del player custom touch. Solo per uso locale
+dell'utente (non firmata per distribuzione, vedi sotto), build via
+`xcodebuild -project Curfs.xcodeproj -scheme CurfsMac -destination 'platform=macOS' build`.
+
+- **Come condivide il codice**: il progetto usa i "file system synchronized groups" di Xcode 16+
+  (`PBXFileSystemSynchronizedRootGroup`) — non ci sono `PBXBuildFile`/`PBXFileReference` per
+  ogni file, la cartella `Curfs/` è un unico gruppo sincronizzato collegato a **entrambi** i
+  target. Un file aggiunto dentro `Curfs/` appartiene quindi automaticamente anche a `CurfsMac`,
+  **a meno che non sia nella lista di eccezioni** (`PBXFileSystemSynchronizedBuildFileExceptionSet`
+  nel `.pbxproj`, targettizzata su `CurfsMac`) che esclude i file iOS-only: `CurfsApp.swift`,
+  `Player/AppDelegate.swift`, `Player/OrientationController.swift`,
+  `Player/VideoPlayerLayerView.swift`, `Player/PlayerView.swift`,
+  `Player/PlayerControlsOverlay.swift`, `Player/PlayerGestureZones.swift`. La cartella `CurfsMac/`
+  è un secondo gruppo sincronizzato, collegato solo al target Mac.
+  ⚠️ **Il gem Ruby `xcodeproj` non fa il round-trip pulito di questo formato** (un salvataggio
+  senza modifiche ha già perso `validationLevel` e alterato dei commenti in un test) — il target
+  è stato aggiunto editando `project.pbxproj` a mano (testato prima su una copia con
+  `xcodebuild -list`/`build` prima di applicarlo al progetto vero). Per touccare di nuovo la
+  struttura del progetto (nuovi target, ecc.): a mano o da Xcode stesso, non con quel gem.
+- **Player Mac**: `CurfsMac/Player/MacVideoPlayerView.swift` (`NSViewRepresentable` su
+  `AVPlayerView`) + `MacPlayerView.swift`, invece di `VideoPlayerLayerView`/
+  `PlayerControlsOverlay`/`PlayerGestureZones`. Scelta deliberata: `AVPlayerView` dà scrubber,
+  fullscreen e **Picture-in-Picture flottante/ridimensionabile già pronti** — esattamente quello
+  che serviva ("mettere il video dove si vuole, ridimensionarlo") senza ricostruirlo a mano.
+  `PlayerViewModel` resta **condiviso** (progresso, salta-intro, prossimo episodio): solo
+  `toggleOrientation()`/`resetOrientation()` e `activate/deactivateAudioSession()` sono dentro
+  `#if os(iOS)` (rotazione e `AVAudioSession` non esistono su macOS).
+- **Fix cross-platform emersi buildando il target Mac** (bug latenti anche per iOS, non solo
+  differenze di piattaforma):
+  - `ThumbnailGenerator`/`ThumbnailImageView` usavano `UIImage` — riscritti su `CGImage`/ImageIO
+    (`CGImageDestination`/`CGImageSourceCreateWithURL`), cross-platform, stessa resa visiva.
+  - `Color(.secondarySystemBackground)` (basato su `UIColor`, non esiste su Mac) → RGB espliciti.
+  - `PressableButtonStyle` viveva dentro `Player/PlayerControlsOverlay.swift` (file iOS-only,
+    escluso dal target Mac) ma era usata da `LibraryHomeView`/`SearchView`: build Mac falliva con
+    "cannot find PressableButtonStyle in scope". Spostata in `Utilities/` dove appartiene
+    davvero.
+  - `.topBarTrailing` → `.primaryAction` (cross-platform), `.navigationBarTitleDisplayMode`/
+    `.searchable(placement: .navigationBarDrawer)`/`.keyboardType`/`.textInputAutocapitalization`
+    dentro `#if os(iOS)` (non esistono su Mac). `.fullScreenCover` (solo iOS) → `#if os(iOS)
+    fullScreenCover #else sheet #endif` nei 3 punti che aprono il player
+    (`LibraryHomeView`/`ShowDetailView`/`RemoteTitleDetailView`).
+  - ⚠️ **`Menu` con `Button` che mutano uno `@State` che ridisegna lo stesso `Menu`**: su macOS
+    l'NSMenu può restare bloccato aperto (non capita su iOS, dove UIKit gestisce i menu
+    diversamente) — capitato con "Salva in:" in `RemoteTitleDetailView`. Mitigato rimandando
+    l'assegnazione allo `@State` con `Task { @MainActor in ... }` dentro l'azione del `Button`
+    invece di farla sincrona. Come rete di sicurezza aggiuntiva (il pannello di dettaglio è
+    presentato come sheet, e la sola "Chiudi" in toolbar su Mac non era un'uscita abbastanza
+    affidabile/visibile), `RemoteTitleDetailView` ha anche una X separata sempre visibile in alto
+    a destra (`#if os(macOS)`, `.overlay(alignment: .topTrailing)`) indipendente dalla toolbar.
+- **Icona**: l'asset catalog `AppIcon.appiconset` (condiviso) aveva già gli slot idiom "mac"
+  (16→512, @1x/@2x) ma vuoti. Popolati da `icon-any.png` (quello iOS, quadrato pieno) ricomposto
+  in stile Big Sur — margine, angoli arrotondati, ombra morbida — con uno script CoreGraphics
+  ad hoc (non con Icon Composer), poi ridimensionato via `sips`.
+- **Bundle ID separato**: `com.nicoloperri.CurfsMac` (a differenza di quello iOS, qui non serve
+  continuità dati con nessuna installazione precedente).
+- **Non sandboxata** (`ENABLE_APP_SANDBOX = NO`): come una normale app Mac, accesso libero a
+  file/rete per import e sezione Cerca — non essendo per l'App Store non serve la sandbox né le
+  entitlement che richiederebbe. Firma automatica con lo stesso team Apple dell'app iOS (development,
+  non Developer ID): funziona senza problemi sul Mac dell'utente, ma un `.dmg` distribuito ad
+  altri farà comparire l'avviso Gatekeeper "sviluppatore non identificato" (serve tasto destro →
+  Apri la prima volta) — non essendoci un account Developer a pagamento non è evitabile.
+- **Download remoti**: `RemoteDownloadManager` (condiviso) funziona finché l'app Mac è aperta, ma
+  non ha l'aggancio equivalente di `AppDelegate.application(_:handleEventsForBackgroundURLSession:)`
+  usato su iOS per il risveglio da app terminata — concetto che su Mac non si applica allo stesso
+  modo (l'app non viene sospesa/terminata dal sistema come su iOS).
 
 ## Decisioni/gotcha non ovvi dal codice
 
