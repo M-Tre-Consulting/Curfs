@@ -173,6 +173,7 @@ actor HTTPTreeProvider: RemoteContentProvider {
             seasonsByTitleID[titleID] = seasons.sorted { $0.number < $1.number }
         }
 
+        titles = await Self.withPosters(titles)
         titles.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         return Catalog(
             titles: titles,
@@ -180,6 +181,31 @@ actor HTTPTreeProvider: RemoteContentProvider {
             fileURLByID: fileURLByID,
             fileExtByID: fileExtByID
         )
+    }
+
+    /// Risolve la locandina ufficiale di ogni titolo via `PosterFetcher`, a
+    /// piccoli gruppi concorrenti (non un `TaskGroup` unico su tutto il
+    /// catalogo: per una libreria grande sparerebbe decine di richieste a
+    /// iTunes tutte insieme). Gira una volta sola per la vita del provider,
+    /// insieme al resto della costruzione del catalogo.
+    private static func withPosters(_ titles: [RemoteTitle]) async -> [RemoteTitle] {
+        var result = titles
+        let chunkSize = 6
+        for start in stride(from: 0, to: titles.count, by: chunkSize) {
+            let end = min(start + chunkSize, titles.count)
+            await withTaskGroup(of: (Int, URL?).self) { group in
+                for i in start..<end {
+                    let title = titles[i]
+                    group.addTask {
+                        (i, await PosterFetcher.shared.posterURL(forName: title.name, kind: title.kind))
+                    }
+                }
+                for await (i, poster) in group {
+                    result[i].posterURL = poster
+                }
+            }
+        }
+        return result
     }
 
     // MARK: - Camminata dell'albero (elenchi JSON di nginx)

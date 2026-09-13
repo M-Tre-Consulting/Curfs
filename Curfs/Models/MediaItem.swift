@@ -36,6 +36,14 @@ final class MediaItem {
     /// automatica, la libreria già sul dispositivo resta intatta.
     var remoteURLString: String?
 
+    /// `true` se l'item viene dal catalogo remoto — anche quando è stato
+    /// scaricato e non è più in streaming (`isRemote` a quel punto torna
+    /// false). Serve SOLO a scegliere la copertina della serie/film in
+    /// libreria (iTunes invece del frame video, vedi `isRemoteOrigin`): non
+    /// tocca riproduzione/streaming, quello resta `remoteURLString`/`isRemote`
+    /// come sempre. Attributo opzionale ⇒ migrazione SwiftData automatica.
+    var remoteOriginFlag: Bool?
+
     var duration: Double
     var playbackPosition: Double
     var isFinished: Bool
@@ -52,6 +60,7 @@ final class MediaItem {
         episodeNumber: Int? = nil,
         relativePath: String,
         remoteURLString: String? = nil,
+        remoteOrigin: Bool = false,
         duration: Double = 0,
         playbackPosition: Double = 0,
         isFinished: Bool = false,
@@ -66,6 +75,7 @@ final class MediaItem {
         self.episodeNumber = episodeNumber
         self.relativePath = relativePath
         self.remoteURLString = remoteURLString
+        self.remoteOriginFlag = remoteOrigin ? true : nil
         self.duration = duration
         self.playbackPosition = playbackPosition
         self.isFinished = isFinished
@@ -82,6 +92,10 @@ extension MediaItem {
 
     /// `true` per un item in streaming dal server remoto (nessun file locale).
     var isRemote: Bool { remoteURLString != nil }
+
+    /// `true` se l'item viene dal catalogo remoto, scaricato o no — a
+    /// differenza di `isRemote` sopravvive al download. Vedi `remoteOriginFlag`.
+    var isRemoteOrigin: Bool { remoteOriginFlag ?? isRemote }
 
     /// Percorso del file locale importato. Non ha senso per gli item remoti
     /// (relativePath vuoto) — usare `playbackURL` per la riproduzione e

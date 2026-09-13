@@ -11,12 +11,7 @@ struct MovieCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topTrailing) {
-                ThumbnailImageView(item: item, systemFallback: "film")
-                    .aspectRatio(16.0/9.0, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(alignment: .topLeading) {
-                        if item.isRemote { StreamingBadge() }
-                    }
+                poster
 
                 if item.isFinished {
                     Image(systemName: "checkmark.circle.fill")
@@ -46,5 +41,24 @@ struct MovieCardView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Un film che viene dal catalogo remoto (in streaming o già scaricato:
+    /// vedi `isRemoteOrigin`) usa la locandina ufficiale, come in Cerca, PER
+    /// SEMPRE — non solo finché resta in streaming.
+    @ViewBuilder
+    private var poster: some View {
+        if item.isRemoteOrigin {
+            RemotePosterImage(name: item.title, kind: .movie, systemFallback: "film")
+                .aspectRatio(2.0/3.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(alignment: .topLeading) {
+                    if item.isRemote { StreamingBadge() }
+                }
+        } else {
+            ThumbnailImageView(item: item, systemFallback: "film")
+                .aspectRatio(16.0/9.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
     }
 }

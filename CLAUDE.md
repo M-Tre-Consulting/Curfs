@@ -304,6 +304,74 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     episodio via rete. `PlayerViewModel` popola `siblingEpisodes` solo per item locali.
   - Setup Pi: nginx statico su `/mnt/nextcloud_data/SC` con `autoindex_format json` +
     `tailscale serve --https=443`; l'app usa l'URL `*.ts.net` (cert valido ⇒ niente eccezioni ATS).
+  - **Locandine ufficiali per film/serie remote** (`Remote/PosterFetcher.swift`): il server del
+    Pi non ha metadati, solo file — `HTTPTreeProvider.buildCatalog` valorizza
+    `RemoteTitle.posterURL` (già consumato da `SearchResultCard`/`RemoteTitleDetailView` via
+    `AsyncImage`, mancava solo chi lo popolasse) interrogando l'**API di ricerca di iTunes**
+    (`itunes.apple.com/search`), pubblica e senza chiave/account. ⚠️ **`media=movie` come
+    parametro di query restituisce sistematicamente 0 risultati** (comportamento osservato, non
+    documentato/garantito da Apple, potrebbe cambiare) — la ricerca va fatta senza filtro
+    `media`/`entity` e il tipo giusto (film vs serie) selezionato lato client dal campo `kind` di
+    ogni risultato (`feature-movie` / `tv-episode` / `tv-season`). L'artwork di default è
+    100×100: l'URL viene ringrandito sostituendo `100x100bb` con `600x900bb` nel path. Risultati
+    (trovati E non trovati, per non riprovare titoli assenti da iTunes ad ogni ricostruzione del
+    catalogo) tenuti in cache in `Caches/RemotePosters.json` — non Application Support: perderla
+    non è un problema, si ricalcola da sola (stesso ragionamento di `fingerprintsDirectory`).
+    Risolte a piccoli gruppi concorrenti (6 alla volta) durante la costruzione del catalogo, non
+    tutte insieme: eviti di sparare decine di richieste in parallelo per una libreria grande.
+    ⚠️ **`AsyncImage` in una griglia a righe di altezza libera (`LazyVGrid`) sfora lo schermo**
+    se non gli dai una dimensione esplicita: senza, propone come "ideale" le dimensioni reali
+    dell'immagine scaricata (es. 600×900pt della locandina) invece di quelle della cella che la
+    ospita — un `.aspectRatio(_, contentMode: .fit)` esterno da solo non basta a contenerla
+    (capitato in `SearchResultCard`, il vecchio placeholder `Rectangle` non ne soffriva perché non
+    ha una dimensione "naturale" propria). Fix/pattern riusabile: `Utilities/RemotePosterImage.swift`
+    avvolge il contenuto in un `GeometryReader` e forza `.frame(width:proxy.size.width,
+    height:proxy.size.height)` — nessuna dimensione naturale propria, si comporta come il
+    placeholder. Dove il contenitore ha già un `.frame(height:)` esplicito (es. l'header a 200pt
+    di `RemoteTitleDetailView`/`ShowDetailView`) il problema non si presenta comunque.
+    `RemotePosterImage` è anche il punto da cui `ShowCardView`/`MovieCardView`/
+    `ShowDetailView.posterBanner` mostrano la locandina (2:3, invece del frame video 16:9) per un
+    titolo che viene dal catalogo remoto. ⚠️ **Sta su `MediaItem.isRemoteOrigin`/
+    `ShowSummary.hasRemoteOrigin`, non su `isRemote`/`isStreaming`**: la prima versione usava
+    `isStreaming` (tutti gli episodi ancora in streaming) e la copertina tornava al frame video
+    non appena si scaricava anche un solo episodio — sbagliato, la locandina va tenuta per sempre
+    una volta che il titolo è stato aggiunto da Cerca, scaricato o no. `MediaItem.remoteOriginFlag`
+    (opzionale ⇒ migrazione automatica) esiste apposta: `RemoteDownloadManager.finalize` crea per
+    ogni download un `MediaItem` **locale nuovo e separato** (non converte quello in streaming), e
+    quello nuovo lo marca `remoteOrigin: true` così l'origine sopravvive anche quando `isRemote`
+    torna false. Per gli item creati già `isRemote` (streaming, mai scaricati) non serve
+    valorizzarlo esplicitamente: `isRemoteOrigin` ricade su `remoteOriginFlag ?? isRemote`. Il
+    badge "in streaming" invece resta legato a `isRemote`/`isStreaming` come prima (ha senso solo
+    finché serve davvero la rete per guardarlo). Per gli episodi/film scaricati PRIMA che
+    `remoteOriginFlag` esistesse (a quella data `RemoteDownloadManager.finalize` creava un
+    `MediaItem` locale indistinguibile da un import da Files, nessun modo di saperlo col senno di
+    poi) — tasto **"Ripara copertine scaricate"** in `RemoteSourceSettingsView`
+    (`LibraryMaintenance.backfillRemoteOrigin`): interroga il catalogo del server e marca
+    retroattivamente gli item locali il cui showName/title combacia con un titolo del catalogo.
+    Best-effort per nome, non per ID: un episodio salvato sotto un nome di serie diverso da quello
+    del Pi (vedi "Salva in:"/`effectiveShowName`) non viene riconosciuto.
+  - **Miniature reali per episodi/film remoti**: `ThumbnailGenerator` (condiviso con l'import
+    locale) prima si fermava subito per gli item `isRemote` (niente file locale ⇒ solo icona
+    placeholder). Ora costruisce l'`AVURLAsset` sull'URL remoto con gli stessi header di
+    autenticazione usati da `PlayerViewModel.makePlayer` per lo streaming, e lo passa ad
+    `AVAssetImageGenerator` esattamente come per un file locale: scarica via richieste Range solo
+    i pochi byte del fotogramma richiesto, non l'intero video — non più pesante del collegamento
+    al Pi già fatto per lo streaming stesso. Nessun'altra modifica serve perché
+    `ThumbnailImageView` rigenera già da sola la miniatura mancante al primo utilizzo (vedi sopra,
+    stesso meccanismo pensato per la perdita di Caches): un item remoto aggiunto alla libreria
+    ottiene la sua miniatura reale la prima volta che la card viene mostrata in griglia.
+    ⚠️ **Bug reale trovato e corretto**: un episodio/film aggiunto alla libreria da remoto
+    (`RemoteTitleDetailView.addSeasonToLibrary`/`addMovieToLibrary`) ha `duration == 0` finché non
+    viene riprodotto almeno una volta (per l'import locale e per il download la durata è già nota
+    a questo punto, misurata altrove — qui no). Il calcolo del fotogramma target
+    (`duration > 4 ? min(duration * 0.1, 30) : 0`) cadeva quindi sempre a t=0 → quasi sempre nero,
+    e ci restava per sempre perché una miniatura già su disco non viene più rigenerata. Fix in
+    `generateIfNeeded`: per un item remoto con `duration <= 0`, misura la durata vera
+    (`asset.load(.duration)`, stesso `AVURLAsset` con gli header già costruito per il frame) prima
+    di scegliere il target, e la scrive anche sul modello (`item.duration =`) così pure la durata
+    mostrata prima del primo play si sistema di rimbalzo. Item già aggiunti PRIMA di questo fix e
+    con una miniatura nera già in cache non si autoripara da soli (il file esiste già): vanno
+    rimossi e riaggiunti alla libreria per rigenerarla.
 
 ## Non ancora implementato
 
