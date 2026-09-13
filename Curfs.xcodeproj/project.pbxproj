@@ -15,13 +15,13 @@
 		89260684579D93A2D7B54BD3 /* Exceptions for "Curfs" folder in "CurfsMac" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"CurfsApp.swift",
-				"Player/AppDelegate.swift",
-				"Player/OrientationController.swift",
-				"Player/VideoPlayerLayerView.swift",
-				"Player/PlayerView.swift",
-				"Player/PlayerControlsOverlay.swift",
-				"Player/PlayerGestureZones.swift",
+				CurfsApp.swift,
+				Player/AppDelegate.swift,
+				Player/OrientationController.swift,
+				Player/PlayerControlsOverlay.swift,
+				Player/PlayerGestureZones.swift,
+				Player/PlayerView.swift,
+				Player/VideoPlayerLayerView.swift,
 			);
 			target = ECFD114AC6966161FB7077D6 /* CurfsMac */;
 		};
@@ -44,12 +44,12 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		5F75FC2E302E156900ACDDCE /* Frameworks */ = {
+		2805E9380DA62C46E283D99D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
 		};
-		2805E9380DA62C46E283D99D /* Frameworks */ = {
+		5F75FC2E302E156900ACDDCE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -180,6 +180,34 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		27079CA8992A79C63A4B4493 /* Debug configuration for PBXNativeTarget "CurfsMac" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.CurfsMac;
+				PRODUCT_NAME = Curfs;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
 		5F75FC3A302E156A00ACDDCE /* Debug configuration for PBXProject "Curfs" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -323,7 +351,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.Mediapple;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -367,7 +395,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.Mediapple;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -384,35 +412,7 @@
 			};
 			name = Release;
 		};
-		27079CA8992A79C63A4B4493 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.CurfsMac;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		78F4314DFD9187D8F8577E82 /* Release */ = {
+		78F4314DFD9187D8F8577E82 /* Release configuration for PBXNativeTarget "CurfsMac" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -426,9 +426,9 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicoloperri.CurfsMac;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Curfs;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -442,6 +442,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		54D1E18698CC74692B484472 /* Build configuration list for PBXNativeTarget "CurfsMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27079CA8992A79C63A4B4493 /* Debug configuration for PBXNativeTarget "CurfsMac" */,
+				78F4314DFD9187D8F8577E82 /* Release configuration for PBXNativeTarget "CurfsMac" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		5F75FC2C302E156900ACDDCE /* Build configuration list for PBXProject "Curfs" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -455,14 +463,6 @@
 			buildConfigurations = (
 				5F75FC3D302E156A00ACDDCE /* Debug configuration for PBXNativeTarget "Curfs" */,
 				5F75FC3E302E156A00ACDDCE /* Release configuration for PBXNativeTarget "Curfs" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		54D1E18698CC74692B484472 /* Build configuration list for PBXNativeTarget "CurfsMac" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				27079CA8992A79C63A4B4493 /* Debug */,
-				78F4314DFD9187D8F8577E82 /* Release */,
 			);
 			defaultConfigurationName = Release;
 		};
