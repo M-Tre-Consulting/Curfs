@@ -236,14 +236,7 @@ struct ShowDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let poster = currentShow.posterItem {
-                ThumbnailImageView(item: poster, systemFallback: "tv")
-                    .aspectRatio(16.0/9.0, contentMode: .fill)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: Color.accentColor.opacity(0.35), radius: 20, y: 10)
-            }
+            posterBanner
 
             if let next = currentShow.nextToWatch {
                 Button {
@@ -262,6 +255,29 @@ struct ShowDetailView: View {
                 .buttonStyle(.glassProminent)
                 .tint(Color.accentColor)
             }
+        }
+    }
+
+    /// Una serie che viene dal catalogo remoto (in streaming o già scaricata
+    /// per intero: vedi `ShowSummary.hasRemoteOrigin`) usa la locandina
+    /// ufficiale, come in Cerca, PER SEMPRE — non solo finché resta in
+    /// streaming. Una serie mai passata dal remoto usa invece il frame reale
+    /// come sempre.
+    @ViewBuilder
+    private var posterBanner: some View {
+        if currentShow.hasRemoteOrigin {
+            RemotePosterImage(name: currentShow.name, kind: .series, systemFallback: "tv")
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: Color.accentColor.opacity(0.35), radius: 20, y: 10)
+        } else if let poster = currentShow.posterItem {
+            ThumbnailImageView(item: poster, systemFallback: "tv")
+                .aspectRatio(16.0/9.0, contentMode: .fill)
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: Color.accentColor.opacity(0.35), radius: 20, y: 10)
         }
     }
 }

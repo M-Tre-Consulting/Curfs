@@ -28,6 +28,12 @@ struct ShowSummary: Identifiable {
     /// Serie composta solo da voci in streaming (nessun file scaricato).
     var isStreaming: Bool { !episodes.isEmpty && episodes.allSatisfy(\.isRemote) }
 
+    /// La serie viene dal catalogo remoto — anche se nel frattempo tutti gli
+    /// episodi sono stati scaricati (a differenza di `isStreaming`, che
+    /// diventa false al primo download). Usato solo per la copertina: vedi
+    /// `MediaItem.isRemoteOrigin`.
+    var hasRemoteOrigin: Bool { episodes.contains(where: \.isRemoteOrigin) }
+
     /// Il prossimo episodio da guardare: se c'è un episodio lasciato a metà,
     /// riprende quello (il più recente per data di ultima riproduzione, non
     /// il primo in ordine — altrimenti se si è già avanti con la visione,

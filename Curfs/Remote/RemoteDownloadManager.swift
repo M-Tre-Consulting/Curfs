@@ -442,6 +442,7 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
                     seasonNumber: request.season,
                     episodeNumber: request.episode,
                     relativePath: relativePath,
+                    remoteOrigin: true,
                     duration: seconds
                 )
                 context.insert(media)
