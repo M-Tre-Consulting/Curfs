@@ -376,7 +376,7 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
 ## Non ancora implementato
 
 - Picture-in-Picture, layout dedicato iPad, sync iCloud.
-- Sezione Cerca: poster/metadati (ora solo placeholder a icona), pull-to-refresh del catalogo
-  remoto, riconciliazione tra un episodio guardato in streaming e lo stesso poi scaricato
-  offline (oggi coesistono come due `MediaItem`), auto-avanzamento a cavallo di stagione
-  testato solo con cataloghi piccoli.
+- Sezione Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si
+  ricava dai nomi file), pull-to-refresh del catalogo remoto, riconciliazione tra un episodio
+  guardato in streaming e lo stesso poi scaricato offline (oggi coesistono come due `MediaItem`),
+  auto-avanzamento a cavallo di stagione testato solo con cataloghi piccoli.

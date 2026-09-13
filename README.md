@@ -1,7 +1,7 @@
 # Curfs
 
-App SwiftUI/SwiftData: un media player personale, per iPhone (**Curfs**) e Mac (**CurfsMac**,
-stesso progetto Xcode, target separato). Importa video da Files, riconosce automaticamente
+App SwiftUI/SwiftData: un media player personale, per iPhone (**Curfs**) e Mac (**Curfs**, target
+Xcode `CurfsMac`, stesso progetto). Importa video da Files, riconosce automaticamente
 stagioni ed episodi dai nomi di cartelle/file, li organizza in Film/Serie, tiene traccia
 dell'avanzamento visto, e li riproduce con AVFoundation/AVKit (Liquid Glass, tema viola scuro
 immersivo; su Mac i controlli di riproduzione sono quelli nativi di AVKit, con Picture-in-Picture
@@ -25,8 +25,10 @@ flottante incluso).
   cold open di lunghezza variabile tra un episodio e l'altro.
 - **Sezione Cerca**: si collega a un server HTTP personale (nel progetto originale un Raspberry
   Pi raggiunto via Tailscale) che espone una cartella di video con elenchi di directory in JSON.
-  Permette di sfogliare, aggiungere alla libreria in streaming o scaricare offline. **Nessuna
-  fonte è preconfigurata**: ognuno inserisce l'URL del proprio server da Impostazioni → Cerca.
+  Permette di sfogliare, aggiungere alla libreria in streaming o scaricare offline, con locandine
+  ufficiali (da iTunes, nessuna configurazione richiesta) al posto del placeholder a icona — la
+  copertina resta anche dopo aver scaricato un titolo. **Nessuna fonte è preconfigurata**: ognuno
+  inserisce l'URL del proprio server da Impostazioni → Cerca.
   Vedi [CLAUDE.md](CLAUDE.md#decisionigotcha-non-ovvi-dal-codice) (sezione "Sezione Cerca /
   streaming remoto") per il contratto lato server (in breve: nginx con
   `autoindex_format json;` + supporto alle richieste Range, nessun endpoint custom).
@@ -82,9 +84,9 @@ esclusi in [CLAUDE.md](CLAUDE.md). PR benvenute.
 
 Picture-in-Picture su iPhone (su Mac c'è già, nativo di AVKit), layout dedicato iPad, sync
 iCloud, icona Mac disegnata a mano (quella attuale è generata per ricomposizione dell'icona
-iOS). Nella sezione Cerca: poster/metadati (ora solo placeholder a icona), pull-to-refresh del
-catalogo remoto, riconciliazione tra un episodio guardato in streaming e lo stesso poi scaricato
-offline.
+iOS). Nella sezione Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo
+quello che si ricava dai nomi file), pull-to-refresh del catalogo remoto, riconciliazione tra un
+episodio guardato in streaming e lo stesso poi scaricato offline.
 
 ## Licenza
 
