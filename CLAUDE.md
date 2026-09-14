@@ -127,32 +127,33 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   problema separato, vedi sotto), passata a `CardGrid.columns(forWidth:)`, che restituisce un
   numero intero di colonne `.flexible` (minimo 2): queste NON possono eccedere lo spazio
   disponibile, è garantito dal layout system.
-- ⚠️ **Bug reale non risolto, isolato ma non capito**: su dispositivo reale (iPhone 12 mini,
-  iOS 26.1.2) — e riprodotto anche in simulatore, su più device/runtime diversi, con dati veri E
-  con repro minimi — card e testo dentro le `ScrollView` di `LibraryHomeView`/`SearchView`/
-  `ShowDetailView` a volte perdono il margine sinistro e finiscono a filo del bordo vero dello
-  schermo. **NON è**: la griglia/`CardGrid` (riprodotto anche con `ContinueWatchingCard`, fuori
-  da ogni griglia), il tipo di bottone (riprodotto identico con `Button`, `.buttonStyle(.plain)`,
-  `PressableButtonStyle`, e con `.onTapGesture` senza alcun bottone), il valore del padding
-  (riprodotto da 16pt fino a testato-funzionante-a-100pt), `.padding()` vs `.safeAreaPadding()`
-  (entrambi falliscono nello stesso modo), `GeometryReader` (riprodotto sia con sia senza),
-  `.frame(maxWidth: .infinity)` vs `.frame(width:)` esplicito (entrambi falliscono). **Isolato
-  con certezza** (repro minimo, ripetibile): dentro una `ScrollView`, una `VStack(alignment: .leading)`
-  con **un solo figlio** a larghezza fissa (`.frame(width:)`) si posiziona bene; **appena la
-  VStack ha un secondo figlio qualsiasi** (anche solo un `Text`, anche solo un'altra card
-  identica) — il figlio a larghezza fissa (in certi casi anche il primo) finisce a filo bordo.
-  Non un frame di transizione: persiste da fermo, a freddo, su installazioni pulite. Tentativi
-  che NON hanno risolto: `.safeAreaPadding` unico sulla ScrollView invece di `.padding()` sparsi,
-  `.frame(maxWidth: .infinity, alignment: .leading)` esplicito sul contenitore, avvolgere la card
-  in `HStack { card; Spacer() }` invece di affidarsi all'allineamento della VStack. Sospetto: un
-  bug genuino di SwiftUI/iOS 26 nell'interazione `ScrollView` + `VStack` con figli di larghezza
-  eterogenea, non qualcosa di sbagliato nel nostro codice — ma non confermato. Se si riprende
-  questa indagine: NON ripartire dalle stesse ipotesi (grid/bottoni/valore padding, già escluse
-  con certezza), e considerare `List` o un layout manuale via `GeometryReader` per-riga come
-  alternative strutturali invece di inseguire ancora `VStack`+`ScrollView`. Le card di griglia
-  (`ShowCardView`, `MovieCardView`, `SearchResultCard`) usano `.aspectRatio(_, contentMode: .fit)`
-  + `.frame(maxWidth: .infinity)` per non spingersi oltre la colonna; dove la miniatura ha già un
-  frame fisso (`EpisodeRowView`, header di `ShowDetailView`) resta `.fill` (è comunque limitata).
+- ✅ **Risolto (2026-09-14) il bug del "margine sinistro perso"** che per mesi era sembrato un
+  bug del layout system (`ScrollView`+`VStack`, vedi storia sotto): la causa vera era
+  **`AppBackground`**, non le view che sembravano sbagliate. Il cerchio sfocato più grande dello
+  sfondo (`Circle().frame(width: 440, height: 440)`) "trapelava" come ideal-size dell'intero
+  `ZStack` di sfondo verso l'alto — confermato misurando la geometria a runtime (non solo per
+  teoria): su schermi più stretti di 440pt (qualunque iPhone: il più largo, i Pro Max, arriva a
+  428/430) lo `ZStack` che contiene `AppBackground()` (in `LibraryHomeView`/`SearchView`/
+  `ShowDetailView`/`RemoteTitleDetailView`, tutte le view che lo montano) finiva centrato su una
+  larghezza fittizia di 440pt invece che sulla larghezza vera dello schermo, spingendo fuori dal
+  bordo sinistro tutto il contenuto per metà della differenza — inosservabile sugli schermi più
+  larghi (13 Pro Max: solo 6pt di offset, sotto la soglia percepibile), vistoso su quelli più
+  stretti (12 mini/11 Pro, 375pt: 32pt di offset, testo tagliato). Spiega perché sembrava
+  "isolato in `ContinueWatchingCard`/testi di sezione" (erano solo i figli più a sinistra della
+  gerarchia a mostrarlo per primi) e perché nessun tentativo sulla griglia/`VStack`/padding
+  aveva funzionato: il problema non era mai stato lì. Fix: `.frame(maxWidth: .infinity)` da solo
+  NON basta (con una proposta di size "nil" si limita a inoltrare la richiesta al figlio invece
+  di forzare un riempimento) — serve avvolgere il contenuto di `AppBackground` in un
+  `GeometryReader`, che riporta sempre e solo la size che gli viene proposta, mai quella dei
+  figli, tagliando il leak alla radice. Diagnosticato misurando `g.frame(in: .global)` via sonde
+  `GeometryReader` temporanee loggate con `os.Logger` (non `print()`: su simulatore non passa
+  per `log stream`/os_log, si perde) e confrontando due simulatori (uno stretto, uno largo)
+  creati ad hoc con `xcrun simctl create`/`log stream --predicate 'subsystem == "..."'` — utile
+  da ricordare come tecnica se si ripresenta un bug di layout simile "isolato ma non capito".
+- Le card di griglia (`ShowCardView`, `MovieCardView`, `SearchResultCard`) usano
+  `.aspectRatio(_, contentMode: .fit)` + `.frame(maxWidth: .infinity)` per non spingersi oltre la
+  colonna; dove la miniatura ha già un frame fisso (`EpisodeRowView`, header di `ShowDetailView`)
+  resta `.fill` (è comunque limitata).
 
 - **`LibraryStorage.thumbnailsDirectory` è in Application Support, NON in Caches**: un
   aggiornamento di iOS (26.1.2) ha svuotato `Caches/` sul dispositivo reale e le miniature degli
