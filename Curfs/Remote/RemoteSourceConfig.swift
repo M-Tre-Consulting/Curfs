@@ -71,4 +71,6 @@ enum RemoteSourceStore {
 
 extension Notification.Name {
     static let remoteSourceConfigChanged = Notification.Name("Curfs.remoteSourceConfigChanged")
+    /// Una copertina dell'utente è stata caricata o rimossa sul server.
+    static let remotePosterChanged = Notification.Name("Curfs.remotePosterChanged")
 }

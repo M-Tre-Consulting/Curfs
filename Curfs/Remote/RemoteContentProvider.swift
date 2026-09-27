@@ -28,6 +28,11 @@ struct RemoteTitle: Identifiable, Sendable, Hashable {
     var year: String?
     var posterURL: URL?
     var overview: String?
+    /// Dove caricare una copertina scelta dall'utente (file accanto al
+    /// contenuto sul server). `nil` se la fonte non supporta copertine proprie.
+    var customPosterUploadURL: URL? = nil
+    /// `posterURL` punta a una copertina caricata dall'utente (non a iTunes).
+    var hasCustomPoster: Bool = false
 }
 
 struct RemoteEpisode: Identifiable, Sendable, Hashable {
@@ -64,6 +69,7 @@ enum RemoteProviderError: LocalizedError {
     case unauthorized
     case badListing
     case server(status: Int)
+    case uploadNotSupported
 
     var errorDescription: String? {
         switch self {
@@ -75,6 +81,8 @@ enum RemoteProviderError: LocalizedError {
             return "Il server ha risposto, ma non con un elenco di cartelle in JSON (serve nginx con «autoindex_format json»)."
         case .server(let status):
             return "Il server ha risposto con un errore (HTTP \(status))."
+        case .uploadNotSupported:
+            return "Il server non accetta il caricamento di copertine: va abilitato PUT/DELETE (WebDAV) su nginx per i file poster."
         }
     }
 }
@@ -93,6 +101,14 @@ protocol RemoteContentProvider: Sendable {
     /// Risolve l'URL diretto del file da scaricare per un film (episode: nil)
     /// o per un episodio specifico di una serie.
     func resolveDownload(for title: RemoteTitle, episode: RemoteEpisode?) async throws -> RemoteDownloadTarget
+
+    /// Salva sul server una copertina scelta dall'utente (JPEG già
+    /// ritagliato 2:3) accanto al contenuto del titolo. Restituisce il nuovo
+    /// `posterURL` da mostrare.
+    func setCustomPoster(_ jpegData: Data, for title: RemoteTitle) async throws -> URL
+
+    /// Rimuove la copertina dell'utente: si torna a quella di iTunes (se c'è).
+    func removeCustomPoster(for title: RemoteTitle) async throws -> URL?
 }
 
 /// Provider "vuoto" usato finché non colleghi una fonte vera: la sezione
@@ -113,6 +129,14 @@ struct UnconfiguredRemoteProvider: RemoteContentProvider {
     }
 
     func resolveDownload(for title: RemoteTitle, episode: RemoteEpisode?) async throws -> RemoteDownloadTarget {
+        throw RemoteProviderError.notConfigured
+    }
+
+    func setCustomPoster(_ jpegData: Data, for title: RemoteTitle) async throws -> URL {
+        throw RemoteProviderError.notConfigured
+    }
+
+    func removeCustomPoster(for title: RemoteTitle) async throws -> URL? {
         throw RemoteProviderError.notConfigured
     }
 }

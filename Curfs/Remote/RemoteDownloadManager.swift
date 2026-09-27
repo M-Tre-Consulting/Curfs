@@ -261,10 +261,27 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
                         self.records[id] = record
                     }
                 }
+                self.pruneCompletedIfIdle()
                 self.persist(force: true)
                 self.emit()
             }
         }
+    }
+
+    /// Finito l'ultimo download del gruppo, le righe "Completato" spariscono
+    /// da sole. Prima restavano nel registro: il pannello si nascondeva
+    /// (nessun download attivo) ma al download successivo ricomparivano
+    /// tutte quelle non chiuse a mano con la X. Le fallite restano: chiedono
+    /// un'azione (riprova o chiudi). Sempre su stateQueue.
+    private func pruneCompletedIfIdle() {
+        let busy = records.values.contains { [.downloading, .paused, .finalizing].contains($0.status) }
+        guard !busy else { return }
+        let done = order.filter { records[$0]?.status == .completed }
+        for id in done {
+            records[id] = nil
+            cleanupFiles(for: id)
+        }
+        order.removeAll { done.contains($0) }
     }
 
     // MARK: Creazione task (nuovo o da resumeData) — sempre su stateQueue
@@ -455,6 +472,7 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
                     done.receivedBytes = done.totalBytes
                     self.records[id] = done
                     try? FileManager.default.removeItem(at: Self.resumeURL(id))
+                    self.pruneCompletedIfIdle()
                     self.persist(force: true)
                     self.emit()
                 }

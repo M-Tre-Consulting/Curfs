@@ -278,6 +278,11 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     unico condiviso** con la scena (`CurfsApp` usa `.modelContainer(AppModelContainer.shared)`),
     non più `.modelContainer(for:)`. `RemoteDownloadManager()` non è più istanziabile:
     usare `.shared`.
+    Le righe "Completato" vengono tolte dal registro da sole appena non resta nessun download
+    attivo (`BackgroundDownloadEngine.pruneCompletedIfIdle`, anche all'avvio): prima il pannello
+    si nascondeva ma quelle non chiuse con la X ricomparivano tutte al download successivo. La X
+    su una riga completata toglie solo la riga (l'episodio resta in libreria); su un download in
+    corso lo annulla. Le fallite restano finché non si riprovano/chiudono.
   - **`MediaItem.remoteURLString`**: se valorizzato l'item è in streaming (nessun file locale,
     `relativePath` vuoto, `playbackURL` punta al remoto). Attributo opzionale ⇒ migrazione
     SwiftData automatica. Gli item remoti **compaiono nelle griglie** Serie TV / Film come
@@ -351,6 +356,59 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     retroattivamente gli item locali il cui showName/title combacia con un titolo del catalogo.
     Best-effort per nome, non per ID: un episodio salvato sotto un nome di serie diverso da quello
     del Pi (vedi "Salva in:"/`effectiveShowName`) non viene riconosciuto.
+  - **Copertine scelte dall'utente, salvate sul Pi accanto al contenuto** (2026-09-27): in
+    `RemoteTitleDetailView` il pulsante "Cambia copertina" sul banner (iPhone: menu Foto/File/
+    Ripristina; Mac: pulsanti separati, niente `Menu` per il gotcha NSMenu sopra) prende
+    un'immagine, la ritaglia al centro a 2:3 e la ridimensiona a max 1000×1500 JPEG
+    (`Utilities/PosterImageProcessing`), poi la carica con **PUT** (WebDAV di nginx) tramite
+    `RemoteContentProvider.setCustomPoster`. Posizione = convenzione Jellyfin/Kodi, così la
+    copertina segue il contenuto (condivisa tra dispositivi, sparisce se si cancella la cartella):
+    film → `<nome file video>-poster.jpg` nella stessa cartella; serie → `poster.jpg` nella
+    cartella comune a tutti gli episodi se contiene SOLO quella serie, altrimenti
+    `<nome serie>-poster.jpg` lì (`HTTPTreeProvider.seriesPosterAnchor`). La scansione raccoglie
+    anche i file `poster.*`/`*-poster.*` (jpg/jpeg/png — si possono mettere anche a mano sul Pi)
+    e passa l'`mtime` di autoindex come `?v=` nell'URL per non mostrare la versione in cache.
+    Vincono su iTunes via `PosterFetcher.overrides`, **sostituiti per intero a ogni costruzione
+    del catalogo** (così un titolo tolto dal server perde la copertina) e salvati in
+    `Caches/RemotePosterOverrides.json` solo perché le card della libreria (`RemotePosterImage`,
+    per nome come prima) la mostrino anche prima che Cerca abbia caricato il catalogo.
+    Lato server serve `dav_methods PUT DELETE` in nginx **solo** per i nomi file poster
+    (location regex), senza → 405 → `RemoteProviderError.uploadNotSupported`. Le immagini
+    remote passano per `Utilities/RemoteImage` (non `AsyncImage`): aggiunge gli header di
+    basic-auth del Pi, che `AsyncImage` non permette. Limite: la card della libreria trova la
+    copertina per nome, quindi una serie salvata con "Salva in:" sotto un nome diverso da quello
+    del Pi non la vede.
+  - **Catena locandine automatiche**: **Wikipedia** → iTunes, entrambe senza chiavi/account
+    (`PosterFetcher.fetchWikipedia`). TMDB è stato provato e **tolto su richiesta dell'utente**
+    (richiede registrazione; il modulo rifiutava l'indirizzo italiano): non reintrodurlo.
+    Wikipedia è la fonte che di fatto trova i FILM, visto che iTunes non li trova più: cerca "<titolo> film"/"serie televisiva" su it.wiki (titoli
+    italiani: "Oceania" → "Oceania (film 2026)"), segue il `langlinks` alla voce INGLESE e ne prende
+    la `pageimage` (it.wiki non ospita locandine, solo fotogrammi orizzontali), poi prova
+    direttamente en.wiki. Serve `pilicense=any` (le locandine sono immagini non libere). Match sul
+    titolo della voce senza disambigua tra parentesi; con un anno nel nome vale solo la voce che
+    lo riporta o quella senza disambigua, mai un'altra versione datata. Un'immagine è accettata
+    solo se è verticale come una locandina (altezza ≥ 1,3 × larghezza): scarta title card, mappe,
+    fotogrammi (es. Deep State e Game of Thrones su en.wiki hanno una title card → niente).
+    User-Agent identificativo obbligatorio per Wikimedia (`PosterFetcher.wikimediaUserAgent`,
+    mandato anche da `RemoteImageLoader` per `*.wikimedia.org`). Cache con prefisso `v5|`.
+  - **Anno nei titoli dei film remoti**: `FileNameParser.cleanTitle` toglie tutto ciò che sta tra
+    parentesi, anche l'anno — `HTTPTreeProvider.movieTitle` lo riaggiunge ("Oceania (2026).mp4" /
+    "Oceania.2026.1080p.mp4" → "Oceania (2026)"), perché serve alle fonti delle locandine per
+    distinguere un remake dall'originale. Non all'inizio del nome ("1917") e non se è parte del
+    titolo ("Blade Runner 2049").
+  - ⚠️ **iTunes: un risultato vale solo se il titolo combacia** (`PosterFetcher.candidateNames`,
+    confronto normalizzato senza anno tra parentesi; per le serie su `artistName` o
+    `collectionName` senza ", Season N"). Conseguenza voluta: i titoli tradotti non si trovano più
+    ("Il Trono di Spade" → iTunes USA risponde "Game of Thrones", che prima veniva preso per
+    fortuna come primo risultato tv). Provato ad accettarli quando i risultati contengono una sola
+    serie: scartato, iTunes restituisce numero/ordine di risultati instabili (con `limit=10`
+    Game of Thrones non c'è, con 25 ci sono due serie) e accetterebbe spazzatura ("Moana" →
+    *Chibi Tiny Tales*). Per quelli c'è la copertina manuale. Prima si prendeva il primo `feature-movie` qualunque:
+    la ricerca iTunes restituisce quasi sempre qualche film ("Oceania" → *The Burned Barns*,
+    "Moana" → *A Minecraft Movie*). Chiavi di cache con prefisso versionato (oggi `v5|`) per scartare i
+    risultati delle versioni precedenti. Nota: a settembre 2026 la ricerca non trova come film nemmeno titoli
+    come *Inception*/*The Matrix* (con o senza `media=movie`), quindi per i film la copertina
+    manuale è in pratica la strada principale; le serie invece si trovano bene.
   - **Miniature reali per episodi/film remoti**: `ThumbnailGenerator` (condiviso con l'import
     locale) prima si fermava subito per gli item `isRemote` (niente file locale ⇒ solo icona
     placeholder). Ora costruisce l'`AVURLAsset` sull'URL remoto con gli stessi header di

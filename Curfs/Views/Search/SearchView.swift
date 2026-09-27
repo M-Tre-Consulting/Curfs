@@ -74,6 +74,11 @@ struct SearchView: View {
             .sheet(item: $selectedTitle) { title in
                 RemoteTitleDetailView(title: title, provider: provider, downloadManager: downloadManager, modelContext: modelContext)
             }
+            // Il provider ha già aggiornato il catalogo in memoria: basta
+            // rileggere i risultati per mostrare la copertina nuova in griglia.
+            .onReceive(NotificationCenter.default.publisher(for: .remotePosterChanged)) { _ in
+                runSearch(for: query, debounce: false)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .remoteSourceConfigChanged)) { _ in
                 provider = RemoteContentProviderRegistry.makeProvider()
                 results = []
