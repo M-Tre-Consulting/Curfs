@@ -378,19 +378,33 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     basic-auth del Pi, che `AsyncImage` non permette. Limite: la card della libreria trova la
     copertina per nome, quindi una serie salvata con "Salva in:" sotto un nome diverso da quello
     del Pi non la vede.
-  - **Catena locandine automatiche**: **Wikipedia** → iTunes, entrambe senza chiavi/account
-    (`PosterFetcher.fetchWikipedia`). TMDB è stato provato e **tolto su richiesta dell'utente**
-    (richiede registrazione; il modulo rifiutava l'indirizzo italiano): non reintrodurlo.
-    Wikipedia è la fonte che di fatto trova i FILM, visto che iTunes non li trova più: cerca "<titolo> film"/"serie televisiva" su it.wiki (titoli
-    italiani: "Oceania" → "Oceania (film 2026)"), segue il `langlinks` alla voce INGLESE e ne prende
-    la `pageimage` (it.wiki non ospita locandine, solo fotogrammi orizzontali), poi prova
-    direttamente en.wiki. Serve `pilicense=any` (le locandine sono immagini non libere). Match sul
-    titolo della voce senza disambigua tra parentesi; con un anno nel nome vale solo la voce che
-    lo riporta o quella senza disambigua, mai un'altra versione datata. Un'immagine è accettata
-    solo se è verticale come una locandina (altezza ≥ 1,3 × larghezza): scarta title card, mappe,
-    fotogrammi (es. Deep State e Game of Thrones su en.wiki hanno una title card → niente).
-    User-Agent identificativo obbligatorio per Wikimedia (`PosterFetcher.wikimediaUserAgent`,
-    mandato anche da `RemoteImageLoader` per `*.wikimedia.org`). Cache con prefisso `v5|`.
+  - **Catena locandine automatiche** (`PosterFetcher.automaticPosterURL`), tutte senza chiavi/account:
+    1. **Wikipedia riconosce il titolo** (`wikiIdentify`): cerca "<titolo> film"/"serie
+       televisiva" su it.wiki (titoli italiani: "Oceania" → "Oceania (film 2026)"), segue il
+       `langlinks` alla voce INGLESE, poi prova direttamente en.wiki. Match sul titolo della voce
+       senza disambigua; con un anno nel nome vale solo la voce che lo riporta o quella senza
+       disambigua, mai un'altra versione datata. Una voce vale come riconoscimento solo se la
+       disambigua dice film/serie ("(film 2026)", "(TV series)") o se ha un'immagine a forma di
+       locandina: evita "Oceania" il continente.
+    2. **IMDb dà la locandina in alta risoluzione** (`fetchIMDb`) cercando il titolo INGLESE
+       riconosciuto al punto 1 (+ anno da nome file o disambigua): endpoint dei suggerimenti
+       della barra di ricerca del sito, `v3.sg.media-imdb.com/suggestion/<iniziale>/<query>.json`.
+       ⚠️ **Non è un'API ufficiale** (quella vera è a pagamento via AWS): può cambiare/sparire,
+       l'utente lo sa e l'ha accettato; se fallisce si ricade sui passi successivi. Match: titolo
+       normalizzato identico + tipo (`qid` movie/tvMovie o tvSeries/tvMiniSeries) + anno (±1) se
+       noto, immagine verticale (≥ 1,2: alcune locandine IMDb sono 4:5). `._V1_.jpg` →
+       `._V1_UX1000_.jpg` per averla già a 1000 px di larghezza.
+    3. La locandina di Wikipedia della voce riconosciuta: **piccola per regola** (fair use delle
+       immagini non libere, ~250×380 all'origine, es. Moana 2026 258×384 — su una card Retina si
+       vedeva sgranata: era il motivo per aggiungere IMDb). Serve `pilicense=any`; accettata solo
+       se verticale (≥ 1,3). 
+    4. iTunes (vedi sotto), artwork chiesto a `1000x1500bb` (per le serie è quadrato, 1000×1000).
+    TMDB è stato provato e **tolto su richiesta dell'utente** (richiede registrazione; il modulo
+    rifiutava l'indirizzo italiano): non reintrodurlo. User-Agent identificativo obbligatorio per
+    Wikimedia (`PosterFetcher.wikimediaUserAgent`, mandato anche da `RemoteImageLoader` per
+    `*.wikimedia.org`). Cache con prefisso `v6|`. Verificato il 2026-09-27 sui titoli del Pi:
+    tutti da IMDb a ~1000 px, compresi Il Trono di Spade (→ Game of Thrones) e Deep State che con
+    Wikipedia/iTunes non avevano nulla.
   - **Anno nei titoli dei film remoti**: `FileNameParser.cleanTitle` toglie tutto ciò che sta tra
     parentesi, anche l'anno — `HTTPTreeProvider.movieTitle` lo riaggiunge ("Oceania (2026).mp4" /
     "Oceania.2026.1080p.mp4" → "Oceania (2026)"), perché serve alle fonti delle locandine per
@@ -405,10 +419,10 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     Game of Thrones non c'è, con 25 ci sono due serie) e accetterebbe spazzatura ("Moana" →
     *Chibi Tiny Tales*). Per quelli c'è la copertina manuale. Prima si prendeva il primo `feature-movie` qualunque:
     la ricerca iTunes restituisce quasi sempre qualche film ("Oceania" → *The Burned Barns*,
-    "Moana" → *A Minecraft Movie*). Chiavi di cache con prefisso versionato (oggi `v5|`) per scartare i
+    "Moana" → *A Minecraft Movie*). Chiavi di cache con prefisso versionato (oggi `v6|`) per scartare i
     risultati delle versioni precedenti. Nota: a settembre 2026 la ricerca non trova come film nemmeno titoli
-    come *Inception*/*The Matrix* (con o senza `media=movie`), quindi per i film la copertina
-    manuale è in pratica la strada principale; le serie invece si trovano bene.
+    come *Inception*/*The Matrix* (con o senza `media=movie`), per questo i film li trovano
+    Wikipedia + IMDb (sopra); iTunes resta l'ultima riserva, utile soprattutto per le serie.
   - **Miniature reali per episodi/film remoti**: `ThumbnailGenerator` (condiviso con l'import
     locale) prima si fermava subito per gli item `isRemote` (niente file locale ⇒ solo icona
     placeholder). Ora costruisce l'`AVURLAsset` sull'URL remoto con gli stessi header di
