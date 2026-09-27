@@ -33,21 +33,16 @@ struct RemotePosterImage: View {
         .task(id: name) {
             url = await PosterFetcher.shared.posterURL(forName: name, kind: kind)
         }
+        // Copertina cambiata dalla sezione Cerca: aggiorna anche le card
+        // della libreria già a schermo.
+        .onReceive(NotificationCenter.default.publisher(for: .remotePosterChanged)) { _ in
+            Task { url = await PosterFetcher.shared.posterURL(forName: name, kind: kind) }
+        }
     }
 
     @ViewBuilder
     private var content: some View {
-        if let url {
-            AsyncImage(url: url) { phase in
-                if case .success(let image) = phase {
-                    image.resizable().scaledToFill()
-                } else {
-                    placeholder
-                }
-            }
-        } else {
-            placeholder
-        }
+        RemoteImage(url: url) { placeholder }
     }
 
     private var placeholder: some View {

@@ -11,6 +11,10 @@
 
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
+#if os(iOS)
+import PhotosUI
+#endif
 
 struct RemoteTitleDetailView: View {
     let title: RemoteTitle
@@ -43,6 +47,20 @@ struct RemoteTitleDetailView: View {
     /// una serie nuova col nome remoto.
     @State private var saveTargetShow: String?
     @State private var savedToLibrary = false
+
+    /// Copertina dopo un cambio fatto da questa scheda (`nil` = quella di
+    /// `title`, così com'era all'apertura).
+    @State private var editedPoster: (url: URL?, custom: Bool)?
+    @State private var isUpdatingPoster = false
+    @State private var posterError: String?
+    @State private var showPosterFileImporter = false
+    #if os(iOS)
+    @State private var showPosterPhotoPicker = false
+    @State private var posterPhotoItem: PhotosPickerItem?
+    #endif
+
+    private var shownPosterURL: URL? { editedPoster.map(\.url) ?? title.posterURL }
+    private var shownPosterIsCustom: Bool { editedPoster?.custom ?? title.hasCustomPoster }
 
     private var effectiveShowName: String { saveTargetShow ?? title.name }
 
@@ -174,19 +192,136 @@ struct RemoteTitleDetailView: View {
 
     @ViewBuilder
     private var posterHeader: some View {
-        if let url = title.posterURL {
-            AsyncImage(url: url) { phase in
-                if case .success(let image) = phase {
-                    image.resizable().scaledToFill()
-                } else {
-                    Rectangle().fill(.ultraThinMaterial)
-                }
+        if shownPosterURL != nil || title.customPosterUploadURL != nil {
+            RemoteImage(url: shownPosterURL) {
+                Rectangle().fill(.ultraThinMaterial)
+                    .overlay {
+                        Image(systemName: title.kind == .movie ? "film" : "tv")
+                            .font(.system(size: 34, weight: .light))
+                            .foregroundStyle(.secondary)
+                    }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 200)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                if isUpdatingPoster {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.black.opacity(0.4))
+                        ProgressView()
+                    }
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if title.customPosterUploadURL != nil {
+                    posterControls.padding(10)
+                }
+            }
             .shadow(color: Color.accentColor.opacity(0.35), radius: 20, y: 10)
             .padding(.horizontal)
+            .fileImporter(isPresented: $showPosterFileImporter, allowedContentTypes: [.image]) { result in
+                guard case .success(let url) = result else { return }
+                let scoped = url.startAccessingSecurityScopedResource()
+                let data = try? Data(contentsOf: url)
+                if scoped { url.stopAccessingSecurityScopedResource() }
+                guard let data else {
+                    posterError = "Impossibile leggere il file scelto."
+                    return
+                }
+                Task { await uploadPoster(data) }
+            }
+            #if os(iOS)
+            .photosPicker(isPresented: $showPosterPhotoPicker, selection: $posterPhotoItem, matching: .images)
+            .onChange(of: posterPhotoItem) { _, item in
+                guard let item else { return }
+                posterPhotoItem = nil
+                Task {
+                    guard let data = try? await item.loadTransferable(type: Data.self) else {
+                        posterError = "Impossibile leggere la foto scelta."
+                        return
+                    }
+                    await uploadPoster(data)
+                }
+            }
+            #endif
+
+            if let posterError {
+                Text(posterError)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal)
+            }
+        }
+    }
+
+    /// Su iPhone un menu (Foto / File / Ripristina). Su Mac pulsanti
+    /// separati: un `Menu` le cui azioni cambiano stato che ridisegna la
+    /// scheda può restare bloccato aperto (vedi CLAUDE.md, "Salva in:").
+    @ViewBuilder
+    private var posterControls: some View {
+        #if os(iOS)
+        Menu {
+            Button("Scegli da Foto", systemImage: "photo.on.rectangle") { showPosterPhotoPicker = true }
+            Button("Scegli da File", systemImage: "folder") { showPosterFileImporter = true }
+            if shownPosterIsCustom {
+                Button("Ripristina copertina automatica", systemImage: "arrow.uturn.backward", role: .destructive) {
+                    Task { await removePoster() }
+                }
+            }
+        } label: {
+            Label("Cambia copertina", systemImage: "photo.badge.plus")
+                .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.glass)
+        .disabled(isUpdatingPoster)
+        #else
+        HStack(spacing: 8) {
+            if shownPosterIsCustom {
+                Button("Ripristina", systemImage: "arrow.uturn.backward") {
+                    Task { await removePoster() }
+                }
+            }
+            Button("Cambia copertina…", systemImage: "photo.badge.plus") {
+                showPosterFileImporter = true
+            }
+        }
+        .font(.caption.weight(.semibold))
+        .buttonStyle(.glass)
+        .disabled(isUpdatingPoster)
+        #endif
+    }
+
+    /// Ritaglia a 2:3, salva sul server accanto al contenuto e aggiorna
+    /// scheda, griglia di Cerca e card della libreria.
+    private func uploadPoster(_ data: Data) async {
+        isUpdatingPoster = true
+        defer { isUpdatingPoster = false }
+        guard let jpeg = await Task.detached(priority: .userInitiated, operation: {
+            PosterImageProcessing.posterJPEG(from: data)
+        }).value else {
+            posterError = "Questo file non sembra un'immagine valida."
+            return
+        }
+        do {
+            let url = try await provider.setCustomPoster(jpeg, for: title)
+            editedPoster = (url, true)
+            posterError = nil
+            NotificationCenter.default.post(name: .remotePosterChanged, object: nil)
+        } catch {
+            posterError = error.localizedDescription
+        }
+    }
+
+    private func removePoster() async {
+        isUpdatingPoster = true
+        defer { isUpdatingPoster = false }
+        do {
+            let url = try await provider.removeCustomPoster(for: title)
+            editedPoster = (url, false)
+            posterError = nil
+            NotificationCenter.default.post(name: .remotePosterChanged, object: nil)
+        } catch {
+            posterError = error.localizedDescription
         }
     }
 

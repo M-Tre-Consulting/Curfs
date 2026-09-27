@@ -38,8 +38,8 @@ struct SearchResultCard: View {
     }
 
     // GeometryReader qui non è quello scartato per il bug di margine delle
-    // ScrollView (vedi CLAUDE.md): serve solo a dare ad AsyncImage una
-    // dimensione esplicita. Senza, AsyncImage usa come "ideale" le
+    // ScrollView (vedi CLAUDE.md): serve solo a dare all'immagine una
+    // dimensione esplicita. Senza, l'immagine usa come "ideale" le
     // dimensioni reali dell'immagine scaricata (es. 600x900pt della
     // locandina) invece di quelle della cella della griglia, e l'aspectRatio
     // esterno non basta a contenerlo — la card sfora lo schermo. Il vecchio
@@ -55,17 +55,7 @@ struct SearchResultCard: View {
 
     @ViewBuilder
     private var posterContent: some View {
-        if let url = title.posterURL {
-            AsyncImage(url: url) { phase in
-                if case .success(let image) = phase {
-                    image.resizable().scaledToFill()
-                } else {
-                    placeholder
-                }
-            }
-        } else {
-            placeholder
-        }
+        RemoteImage(url: title.posterURL) { placeholder }
     }
 
     private var placeholder: some View {

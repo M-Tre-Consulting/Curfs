@@ -28,8 +28,12 @@ struct MacPlayerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            MacVideoPlayerView(player: vm.player)
-                .ignoresSafeArea()
+            MacVideoPlayerView(
+                player: vm.player,
+                onSkip: { vm.skip(by: $0) },
+                onRateChange: { vm.setPlaybackRate($0) }
+            )
+            .ignoresSafeArea()
 
             if vm.isInIntro {
                 SkipIntroButton { vm.skipIntro() }
