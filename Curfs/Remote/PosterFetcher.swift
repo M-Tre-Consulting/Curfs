@@ -3,11 +3,18 @@
 //  Curfs
 //
 //  Locandine ufficiali per i titoli della sezione Cerca, senza chiavi né
-//  account: prima Wikipedia (vedi `fetchWikipedia`), poi l'API di ricerca
-//  di iTunes — che per i FILM è quasi inservibile (a settembre 2026 non
-//  trova nemmeno "Inception" o "The Matrix", e ogni filtro per film
-//  restituisce 0 risultati) ma per le serie funziona bene. L'artwork iTunes
-//  viene ingrandito rispetto alla miniatura 100x100 di default. `RemoteTitle.posterURL` era già usato
+//  account:
+//   1. Wikipedia RICONOSCE il titolo (anche italiano: "Oceania" → voce
+//      inglese "Moana (2026 film)"), vedi `wikiIdentify`;
+//   2. IMDb dà la locandina in alta risoluzione di quel titolo (~1000 px),
+//      vedi `fetchIMDb`. Le locandine di Wikipedia sono di proposito
+//      piccole (~250×380, regola sul fair use delle immagini non libere):
+//      su una card Retina si vedevano sgranate;
+//   3. se IMDb non trova/risponde, la locandina piccola di Wikipedia;
+//   4. infine iTunes, che per i FILM è quasi inservibile (a settembre 2026
+//      non trova nemmeno "Inception" o "The Matrix", e ogni filtro per film
+//      restituisce 0 risultati) ma per le serie funziona bene. L'artwork
+//      iTunes viene ingrandito rispetto alla miniatura 100x100 di default. `RemoteTitle.posterURL` era già usato
 //  da `SearchResultCard`/`RemoteTitleDetailView` (AsyncImage) — mancava solo
 //  chi lo valorizzasse: vedi `HTTPTreeProvider.buildCatalog`.
 //
@@ -81,17 +88,31 @@ actor PosterFetcher {
     /// personalizzata viene rimossa.
     func automaticPosterURL(forName name: String, kind: RemoteTitleKind) async -> URL? {
         await loadCacheIfNeeded()
-        let key = "v5|" + cacheKey(name: name, kind: kind)
+        let key = "v6|" + cacheKey(name: name, kind: kind)
         if let cached = cache[key] {
             return cached.isEmpty ? nil : URL(string: cached)
         }
 
         var anyFailed = false
-        switch await fetchWikipedia(name: name, kind: kind) {
+        var wikiPoster: URL?
+        // Titolo con cui chiedere a IMDb: quello inglese riconosciuto da
+        // Wikipedia, altrimenti il nome così com'è (spesso è già inglese).
+        var imdbTitle = Self.strippingYear(name)
+        var imdbYear = Self.year(in: name)
+        switch await wikiIdentify(name: name, kind: kind) {
+        case .match(let match):
+            wikiPoster = match.poster
+            imdbTitle = Self.strippingDisambiguation(match.enTitle)
+            imdbYear = imdbYear ?? Self.firstYear(in: match.enTitle)
+        case .notFound: break
+        case .failed: anyFailed = true
+        }
+        switch await fetchIMDb(title: imdbTitle, year: imdbYear, kind: kind) {
         case .found(let url): return store(url, key: key)
         case .notFound: break
         case .failed: anyFailed = true
         }
+        if let wikiPoster { return store(wikiPoster, key: key) }
         switch await fetchITunes(name: name, kind: kind) {
         case .found(let url): return store(url, key: key)
         case .notFound: if !anyFailed { _ = store(nil, key: key) }
@@ -148,13 +169,29 @@ actor PosterFetcher {
         }
     }
 
-    /// Nessuna chiave richiesta. La locandina sta quasi sempre nella voce
-    /// INGLESE (it.wiki non ospita locandine, solo fotogrammi): si cerca
-    /// prima su it.wiki (titoli italiani: "Oceania" → "Oceania (film 2026)")
-    /// e si passa alla voce inglese collegata, poi direttamente su en.wiki.
-    /// Un'immagine vale solo se è verticale come una locandina (≥ 1,3 volte
-    /// più alta che larga): scarta fotogrammi, title card, mappe.
-    private func fetchWikipedia(name: String, kind: RemoteTitleKind) async -> Lookup {
+    private struct WikiMatch {
+        /// Titolo della voce inglese, con disambigua ("Moana (2026 film)").
+        var enTitle: String
+        /// Locandina della voce, se è verticale come una locandina.
+        var poster: URL?
+    }
+
+    private enum WikiResult {
+        case match(WikiMatch)
+        case notFound
+        case failed
+    }
+
+    /// Nessuna chiave richiesta. Cerca prima su it.wiki (titoli italiani:
+    /// "Oceania" → "Oceania (film 2026)") e passa alla voce inglese
+    /// collegata, dove sta la locandina (it.wiki non ospita locandine, solo
+    /// fotogrammi); poi direttamente su en.wiki. Una voce vale come
+    /// riconoscimento solo se è chiaramente un film/serie (disambigua tipo
+    /// "(film 2026)"/"(TV series)") o se ha un'immagine a forma di locandina:
+    /// evita di prendere "Oceania" il continente per il film. Un'immagine
+    /// vale come locandina solo se è verticale (≥ 1,3 volte più alta che
+    /// larga): scarta fotogrammi, title card, mappe.
+    private func wikiIdentify(name: String, kind: RemoteTitleKind) async -> WikiResult {
         let query = Self.strippingYear(name)
         let wanted = Self.normalized(query)
         guard !wanted.isEmpty else { return .notFound }
@@ -168,9 +205,14 @@ actor PosterFetcher {
             if let page = Self.bestWikiPage(pages, wanted: wanted, year: year),
                let enTitle = page.langlinks?.first?.title {
                 switch await wikiPoster(enTitle: enTitle) {
-                case .found(let url): return .found(url)
-                case .failed: anyFailed = true
-                case .notFound: break
+                case .found(let url):
+                    return .match(WikiMatch(enTitle: enTitle, poster: url))
+                case .notFound:
+                    if Self.isWorkTitle(page.title) || Self.isWorkTitle(enTitle) {
+                        return .match(WikiMatch(enTitle: enTitle, poster: nil))
+                    }
+                case .failed:
+                    anyFailed = true
                 }
             }
         case .failure:
@@ -181,14 +223,31 @@ actor PosterFetcher {
         let enSuffix = kind == .movie ? "film" : "TV series"
         switch await wikiSearch(lang: "en", query: "\(query) \(enSuffix)", extraProps: []) {
         case .success(let pages):
-            if let page = Self.bestWikiPage(pages.filter { Self.isPosterShaped($0.thumbnail) }, wanted: wanted, year: year),
-               let thumb = page.thumbnail, let url = URL(string: thumb.source) {
-                return .found(url)
+            let works = pages.filter { Self.isPosterShaped($0.thumbnail) || Self.isWorkTitle($0.title) }
+            if let page = Self.bestWikiPage(works, wanted: wanted, year: year) {
+                let poster = Self.isPosterShaped(page.thumbnail) ? page.thumbnail.flatMap { URL(string: $0.source) } : nil
+                return .match(WikiMatch(enTitle: page.title, poster: poster))
             }
         case .failure:
             anyFailed = true
         }
         return anyFailed ? .failed : .notFound
+    }
+
+    /// "(film 2026)", "(2026 film)", "(serie televisiva)", "(TV series)",
+    /// "(miniseries)"…: la voce parla di un film o di una serie.
+    private static func isWorkTitle(_ title: String) -> Bool {
+        title.range(of: #"\((?:[^)]*\b)?(film|serie|series|miniseries|miniserie|TV)\b[^)]*\)\s*$"#,
+                    options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    private static func strippingDisambiguation(_ title: String) -> String {
+        title.replacingOccurrences(of: #"\s*\([^)]*\)\s*$"#, with: "", options: .regularExpression)
+    }
+
+    /// Primo anno 19xx/20xx nel testo ("Moana (2026 film)" → "2026").
+    private static func firstYear(in s: String) -> String? {
+        s.range(of: #"\b(19|20)\d{2}\b"#, options: .regularExpression).map { String(s[$0]) }
     }
 
     private struct WikiError: Error {}
@@ -234,6 +293,72 @@ actor PosterFetcher {
               Self.isPosterShaped(thumb), let url = URL(string: thumb.source)
         else { return .notFound }
         return .found(url)
+    }
+
+    // MARK: - IMDb
+
+    private struct IMDbResponse: Decodable {
+        var d: [Item]?
+        struct Item: Decodable {
+            /// Titolo (inglese).
+            var l: String?
+            var y: Int?
+            /// Tipo: movie, tvMovie, tvSeries, tvMiniSeries, short, video…
+            var qid: String?
+            var i: Image?
+        }
+        struct Image: Decodable {
+            var imageUrl: String
+            var width: Int?
+            var height: Int?
+        }
+    }
+
+    /// Suggerimenti della barra di ricerca del sito IMDb: nessuna chiave né
+    /// account, locandine in alta risoluzione. ⚠️ NON è un'API ufficiale
+    /// (quella vera è a pagamento via AWS): può cambiare o sparire senza
+    /// preavviso — in quel caso si ricade su Wikipedia/iTunes, niente si
+    /// rompe. Vale solo un titolo identico (normalizzato) del tipo giusto;
+    /// con un anno, quello (o ±1: uscite in anni diversi tra paesi),
+    /// altrimenti il primo per rilevanza.
+    private func fetchIMDb(title: String, year: String?, kind: RemoteTitleKind) async -> Lookup {
+        let wanted = Self.normalized(title)
+        guard !wanted.isEmpty else { return .notFound }
+        let query = title.lowercased().replacingOccurrences(of: "/", with: " ")
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let first = query.first(where: { $0.isLetter || $0.isNumber }),
+              let url = URL(string: "https://v3.sg.media-imdb.com/suggestion/\(first.isASCII && first.isLetter ? String(first) : "x")/\(encoded).json")
+        else { return .notFound }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 8
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+              let decoded = try? JSONDecoder().decode(IMDbResponse.self, from: data)
+        else { return .failed }
+
+        let types: Set<String> = kind == .movie ? ["movie", "tvMovie"] : ["tvSeries", "tvMiniSeries"]
+        let candidates = (decoded.d ?? []).filter { item in
+            guard let image = item.i, let w = image.width, let h = image.height, w > 0 else { return false }
+            return types.contains(item.qid ?? "")
+                && Self.normalized(item.l ?? "") == wanted
+                // 1,2 e non 1,3 come per Wikipedia: alcune locandine IMDb
+                // sono 4:5 (House of the Dragon 3000×3750). Basta comunque
+                // a scartare quadrati e immagini orizzontali.
+                && Double(h) >= Double(w) * 1.2
+        }
+        let match: IMDbResponse.Item?
+        if let year, let y = Int(year) {
+            match = candidates.first { $0.y == y }
+                ?? candidates.first { $0.y.map { abs($0 - y) == 1 } ?? false }
+        } else {
+            match = candidates.first
+        }
+        guard let imageURL = match?.i?.imageUrl else { return .notFound }
+        // "…._V1_.jpg" è l'originale (anche 3000+ px): "_UX1000_" la fa
+        // servire già ridimensionata a 1000 px di larghezza.
+        let sized = imageURL.replacingOccurrences(of: "._V1_.jpg", with: "._V1_UX1000_.jpg")
+        return URL(string: sized).map { .found($0) } ?? .notFound
     }
 
     /// Wikimedia chiede uno User-Agent che identifichi l'app.
@@ -311,7 +436,9 @@ actor PosterFetcher {
     /// dimensioni nel path con una risoluzione da locandina vera.
     private func upsized(_ artworkUrl100: String) -> String {
         for size in ["100x100bb", "60x60bb", "30x30bb"] where artworkUrl100.contains(size) {
-            return artworkUrl100.replacingOccurrences(of: size, with: "600x900bb")
+            // Le serie hanno artwork quadrato: con 600x900 iTunes restituisce
+            // comunque 600x600. 1000 per restare nitide su una card Retina.
+            return artworkUrl100.replacingOccurrences(of: size, with: "1000x1500bb")
         }
         return artworkUrl100
     }
@@ -355,7 +482,7 @@ actor PosterFetcher {
     }
 
     /// Chiave di un titolo, per le copertine dell'utente e (con prefisso
-    /// `v5|`) per la cache delle automatiche. Le voci con prefissi più
+    /// `v6|`) per la cache delle automatiche. Le voci con prefissi più
     /// vecchi (prima del controllo sul titolo, spesso film a caso, o prima
     /// di Wikipedia) vengono ignorate e ricalcolate.
     private func cacheKey(name: String, kind: RemoteTitleKind) -> String {
@@ -381,7 +508,7 @@ actor PosterFetcher {
            let decoded = try? JSONDecoder().decode([String: String].self, from: data) {
             // Le voci senza prefisso di versione sono della vecchia ricerca
             // senza controllo sul titolo: inutili, non le ricarichiamo.
-            cache = decoded.filter { $0.key.hasPrefix("v5|") }
+            cache = decoded.filter { $0.key.hasPrefix("v6|") }
         }
         if let data = try? Data(contentsOf: Self.overridesFileURL),
            let decoded = try? JSONDecoder().decode([String: String].self, from: data) {
