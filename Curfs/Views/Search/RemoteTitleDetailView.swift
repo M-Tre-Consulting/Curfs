@@ -225,7 +225,7 @@ struct RemoteTitleDetailView: View {
                 let data = try? Data(contentsOf: url)
                 if scoped { url.stopAccessingSecurityScopedResource() }
                 guard let data else {
-                    posterError = "Impossibile leggere il file scelto."
+                    posterError = String(localized: "Impossibile leggere il file scelto.")
                     return
                 }
                 Task { await uploadPoster(data) }
@@ -237,7 +237,7 @@ struct RemoteTitleDetailView: View {
                 posterPhotoItem = nil
                 Task {
                     guard let data = try? await item.loadTransferable(type: Data.self) else {
-                        posterError = "Impossibile leggere la foto scelta."
+                        posterError = String(localized: "Impossibile leggere la foto scelta.")
                         return
                     }
                     await uploadPoster(data)
@@ -299,7 +299,7 @@ struct RemoteTitleDetailView: View {
         guard let jpeg = await Task.detached(priority: .userInitiated, operation: {
             PosterImageProcessing.posterJPEG(from: data)
         }).value else {
-            posterError = "Questo file non sembra un'immagine valida."
+            posterError = String(localized: "Questo file non sembra un'immagine valida.")
             return
         }
         do {
@@ -344,7 +344,7 @@ struct RemoteTitleDetailView: View {
             Button {
                 addMovieToLibrary()
             } label: {
-                Label(savedToLibrary ? "Aggiunto ai Film" : "Aggiungi ai Film",
+                Label(savedToLibrary ? String(localized: "Aggiunto ai Film") : String(localized: "Aggiungi ai Film"),
                       systemImage: savedToLibrary ? "checkmark" : "plus.circle")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
@@ -356,7 +356,7 @@ struct RemoteTitleDetailView: View {
             Button {
                 downloadMovie()
             } label: {
-                Label(movieDownloadStarted ? "Download avviato" : "…oppure scaricalo per l'offline",
+                Label(movieDownloadStarted ? String(localized: "Download avviato") : String(localized: "…oppure scaricalo per l'offline"),
                       systemImage: movieDownloadStarted ? "checkmark" : "arrow.down.to.line")
                     .font(.caption.weight(.medium))
                     .frame(maxWidth: .infinity)
@@ -377,7 +377,7 @@ struct RemoteTitleDetailView: View {
                 .padding()
                 .frame(maxWidth: .infinity)
         } else if seasons.isEmpty {
-            Text(loadError == nil ? "Nessuna stagione trovata." : "")
+            Text(loadError == nil ? String(localized: "Nessuna stagione trovata.") : "")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
@@ -389,13 +389,13 @@ struct RemoteTitleDetailView: View {
                         set: { selectedSeason = $0 }
                     )) {
                         ForEach(seasons) { season in
-                            Text(seasons.count > 4 ? "S\(season.number)" : "Stagione \(season.number)").tag(season.number)
+                            Text(seasons.count > 4 ? "S\(season.number)" : String(localized: "Stagione \(season.number)")).tag(season.number)
                         }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
                 } else if let only = seasons.first {
-                    Text("Stagione \(only.number) · \(only.episodes.count) episodi")
+                    Text("Stagione \(only.number) · \(String(localized: "\(only.episodes.count) episodi"))")
                         .font(.headline)
                         .padding(.horizontal)
                 }
@@ -465,7 +465,7 @@ struct RemoteTitleDetailView: View {
             Button {
                 addSeasonToLibrary()
             } label: {
-                Label(savedToLibrary ? "Aggiunta alla libreria" : "Aggiungi Stagione \(currentSeasonNumber) alla libreria",
+                Label(savedToLibrary ? String(localized: "Aggiunta alla libreria") : String(localized: "Aggiungi Stagione \(currentSeasonNumber) alla libreria"),
                       systemImage: savedToLibrary ? "checkmark" : "plus.circle")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
@@ -478,7 +478,7 @@ struct RemoteTitleDetailView: View {
             Button {
                 downloadSeason()
             } label: {
-                Label(seasonFullyQueued ? "Stagione in download" : "…oppure scaricala per l'offline",
+                Label(seasonFullyQueued ? String(localized: "Stagione in download") : String(localized: "…oppure scaricala per l'offline"),
                       systemImage: seasonFullyQueued ? "checkmark" : "arrow.down.to.line")
                     .font(.caption.weight(.medium))
                     .frame(maxWidth: .infinity)
@@ -513,7 +513,7 @@ struct RemoteTitleDetailView: View {
                         .font(.system(size: 26))
                         .foregroundStyle(Color.accentColor)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(format: "Episodio %02d", episode.number))
+                        Text("Episodio \(String(format: "%02d", episode.number))")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
                         if let epTitle = episode.title, !epTitle.isEmpty {
@@ -578,7 +578,7 @@ struct RemoteTitleDetailView: View {
                         $0.showName == show && ($0.seasonNumber ?? 1) == season && ($0.episodeNumber ?? -1) == ep.number
                     }
                     if dupLocal { continue }
-                    let epTitle = (ep.title?.isEmpty == false) ? ep.title! : "Episodio \(ep.number)"
+                    let epTitle = (ep.title?.isEmpty == false) ? ep.title! : String(localized: "Episodio \(ep.number)")
                     let mi = MediaItem(
                         title: epTitle,
                         kind: .episode,
@@ -653,7 +653,7 @@ struct RemoteTitleDetailView: View {
                 for season in seasons {
                     for ep in season.episodes {
                         let stream = try await provider.streamTarget(for: title, episode: ep)
-                        let epTitle = (ep.title?.isEmpty == false) ? ep.title! : "Episodio \(ep.number)"
+                        let epTitle = (ep.title?.isEmpty == false) ? ep.title! : String(localized: "Episodio \(ep.number)")
                         let mi = reuseOrMake(streamURL: stream.url) {
                             MediaItem(
                                 title: epTitle,
@@ -713,7 +713,7 @@ struct RemoteTitleDetailView: View {
         Task {
             do {
                 let target = try await provider.resolveDownload(for: title, episode: episode)
-                let episodeTitle = (episode.title?.isEmpty == false) ? episode.title! : "Episodio \(episode.number)"
+                let episodeTitle = (episode.title?.isEmpty == false) ? episode.title! : String(localized: "Episodio \(episode.number)")
                 downloadManager.start(
                     target: target,
                     request: RemoteDownloadRequest(
@@ -744,7 +744,7 @@ struct RemoteTitleDetailView: View {
             for ep in episodes {
                 do {
                     let target = try await provider.resolveDownload(for: title, episode: ep)
-                    let epTitle = (ep.title?.isEmpty == false) ? ep.title! : "Episodio \(ep.number)"
+                    let epTitle = (ep.title?.isEmpty == false) ? ep.title! : String(localized: "Episodio \(ep.number)")
                     downloadManager.start(
                         target: target,
                         request: RemoteDownloadRequest(

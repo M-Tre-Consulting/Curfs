@@ -251,7 +251,7 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
                             self.finalize(id: id, staging: staging, record: record)
                         } else {
                             record.status = .failed
-                            record.errorMessage = "Interrotto durante il salvataggio"
+                            record.errorMessage = String(localized: "Interrotto durante il salvataggio")
                             self.records[id] = record
                         }
                     case .downloading, .paused:
@@ -365,7 +365,7 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
             }
             if !httpOK {
                 record.status = .failed
-                record.errorMessage = "Risposta del server: \(statusCode ?? -1)"
+                record.errorMessage = String(localized: "Risposta del server: \(statusCode ?? -1)")
                 self.records[id] = record
                 try? FileManager.default.removeItem(at: staging)
                 self.persist(force: true); self.emit()
@@ -615,7 +615,7 @@ private struct DownloadRecord: Codable {
         case .paused: return .paused(progress: progress)
         case .finalizing: return .finalizing
         case .completed: return .completed
-        case .failed: return .failed(errorMessage ?? "Errore")
+        case .failed: return .failed(errorMessage ?? String(localized: "Errore"))
         }
     }
 }

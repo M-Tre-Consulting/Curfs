@@ -28,8 +28,9 @@ struct ShowCardView: View {
     }
 
     private var subtitle: String {
-        let seasonsText = show.seasons.count > 1 ? "\(show.seasons.count) stagioni" : "1 stagione"
-        return "\(seasonsText) · \(show.episodeCount) episodi"
+        let seasonsText = String(localized: "\(show.seasons.count) stagioni")
+        let episodesText = String(localized: "\(show.episodeCount) episodi")
+        return "\(seasonsText) · \(episodesText)"
     }
 
     /// Una serie che viene dal catalogo remoto (in streaming o già scaricata

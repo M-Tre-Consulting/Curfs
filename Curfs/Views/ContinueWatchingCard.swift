@@ -33,7 +33,7 @@ struct ContinueWatchingCard: View {
                 Text(code + " · " + item.title).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             } else {
                 Text(item.title).font(.footnote.weight(.medium)).lineLimit(1)
-                Text(TimeFormatter.formatCompact(max(item.duration - item.playbackPosition, 0)) + " rimasti")
+                Text("\(TimeFormatter.formatCompact(max(item.duration - item.playbackPosition, 0))) rimasti")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

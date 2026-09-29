@@ -30,7 +30,7 @@ final class ImportViewModel {
             accessedURLs.append(url)
         }
         guard !accessedURLs.isEmpty else {
-            lastError = "Non riesco ad accedere ai file selezionati."
+            lastError = String(localized: "Non riesco ad accedere ai file selezionati.")
             return
         }
 
@@ -54,7 +54,7 @@ final class ImportViewModel {
             }
 
             guard !items.isEmpty else {
-                lastError = "Nessun video valido trovato nella selezione."
+                lastError = String(localized: "Nessun video valido trovato nella selezione.")
                 return
             }
 

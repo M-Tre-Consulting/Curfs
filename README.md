@@ -15,6 +15,9 @@ flottante incluso).
 
 ## Funzionalità
 
+- **Lingue**: italiano, inglese, spagnolo, francese e tedesco, in automatico dalla lingua di
+  sistema (le altre lingue usano l'inglese).
+
 - **Import da Files**: riconoscimento automatico di film/serie/stagioni/episodi dai nomi di
   cartelle e file, senza bisogno di rinominare nulla a mano.
 - **Libreria** con avanzamento visto, "Continua a guardare", "Riprendi" per serie.
@@ -90,4 +93,6 @@ episodio guardato in streaming e lo stesso poi scaricato offline.
 
 ## Licenza
 
-[MIT](LICENSE) © M-Tre Consulting
+[MIT](LICENSE) © [M-Tre Consulting](https://mtre-consulting.it) — contatti: info@mtre-consulting.it.
+Nell'app, informativa sulla privacy, licenza e contatti sono in fondo alla Libreria (© anno) e,
+su Mac, nel menu Curfs → «Privacy, licenza e contatti…».

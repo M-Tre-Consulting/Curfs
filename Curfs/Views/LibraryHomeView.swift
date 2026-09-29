@@ -19,6 +19,7 @@ struct LibraryHomeView: View {
     @State private var playingItem: MediaItem?
     @State private var pendingDeleteMovie: MediaItem?
     @State private var pendingDeleteShow: ShowSummary?
+    @State private var showLegal = false
 
     private var shows: [ShowSummary] { ShowSummary.groups(from: allItems) }
     private var movies: [MediaItem] {
@@ -56,8 +57,24 @@ struct LibraryHomeView: View {
                     .animation(.easeInOut(duration: 0.25), value: importVM.isImporting)
                 }
             }
+            // Firma M-Tre sempre visibile in fondo alla schermata iniziale (vedi Branding).
+            .safeAreaInset(edge: .bottom) {
+                BrandFooter { showLegal = true }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+            }
             .navigationTitle("Libreria")
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showLegal = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel("Privacy, licenza e contatti")
+                }
+                #endif
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showImporter = true
@@ -78,6 +95,9 @@ struct LibraryHomeView: View {
                 case .failure(let error):
                     importVM.lastError = error.localizedDescription
                 }
+            }
+            .sheet(isPresented: $showLegal) {
+                LegalSheet()
             }
             .alert("Importazione", isPresented: Binding(
                 get: { importVM.lastError != nil },
@@ -193,7 +213,7 @@ struct LibraryHomeView: View {
         .animation(.easeInOut(duration: 0.3), value: allItems.count)
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.title3.weight(.bold))
@@ -208,7 +228,7 @@ struct LibraryHomeView: View {
                 .foregroundStyle(.secondary)
             Text("Nessun video importato")
                 .font(.title3.weight(.semibold))
-            Text("Importa film o intere stagioni dai Files del tuo iPhone.\nRiconosco automaticamente le stagioni dai nomi delle cartelle.")
+            Text("Importa film o intere stagioni dai tuoi file.\nRiconosco automaticamente le stagioni dai nomi delle cartelle.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

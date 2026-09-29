@@ -100,9 +100,9 @@ struct SearchView: View {
             if !RemoteSourceStore.current.isConfigured {
                 unconfiguredPrompt
             } else if trimmedQuery.isEmpty {
-                statusState(systemImage: "folder", message: "Nessun contenuto trovato sul server.")
+                statusState(systemImage: "folder", message: String(localized: "Nessun contenuto trovato sul server."))
             } else {
-                statusState(systemImage: "questionmark.folder", message: "Nessun risultato per \"\(query)\"")
+                statusState(systemImage: "questionmark.folder", message: String(localized: "Nessun risultato per \"\(query)\""))
             }
         } else {
             resultsGrid

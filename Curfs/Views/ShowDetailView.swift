@@ -38,7 +38,7 @@ struct ShowDetailView: View {
     /// controllo segmentato stringe ogni segmento finché "Stagione N" tronca
     /// in "Stag…" — passiamo alla forma compatta "SN" prima che succeda.
     private func seasonLabel(_ season: Int) -> String {
-        currentShow.seasons.count > 4 ? "S\(season)" : "Stagione \(season)"
+        currentShow.seasons.count > 4 ? "S\(season)" : String(localized: "Stagione \(season)")
     }
 
     var body: some View {
@@ -171,7 +171,7 @@ struct ShowDetailView: View {
                 } else if s.withIntro > 0 {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.accentColor)
-                    Text(s.withIntro == s.total ? "Salta intro pronto" : "Salta intro pronto per \(s.withIntro)/\(s.total)")
+                    Text(s.withIntro == s.total ? String(localized: "Salta intro pronto") : String(localized: "Salta intro pronto per \(s.withIntro)/\(s.total)"))
                 } else {
                     Image(systemName: "info.circle")
                     Text("Nessuna sigla riconosciuta per questa stagione")
@@ -244,7 +244,7 @@ struct ShowDetailView: View {
                 } label: {
                     HStack {
                         Image(systemName: "play.fill")
-                        Text(next.isFinished ? "Rivedi" : (next.hasProgress ? "Riprendi \(next.episodeCode ?? "")" : "Guarda \(next.episodeCode ?? "")"))
+                        Text(next.isFinished ? String(localized: "Rivedi") : (next.hasProgress ? String(localized: "Riprendi \(next.episodeCode ?? "")") : String(localized: "Guarda \(next.episodeCode ?? "")")))
                             .lineLimit(1)
                         Spacer()
                     }

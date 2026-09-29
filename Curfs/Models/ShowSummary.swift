@@ -58,7 +58,7 @@ struct ShowSummary: Identifiable {
         // tieni quello locale e scarta il doppione remoto.
         let localKeys = Set(episodes.filter { !$0.isRemote }.map(episodeKey))
         let deduped = episodes.filter { !$0.isRemote || !localKeys.contains(episodeKey($0)) }
-        let byShow = Dictionary(grouping: deduped) { $0.showName ?? "Serie" }
+        let byShow = Dictionary(grouping: deduped) { $0.showName ?? String(localized: "Serie") }
         return byShow.map { ShowSummary(name: $0.key, episodes: $0.value) }
             .sorted { $0.latestAdded > $1.latestAdded }
     }

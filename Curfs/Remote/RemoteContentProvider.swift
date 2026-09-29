@@ -70,19 +70,41 @@ enum RemoteProviderError: LocalizedError {
     case badListing
     case server(status: Int)
     case uploadNotSupported
+    case unreachable(host: String)
+
+    /// Traduce gli errori di rete di URLSession in `unreachable`, così chi
+    /// usa l'app capisce cosa fare invece di leggere "errore SSL".
+    /// Tipico con Tailscale spento: il nome `*.ts.net` si risolve comunque
+    /// col DNS pubblico ai server di Tailscale, che chiudono l'handshake TLS
+    /// (non è la firma dell'app né il certificato del Pi).
+    static func mapped(_ error: Error, host: String?) -> Error {
+        guard let urlError = error as? URLError, let host else { return error }
+        switch urlError.code {
+        case .secureConnectionFailed, .cannotConnectToHost, .cannotFindHost,
+             .dnsLookupFailed, .timedOut, .networkConnectionLost, .notConnectedToInternet:
+            return RemoteProviderError.unreachable(host: host)
+        default:
+            return error
+        }
+    }
 
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "Nessuna fonte remota configurata. Aprila dalle impostazioni della sezione Cerca e inserisci l'indirizzo del tuo server."
+            return String(localized: "Nessuna fonte remota configurata. Apri le impostazioni della sezione Cerca e inserisci l'indirizzo del tuo server.")
         case .unauthorized:
-            return "Accesso negato: controlla nome utente e password del server."
+            return String(localized: "Accesso negato: controlla nome utente e password del server.")
         case .badListing:
-            return "Il server ha risposto, ma non con un elenco di cartelle in JSON (serve nginx con «autoindex_format json»)."
+            return String(localized: "Il server ha risposto, ma non con un elenco di cartelle in JSON (serve nginx con «autoindex_format json»).")
         case .server(let status):
-            return "Il server ha risposto con un errore (HTTP \(status))."
+            return String(localized: "Il server ha risposto con un errore (HTTP \(status)).")
         case .uploadNotSupported:
-            return "Il server non accetta il caricamento di copertine: va abilitato PUT/DELETE (WebDAV) su nginx per i file poster."
+            return String(localized: "Il server non accetta il caricamento di copertine: va abilitato PUT/DELETE (WebDAV) su nginx per i file poster.")
+        case .unreachable(let host):
+            if host.hasSuffix(".ts.net") {
+                return String(localized: "Server \(host) non raggiungibile: controlla che Tailscale sia acceso e connesso su questo dispositivo.")
+            }
+            return String(localized: "Server \(host) non raggiungibile: controlla la connessione e l'indirizzo del server.")
         }
     }
 }
