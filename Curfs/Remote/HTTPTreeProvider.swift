@@ -118,7 +118,7 @@ actor HTTPTreeProvider: RemoteContentProvider {
         var request = URLRequest(url: target)
         request.httpMethod = "PUT"
         request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
-        let (_, response) = try await session.upload(for: request, from: jpegData)
+        let (_, response) = try await send { try await session.upload(for: request, from: jpegData) }
         try Self.checkWrite(response)
 
         // Una copertina precedente con altra estensione (es. .png messa a
@@ -151,10 +151,20 @@ actor HTTPTreeProvider: RemoteContentProvider {
     private func delete(_ url: URL) async throws {
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
-        let (_, response) = try await session.data(for: request)
+        let (_, response) = try await send { try await session.data(for: request) }
         // Già sparito dal server: va bene lo stesso.
         if (response as? HTTPURLResponse)?.statusCode == 404 { return }
         try Self.checkWrite(response)
+    }
+
+    /// Esegue una richiesta verso il server traducendo gli errori di rete
+    /// in `RemoteProviderError.unreachable` (vedi `RemoteProviderError.mapped`).
+    private func send<T>(_ operation: () async throws -> T) async throws -> T {
+        do {
+            return try await operation()
+        } catch {
+            throw RemoteProviderError.mapped(error, host: baseURL.host())
+        }
     }
 
     private static func checkWrite(_ response: URLResponse) throws {
@@ -457,7 +467,7 @@ actor HTTPTreeProvider: RemoteContentProvider {
         }
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await send { try await session.data(for: request) }
         guard let http = response as? HTTPURLResponse else {
             throw RemoteProviderError.notConfigured
         }

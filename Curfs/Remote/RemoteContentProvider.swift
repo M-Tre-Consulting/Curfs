@@ -70,6 +70,23 @@ enum RemoteProviderError: LocalizedError {
     case badListing
     case server(status: Int)
     case uploadNotSupported
+    case unreachable(host: String)
+
+    /// Traduce gli errori di rete di URLSession in `unreachable`, così chi
+    /// usa l'app capisce cosa fare invece di leggere "errore SSL".
+    /// Tipico con Tailscale spento: il nome `*.ts.net` si risolve comunque
+    /// col DNS pubblico ai server di Tailscale, che chiudono l'handshake TLS
+    /// (non è la firma dell'app né il certificato del Pi).
+    static func mapped(_ error: Error, host: String?) -> Error {
+        guard let urlError = error as? URLError, let host else { return error }
+        switch urlError.code {
+        case .secureConnectionFailed, .cannotConnectToHost, .cannotFindHost,
+             .dnsLookupFailed, .timedOut, .networkConnectionLost, .notConnectedToInternet:
+            return RemoteProviderError.unreachable(host: host)
+        default:
+            return error
+        }
+    }
 
     var errorDescription: String? {
         switch self {
@@ -83,6 +100,11 @@ enum RemoteProviderError: LocalizedError {
             return "Il server ha risposto con un errore (HTTP \(status))."
         case .uploadNotSupported:
             return "Il server non accetta il caricamento di copertine: va abilitato PUT/DELETE (WebDAV) su nginx per i file poster."
+        case .unreachable(let host):
+            if host.hasSuffix(".ts.net") {
+                return "Server \(host) non raggiungibile: controlla che Tailscale sia acceso e connesso su questo dispositivo."
+            }
+            return "Server \(host) non raggiungibile: controlla la connessione e l'indirizzo del server."
         }
     }
 }

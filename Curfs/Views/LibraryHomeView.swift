@@ -19,6 +19,7 @@ struct LibraryHomeView: View {
     @State private var playingItem: MediaItem?
     @State private var pendingDeleteMovie: MediaItem?
     @State private var pendingDeleteShow: ShowSummary?
+    @State private var showLegal = false
 
     private var shows: [ShowSummary] { ShowSummary.groups(from: allItems) }
     private var movies: [MediaItem] {
@@ -56,8 +57,24 @@ struct LibraryHomeView: View {
                     .animation(.easeInOut(duration: 0.25), value: importVM.isImporting)
                 }
             }
+            // Firma M-Tre sempre visibile in fondo alla schermata iniziale (vedi Branding).
+            .safeAreaInset(edge: .bottom) {
+                BrandFooter { showLegal = true }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+            }
             .navigationTitle("Libreria")
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showLegal = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel("Privacy, licenza e contatti")
+                }
+                #endif
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showImporter = true
@@ -78,6 +95,9 @@ struct LibraryHomeView: View {
                 case .failure(let error):
                     importVM.lastError = error.localizedDescription
                 }
+            }
+            .sheet(isPresented: $showLegal) {
+                LegalSheet()
             }
             .alert("Importazione", isPresented: Binding(
                 get: { importVM.lastError != nil },

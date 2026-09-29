@@ -90,4 +90,6 @@ episodio guardato in streaming e lo stesso poi scaricato offline.
 
 ## Licenza
 
-[MIT](LICENSE) © M-Tre Consulting
+[MIT](LICENSE) © [M-Tre Consulting](https://mtre-consulting.it) — contatti: info@mtre-consulting.it.
+Nell'app, informativa sulla privacy, licenza e contatti sono in fondo alla Libreria (© anno) e,
+su Mac, nel menu Curfs → «Privacy, licenza e contatti…».
