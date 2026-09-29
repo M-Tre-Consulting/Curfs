@@ -455,6 +455,17 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   schermata dice MIT, non la licenza proprietaria della guida. L'informativa descrive cosa fa
   davvero l'app (server dell'utente, titoli inviati a Wikipedia/IMDb/iTunes per le locandine):
   se si aggiunge una nuova connessione o un permesso, aggiornarla con la data.
+- **Lingue** (2.3.0, come MarkIt): italiano, inglese, spagnolo, francese, tedesco, scelte dalla
+  lingua di sistema; tutte le altre ricadono sull'**inglese** (`developmentRegion = en`,
+  `sourceLanguage` del catalogo = en). Le **chiavi sono in italiano** nel codice e le traduzioni
+  (anche l'italiano) stanno in `Curfs/Localizable.xcstrings`; `Curfs/InfoPlist.xcstrings` traduce
+  `NSHumanReadableCopyright`. Entrambi nel gruppo sincronizzato ⇒ in tutti e due i target.
+  ⚠️ I testi costruiti come `String` (ternari, funzioni che restituiscono `String`, messaggi
+  d'errore, stati) NON vengono tradotti da `Text`/`Label`: vanno scritti con
+  `String(localized:)`. I plurali (`%lld episodi`, `%lld stagioni`, …) usano le variazioni
+  plural del catalogo. Un testo nuovo va aggiunto al catalogo in tutte e 5 le lingue (Xcode
+  aggiunge la chiave da solo quando si builda dall'IDE, ma senza traduzioni). I testi dell'app
+  sono generici (nessun riferimento al Pi/tailnet del proprietario): tenerli così.
 - **"Errore TLS" su Mac = Tailscale spento**, non la firma dell'app: senza tailnet il nome
   `*.ts.net` si risolve col DNS pubblico ai frontend di Tailscale (185.40.234.x) che chiudono
   l'handshake (`SSL_ERROR_SYSCALL`, `URLError.secureConnectionFailed`). `HTTPTreeProvider.send`

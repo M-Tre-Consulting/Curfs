@@ -158,13 +158,13 @@ actor ImportEngine {
                     : nil
                 let showFromFilename = FileNameParser.textBefore(match, in: filenameNoExt)
                 let cleanedFromFilename = FileNameParser.cleanTitle(showFromFilename)
-                let showName = showFromFolder ?? (cleanedFromFilename.isEmpty ? "Serie" : cleanedFromFilename)
+                let showName = showFromFolder ?? (cleanedFromFilename.isEmpty ? String(localized: "Serie") : cleanedFromFilename)
 
                 let title = FileNameParser.cleanEpisodeTitle(filenameNoExt)
                 return WorkItem(
                     entry: entry,
                     kind: .episode,
-                    title: title.isEmpty ? "Episodio \(match.episode)" : title,
+                    title: title.isEmpty ? String(localized: "Episodio \(match.episode)") : title,
                     showName: showName,
                     season: match.season,
                     episode: match.episode

@@ -97,11 +97,11 @@ struct DownloadsOverlay: View {
         case .downloading(let progress):
             return "\(Int(progress * 100))%"
         case .paused(let progress):
-            return "In pausa • \(Int(progress * 100))% — riprendo da qui"
+            return String(localized: "In pausa • \(Int(progress * 100))% — riprendo da qui")
         case .finalizing:
-            return "Sto completando…"
+            return String(localized: "Sto completando…")
         case .completed:
-            return "Completato"
+            return String(localized: "Completato")
         case .failed(let message):
             return message
         }

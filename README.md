@@ -15,6 +15,9 @@ flottante incluso).
 
 ## Funzionalità
 
+- **Lingue**: italiano, inglese, spagnolo, francese e tedesco, in automatico dalla lingua di
+  sistema (le altre lingue usano l'inglese).
+
 - **Import da Files**: riconoscimento automatico di film/serie/stagioni/episodi dai nomi di
   cartelle e file, senza bisogno di rinominare nulla a mano.
 - **Libreria** con avanzamento visto, "Continua a guardare", "Riprendi" per serie.

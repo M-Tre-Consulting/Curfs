@@ -261,7 +261,7 @@ actor HTTPTreeProvider: RemoteContentProvider {
 
         // Serie: raggruppa per nome show
         let episodeItems = classified.filter { $0.kind == .episode }
-        let byShow = Dictionary(grouping: episodeItems) { $0.showName ?? "Serie" }
+        let byShow = Dictionary(grouping: episodeItems) { $0.showName ?? String(localized: "Serie") }
         for (showName, items) in byShow {
             let titleID = "s|" + showName
             registerPoster(titleID: titleID, name: showName, kind: .series,
@@ -566,13 +566,13 @@ actor HTTPTreeProvider: RemoteContentProvider {
                 ? nil
                 : FileNameParser.bestShowName(folders: folders, seasonHintIndex: sIdx, rootFallback: rootName)
             let showFromFilename = FileNameParser.cleanTitle(FileNameParser.textBefore(match, in: filenameNoExt))
-            let rawShowName = showFromFolder ?? (showFromFilename.isEmpty ? "Serie" : showFromFilename)
+            let rawShowName = showFromFolder ?? (showFromFilename.isEmpty ? String(localized: "Serie") : showFromFilename)
 
             let epTitle = FileNameParser.cleanEpisodeTitle(filenameNoExt)
             return ClassifiedItem(
                 node: node,
                 kind: .episode,
-                title: epTitle.isEmpty ? "Episodio \(match.episode)" : prettify(epTitle),
+                title: epTitle.isEmpty ? String(localized: "Episodio \(match.episode)") : prettify(epTitle),
                 showName: prettify(rawShowName),
                 season: match.season,
                 episode: match.episode

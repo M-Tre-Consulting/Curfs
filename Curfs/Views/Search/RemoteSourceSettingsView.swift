@@ -44,7 +44,7 @@ struct RemoteSourceSettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("https://nome-pi.tuo-tailnet.ts.net", text: $baseURLString)
+                    TextField(text: $baseURLString, prompt: Text(verbatim: "https://server.example.com")) { Text("Indirizzo del server") }
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
@@ -54,7 +54,7 @@ struct RemoteSourceSettingsView: View {
                 } header: {
                     Text("Indirizzo del server")
                 } footer: {
-                    Text("L'URL servito da «tailscale serve» sul tuo Raspberry Pi. Deve rispondere con l'elenco delle cartelle in JSON (nginx: autoindex_format json).")
+                    Text("L'indirizzo del tuo server di video, raggiungibile da questo dispositivo (per esempio in rete locale o via VPN). Deve rispondere con l'elenco delle cartelle in JSON (nginx: autoindex_format json) e supportare le richieste Range.")
                 }
 
                 Section {
@@ -95,7 +95,7 @@ struct RemoteSourceSettingsView: View {
                     }
                     .disabled(RemoteSourceStore.current.baseURL == nil || backfillState == .testing)
                 } footer: {
-                    Text("Per gli episodi/film scaricati prima che le copertine venissero da iTunes: li confronta col catalogo del server e ripristina la locandina ufficiale al posto del fotogramma video, dove il nome corrisponde.")
+                    Text("Per film ed episodi scaricati che mostrano un fotogramma del video invece della locandina: li confronta col catalogo del server e ripristina la locandina dove il nome corrisponde.")
                 }
             }
             .navigationTitle("Fonte remota")
@@ -125,7 +125,7 @@ struct RemoteSourceSettingsView: View {
         case .testing:
             ProgressView()
         case .ok(let count):
-            Label("\(count) elementi", systemImage: "checkmark.circle.fill")
+            Label(String(localized: "\(count) elementi"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(Color.accentColor)
                 .font(.caption)
         case .failed(let message):
@@ -158,7 +158,7 @@ struct RemoteSourceSettingsView: View {
         case .testing:
             ProgressView()
         case .ok(let count):
-            Label(count > 0 ? "\(count) sistemati" : "Nessuno da sistemare", systemImage: "checkmark.circle.fill")
+            Label(count > 0 ? String(localized: "\(count) sistemati") : String(localized: "Nessuno da sistemare"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(Color.accentColor)
                 .font(.caption)
         case .failed(let message):

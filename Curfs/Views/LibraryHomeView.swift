@@ -213,7 +213,7 @@ struct LibraryHomeView: View {
         .animation(.easeInOut(duration: 0.3), value: allItems.count)
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.title3.weight(.bold))
@@ -228,7 +228,7 @@ struct LibraryHomeView: View {
                 .foregroundStyle(.secondary)
             Text("Nessun video importato")
                 .font(.title3.weight(.semibold))
-            Text("Importa film o intere stagioni dai Files del tuo iPhone.\nRiconosco automaticamente le stagioni dai nomi delle cartelle.")
+            Text("Importa film o intere stagioni dai tuoi file.\nRiconosco automaticamente le stagioni dai nomi delle cartelle.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
