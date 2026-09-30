@@ -425,7 +425,10 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     Wikimedia (`PosterFetcher.wikimediaUserAgent`, mandato anche da `RemoteImageLoader` per
     `*.wikimedia.org`). Cache con prefisso `v6|`. Verificato il 2026-09-27 sui titoli del Pi:
     tutti da IMDb a ~1000 px, compresi Il Trono di Spade (→ Game of Thrones) e Deep State che con
-    Wikipedia/iTunes non avevano nulla.
+    Wikipedia/iTunes non avevano nulla. ⚠️ Le riserve (Wikipedia, iTunes) finiscono in cache solo
+    se nessuna fonte migliore è **fallita per rete**: bug reale (2026-09-30, prima apertura dell'app
+    Mac sandboxata con cache vuota) — IMDb in errore passeggero e Game of Thrones fissato per sempre
+    sul pageimage di Wikipedia, che in quel momento era la copertina del videogioco Telltale.
   - **Anno nei titoli dei film remoti**: `FileNameParser.cleanTitle` toglie tutto ciò che sta tra
     parentesi, anche l'anno — `HTTPTreeProvider.movieTitle` lo riaggiunge ("Oceania (2026).mp4" /
     "Oceania.2026.1080p.mp4" → "Oceania (2026)"), perché serve alle fonti delle locandine per

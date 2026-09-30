@@ -112,9 +112,14 @@ actor PosterFetcher {
         case .notFound: break
         case .failed: anyFailed = true
         }
-        if let wikiPoster { return store(wikiPoster, key: key) }
+        // Le riserve (Wikipedia, iTunes) vanno in cache solo se nessuna fonte
+        // migliore è fallita per rete: altrimenti un errore passeggero di
+        // IMDb fissava per sempre la riserva (bug reale: Game of Thrones col
+        // pageimage di Wikipedia che in quel momento era la copertina del
+        // videogioco Telltale). Così si mostra, ma al giro dopo si riprova.
+        if let wikiPoster { return anyFailed ? wikiPoster : store(wikiPoster, key: key) }
         switch await fetchITunes(name: name, kind: kind) {
-        case .found(let url): return store(url, key: key)
+        case .found(let url): return anyFailed ? url : store(url, key: key)
         case .notFound: if !anyFailed { _ = store(nil, key: key) }
         case .failed: break
         }
