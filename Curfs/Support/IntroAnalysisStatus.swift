@@ -6,8 +6,8 @@
 //  mostrare all'utente un indicatore (gira mentre analizza, spunta quando è
 //  in cache) così sa quando aspettarsi il pulsante alla riproduzione.
 //
-//  Aggiornato dai punti che fanno il pre-calcolo (avvio app, import, apertura
-//  scheda serie, player). Non influenza in alcun modo la logica di analisi.
+//  Aggiornato da `IntroAnalysisQueue` (il pre-calcolo di tutta l'app) e
+//  dall'analisi del player. Non influenza in alcun modo la logica di analisi.
 //
 //  "Pronto" (`ready`) e "sigla trovata" (`readyWithIntro`) sono tenuti
 //  distinti apposta: un episodio può essere analizzato con successo (in
@@ -68,14 +68,21 @@ final class IntroAnalysisStatus {
         }
     }
 
-    /// Dimentica tutto lo stato in memoria: usato insieme a
-    /// `IntroCreditsAnalyzer.resetDiskCache()` dal tasto manuale "Ricalcola",
+    /// Analisi interrotta prima della fine: torna "da analizzare", non "pronto".
+    func abandon(_ id: UUID) {
+        analyzing.remove(id)
+    }
+
+    /// Dimentica lo stato di questi episodi: usato insieme a
+    /// `IntroCreditsAnalyzer.resetDiskCache(for:)` dal tasto "Ricalcola",
     /// così l'indicatore torna subito a "Analisi sigla… 0/N" invece di
     /// restare a mostrare un "pronto" ormai riferito a una cache cancellata.
-    func resetAll() {
-        ready.removeAll()
-        readyWithIntro.removeAll()
-        analyzing.removeAll()
+    func reset(_ ids: [UUID]) {
+        for id in ids {
+            ready.remove(id)
+            readyWithIntro.remove(id)
+            analyzing.remove(id)
+        }
     }
 
     func state(for id: UUID) -> IntroAnalysisState {

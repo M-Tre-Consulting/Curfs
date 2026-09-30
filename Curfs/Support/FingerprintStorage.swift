@@ -14,7 +14,7 @@ nonisolated enum FingerprintStorage {
     /// le impronte già su disco, calcolate col metodo vecchio, vengono
     /// semplicemente ignorate e ricalcolate, invece di restare in cache e
     /// continuare a produrre lo stesso posizionamento sbagliato.
-    private static let cacheVersion = 6
+    private static let cacheVersion = 7
 
     private static func url(for id: UUID) -> URL {
         LibraryStorage.fingerprintsDirectory.appending(path: "\(id.uuidString)-v\(cacheVersion).json")

@@ -12,7 +12,6 @@ import SwiftUI
 import SwiftData
 
 struct RootTabView: View {
-    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         TabView {
@@ -27,7 +26,7 @@ struct RootTabView: View {
         .task {
             // Scalda l'analisi "salta intro" di tutta la libreria locale, così
             // il pulsante c'è alla prima riproduzione (vedi IntroCreditsWarmup).
-            await IntroCreditsWarmup.run(modelContext: modelContext)
+            await IntroCreditsWarmup.run()
         }
     }
 }

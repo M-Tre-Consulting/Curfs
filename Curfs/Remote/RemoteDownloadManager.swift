@@ -465,6 +465,12 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
                 context.insert(media)
                 try context.save()
                 await ThumbnailGenerator.generateIfNeeded(for: media)
+                if kind == .episode, let show = request.showName {
+                    let mediaID = media.id
+                    await MainActor.run {
+                        IntroAnalysisQueue.shared.enqueueShows([show], first: [mediaID])
+                    }
+                }
 
                 self.stateQueue.async {
                     guard var done = self.records[id] else { return }

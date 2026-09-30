@@ -207,13 +207,21 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     `IntroCreditsStorage` (il *risultato* dell'analisi per episodio, legato a `analysisVersion` +
     durata + firma dei vicini usati). La seconda rende il "salta intro" deterministico e immediato
     dalla seconda visione, invece di riconfrontarsi ogni volta coi vicini del momento.
-  - **Pre-calcolo prima del play** (`IntroCreditsAnalyzer.shared.warm`): all'avvio dell'app
-    (`IntroCreditsWarmup` da `RootTabView.task`) l'analisi di TUTTA la libreria locale viene
-    calcolata e messa in cache in background (più recente per primo); così anche dopo — dopo
-    l'import (`ImportViewModel`) e all'apertura di `ShowDetailView`. `PlayerViewModel.prewarmNextEpisode()`
-    fa lo stesso per l'episodio successivo nel binge. Il player usa un'istanza propria
-    dell'analizzatore, i warmer usano `.shared`. `isInIntro` ha 5 s di anticipo sul bordo.
-    Lista vicini condivisa via `PlayerViewModel.siblingEpisodes(of:in:)`.
+  - **Pre-calcolo prima del play = coda unica `IntroAnalysisQueue`** (MainActor, un worker in
+    background, un episodio alla volta, legge la libreria da `AppModelContainer.shared.mainContext`).
+    Tutti gli altri punti si limitano ad accodare: avvio app (`IntroCreditsWarmup` →
+    `enqueueLibrary`), import da File e download finalizzati (`enqueueShows`: TUTTA la serie,
+    i nuovi prima — un episodio nuovo cambia i vicini e quindi la cache degli altri), apertura di
+    una stagione in `ShowDetailView` e episodio successivo nel player (`prioritize`: solo un cambio
+    di ordine, passano in testa). ⚠️ **Mai far girare l'analisi dentro un `.task` di una view**:
+    bug reale (2026-09-30) — l'analisi girava nel `.task` di `ShowDetailView`, uscire/cambiare
+    stagione lo cancellava a metà di un episodio e `FingerprintExtractor`/`analyze` salvavano
+    comunque impronte parziali + risultato vuoto ⇒ quell'episodio restava in cache "analizzato,
+    nessuna sigla", uno bruciato a ogni uscita. Ora entrambi **non salvano nulla se
+    `Task.isCancelled`**, e i chiamanti in quel caso usano `IntroAnalysisStatus.abandon` invece di
+    `finish`. Il player usa un'istanza propria dell'analizzatore, la coda usa `.shared`.
+    `isInIntro` ha 5 s di anticipo sul bordo. Lista vicini condivisa via
+    `PlayerViewModel.siblingEpisodes(of:in:)`.
   - **Dipende dalla durata reale dell'episodio**: `analyze` esce (senza cache) se `duration < 90`
     — tipico subito dopo l'import, prima che `MediaDurationMeasurer`/`PlayerViewModel.resolveDuration`
     la misurino. `PlayerViewModel.onDurationResolved()` rilancia l'analisi una volta appena la
@@ -234,14 +242,12 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     semplicemente concluso "niente da saltare qui".
   - **Mai in streaming**: `siblingEpisodes` è popolato solo per item locali (confronterebbe
     fotogrammi di ogni episodio via rete).
-  - **Tasto manuale "Ricalcola"** (icona ⟲ accanto all'indicatore in `ShowDetailView`): svuota
-    `IntroCreditsAnalyzer.resetDiskCache()` (cancella tutti i file in
-    `LibraryStorage.fingerprintsDirectory`, sia impronte che risultati, per l'intera libreria) +
-    `IntroAnalysisStatus.shared.resetAll()`, poi incrementa `introCacheResetTick` che cambia
-    l'id del `.task` di warmup così SwiftUI cancella quello in corso e ne riparte uno da zero.
-    Il sistema si autoripara già da solo (fingerprint/risultato mancante ⇒ si ricalcola alla
-    prossima occasione), ma un modo per forzarlo SUBITO senza aspettare i warmer in background
-    resta utile quando l'utente non si fida del risultato mostrato.
+  - **Tasto manuale "Ricalcola"** (icona ⟲ accanto all'indicatore in `ShowDetailView`): agisce
+    **solo sugli episodi della stagione mostrata** (`IntroAnalysisQueue.recompute(ids)`): ferma
+    il worker e aspetta che si fermi (così non riscrive i file appena cancellati), cancella i file
+    di quegli episodi (`IntroCreditsAnalyzer.resetDiskCache(for:)`, per prefisso UUID),
+    `IntroAnalysisStatus.reset(ids)`, poi li rimette in testa alla coda. Le altre stagioni/serie
+    non vengono toccate.
 - **"Continua a guardare"** in home mostra un solo item (l'ultimo in assoluto per
   `lastPlayedAt`), non tutti i video a metà. Dentro una serie, "Riprendi"
   (`ShowSummary.nextToWatch`) punta all'ultimo episodio *di quella serie* effettivamente lasciato

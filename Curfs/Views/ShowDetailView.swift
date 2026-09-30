@@ -107,8 +107,8 @@ struct ShowDetailView: View {
             MacPlayerView(item: item, library: allItems)
         }
         #endif
-        .task(id: "\(currentShow.id)-\(selectedSeason)-\(introCacheResetTick)") {
-            await warmIntroDetection()
+        .task(id: "\(currentShow.id)-\(selectedSeason)") {
+            prioritizeIntroDetection()
         }
         .confirmationDialog(
             "Eliminare questo episodio?",
@@ -151,10 +151,6 @@ struct ShowDetailView: View {
     }
 
     @State private var introStatus = IntroAnalysisStatus.shared
-    /// Incrementato dal tasto "Ricalcola": cambia l'id del `.task` di warmup
-    /// più sotto, che così SwiftUI cancella e riavvia da capo contro la
-    /// cache appena svuotata — nessuna gestione manuale del Task.
-    @State private var introCacheResetTick = 0
 
     /// Indicatore: gira mentre l'app analizza la sigla degli episodi di questa
     /// stagione, spunta quando sono tutti in cache (⇒ il "salta intro"
@@ -179,14 +175,11 @@ struct ShowDetailView: View {
 
                 Spacer()
 
-                // Tasto manuale: cancella la cache su disco di sigla/coda per
-                // TUTTA la libreria e la ricalcola da zero per questa
-                // stagione. Il sistema si ripara già da solo nel tempo, ma
-                // un modo per forzarlo subito senza aspettare resta utile.
+                // Tasto manuale: cancella la cache di sigla/coda SOLO degli
+                // episodi di questa stagione e li rianalizza per primi. Le
+                // altre stagioni/serie restano com'erano.
                 Button {
-                    IntroCreditsAnalyzer.resetDiskCache()
-                    IntroAnalysisStatus.shared.resetAll()
-                    introCacheResetTick += 1
+                    Task { await IntroAnalysisQueue.shared.recompute(ids) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -199,39 +192,20 @@ struct ShowDetailView: View {
         }
     }
 
-    /// Pre-calcola l'analisi "salta intro" per gli episodi della stagione che
-    /// stai guardando (quello da riprendere per primo), così qualunque
-    /// episodio tu faccia partire da qui il pulsante c'è già invece di
-    /// rincorrere la sigla. Gira mentre guardi la lista; si annulla da sola
-    /// se lasci la schermata o cambi stagione.
-    private func warmIntroDetection() async {
-        let library = allItems
+    /// Porta in testa alla coda di analisi "salta intro" (vedi
+    /// `IntroAnalysisQueue`) gli episodi della stagione mostrata, quello da
+    /// riprendere per primo. Solo un cambio di ORDINE: l'analisi vera gira
+    /// nella coda dell'app, quindi uscire o cambiare stagione non la
+    /// interrompe (prima la cancellava a metà e l'episodio restava "senza
+    /// sigla" in cache).
+    private func prioritizeIntroDetection() {
         var ordered: [MediaItem] = []
         if let next = currentShow.nextToWatch,
            (next.seasonNumber ?? 1) == selectedSeason {
             ordered.append(next)
         }
         ordered.append(contentsOf: episodesForSelectedSeason)
-
-        var seen = Set<UUID>()
-        for episode in ordered where !episode.isRemote && seen.insert(episode.id).inserted {
-            if Task.isCancelled { return }
-            let siblings = PlayerViewModel.siblingEpisodes(of: episode, in: library)
-            guard !siblings.isEmpty else { continue }
-            switch IntroCreditsAnalyzer.cacheStatus(for: episode, siblings: siblings) {
-            case .readyWithIntro:
-                IntroAnalysisStatus.shared.markCached(episode.id, foundIntro: true)
-                continue
-            case .readyNoIntro:
-                IntroAnalysisStatus.shared.markCached(episode.id, foundIntro: false)
-                continue
-            case .missing:
-                break
-            }
-            IntroAnalysisStatus.shared.begin(episode.id)
-            let result = await IntroCreditsAnalyzer.shared.warm(item: episode, siblings: siblings)
-            IntroAnalysisStatus.shared.finish(episode.id, foundIntro: result.introRange != nil)
-        }
+        IntroAnalysisQueue.shared.prioritize(ordered)
     }
 
     private var header: some View {

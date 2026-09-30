@@ -29,7 +29,7 @@ actor IntroCreditsAnalyzer {
 
     /// Bump quando cambia la logica di match qui sotto o il campionamento in
     /// FingerprintExtractor: invalida i risultati già in cache.
-    static let analysisVersion = 8
+    static let analysisVersion = 9
 
     /// "Firma" dei vicini usati per il confronto (id + durata): se cambia il
     /// set di vicini, la cache del risultato non è più valida.
@@ -59,16 +59,16 @@ actor IntroCreditsAnalyzer {
         return (cached.introLower != nil && cached.introUpper != nil) ? .readyWithIntro : .readyNoIntro
     }
 
-    /// Cancella TUTTA la cache su disco di sigla/coda (impronte + risultati,
-    /// stesso posto per entrambe: `LibraryStorage.fingerprintsDirectory`) —
-    /// usata dal tasto manuale "Ricalcola" in `ShowDetailView` quando l'utente
-    /// non si fida del risultato mostrato. Il sistema si ripara già da solo
-    /// nel tempo (ogni pezzo mancante si ricalcola quando serve), ma un modo
-    /// per forzarlo SUBITO, senza aspettare, resta comunque utile.
-    nonisolated static func resetDiskCache() {
+    /// Cancella la cache su disco di sigla/coda (impronte + risultati) SOLO
+    /// per questi episodi — usata dal tasto manuale "Ricalcola" in
+    /// `ShowDetailView` per la stagione mostrata, quando l'utente non si fida
+    /// del risultato. I file di un episodio iniziano tutti con il suo UUID
+    /// (`<id>-v<N>.json`, `<id>-introcredits.json`).
+    nonisolated static func resetDiskCache(for ids: [UUID]) {
         let dir = LibraryStorage.fingerprintsDirectory
         guard let contents = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return }
-        for url in contents {
+        let prefixes = ids.map { $0.uuidString + "-" }
+        for url in contents where prefixes.contains(where: { url.lastPathComponent.hasPrefix($0) }) {
             try? FileManager.default.removeItem(at: url)
         }
     }
@@ -119,6 +119,12 @@ actor IntroCreditsAnalyzer {
         }
 
         let result = await computeAnalysis(item: item, siblings: usableSiblings)
+
+        // Analisi interrotta (es. "Ricalcola", player chiuso): il risultato è
+        // incompleto e NON va messo in cache, altrimenti l'episodio resterebbe
+        // "analizzato, nessuna sigla" per sempre. Il chiamante controlla
+        // `Task.isCancelled` e non lo considera pronto.
+        guard !Task.isCancelled else { return result }
 
         IntroCreditsStorage.save(
             IntroCreditsCache(

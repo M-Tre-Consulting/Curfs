@@ -75,25 +75,12 @@ final class ImportViewModel {
             }
             try? modelContext.save()
 
-            warmIntroDetection(for: insertedEpisodes, modelContext: modelContext)
-        }
-    }
-
-    /// Dopo l'import, in background e a bassa priorità, pre-calcola l'analisi
-    /// "salta intro" per gli episodi appena aggiunti: così al primo play il
-    /// pulsante è già pronto invece di comparire (o no) a sigla iniziata.
-    private func warmIntroDetection(for episodes: [MediaItem], modelContext: ModelContext) {
-        guard !episodes.isEmpty else { return }
-        let library = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? episodes
-        Task(priority: .background) {
-            for episode in episodes {
-                if Task.isCancelled { return }
-                let siblings = PlayerViewModel.siblingEpisodes(of: episode, in: library)
-                guard !siblings.isEmpty else { continue }
-                IntroAnalysisStatus.shared.begin(episode.id)
-                let result = await IntroCreditsAnalyzer.shared.warm(item: episode, siblings: siblings)
-                IntroAnalysisStatus.shared.finish(episode.id, foundIntro: result.introRange != nil)
-            }
+            // Subito in background, per TUTTI gli episodi delle serie toccate
+            // (i nuovi prima): non serve aprire la stagione e aspettare lì.
+            IntroAnalysisQueue.shared.enqueueShows(
+                Set(insertedEpisodes.compactMap(\.showName)),
+                first: insertedEpisodes.map(\.id)
+            )
         }
     }
 }

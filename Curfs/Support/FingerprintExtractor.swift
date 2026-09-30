@@ -63,6 +63,11 @@ actor FingerprintExtractor {
         let introSamples = await sample(times: introTimes, generator: generator) { $0 }
         let creditsSamples = await sample(times: creditsTimes, generator: generator) { duration - $0 }
 
+        // Interrotto a metà: i campioni sono parziali. Salvarli li farebbe
+        // passare per un'impronta valida (per sempre, finché la durata non
+        // cambia) e l'episodio risulterebbe "senza sigla" anche per i vicini.
+        guard !Task.isCancelled else { return nil }
+
         let fingerprint = EpisodeFingerprint(duration: duration, introSamples: introSamples, creditsSamples: creditsSamples)
         FingerprintStorage.save(fingerprint, for: item.id)
         return fingerprint

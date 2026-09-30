@@ -41,7 +41,6 @@ final class PlayerViewModel {
     private var endObserver: NSObjectProtocol?
     private var hideControlsTask: Task<Void, Never>?
     private var introCreditsTask: Task<Void, Never>?
-    private var prewarmTask: Task<Void, Never>?
     private var lastSavedAt: Date = .distantPast
 
     /// Altri episodi della stessa serie, ordinati per vicinanza a questo:
@@ -179,7 +178,6 @@ final class PlayerViewModel {
         endObserver = nil
         hideControlsTask?.cancel()
         introCreditsTask?.cancel()
-        prewarmTask?.cancel()
         player.pause()
         persistProgress(force: true)
         deactivateAudioSession()
@@ -198,36 +196,23 @@ final class PlayerViewModel {
             guard let self else { return }
             IntroAnalysisStatus.shared.begin(episode.id)
             let result = await self.introCreditsAnalyzer.analyze(item: self.item, siblings: self.siblingEpisodes)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+                IntroAnalysisStatus.shared.abandon(episode.id)
+                return
+            }
             self.detectedIntroRange = result.introRange
             self.detectedCreditsRange = result.creditsRange
             IntroAnalysisStatus.shared.finish(episode.id, foundIntro: result.introRange != nil)
         }
     }
 
-    /// Mentre si guarda questo episodio, precalcola in background l'impronta
-    /// del prossimo: così quando si passa oltre (binge watching) il "salta
-    /// intro" è già pronto invece di dover decodificare i fotogrammi al volo.
+    /// Mentre si guarda questo episodio, porta in testa alla coda di analisi
+    /// il prossimo: così quando si passa oltre (binge watching) il "salta
+    /// intro" è già pronto. Non dipende dal player: chiuderlo non interrompe
+    /// l'analisi a metà.
     private func prewarmNextEpisode() {
         guard let next = nextEpisode, !next.isRemote else { return }
-        let nextSiblings = Self.siblingEpisodes(of: next, in: [item] + siblingEpisodes)
-        guard !nextSiblings.isEmpty else { return }
-        prewarmTask?.cancel()
-        prewarmTask = Task(priority: .utility) {
-            switch IntroCreditsAnalyzer.cacheStatus(for: next, siblings: nextSiblings) {
-            case .readyWithIntro:
-                IntroAnalysisStatus.shared.markCached(next.id, foundIntro: true)
-                return
-            case .readyNoIntro:
-                IntroAnalysisStatus.shared.markCached(next.id, foundIntro: false)
-                return
-            case .missing:
-                break
-            }
-            IntroAnalysisStatus.shared.begin(next.id)
-            let result = await IntroCreditsAnalyzer.shared.warm(item: next, siblings: nextSiblings)
-            IntroAnalysisStatus.shared.finish(next.id, foundIntro: result.introRange != nil)
-        }
+        IntroAnalysisQueue.shared.prioritize([next])
     }
 
     /// L'audio deve sentirsi sempre, anche con la levetta dello squillo su
