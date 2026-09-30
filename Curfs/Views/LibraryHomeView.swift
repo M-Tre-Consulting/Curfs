@@ -57,12 +57,6 @@ struct LibraryHomeView: View {
                     .animation(.easeInOut(duration: 0.25), value: importVM.isImporting)
                 }
             }
-            // Firma M-Tre sempre visibile in fondo alla schermata iniziale (vedi Branding).
-            .safeAreaInset(edge: .bottom) {
-                BrandFooter { showLegal = true }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-            }
             .navigationTitle("Libreria")
             .toolbar {
                 #if os(iOS)

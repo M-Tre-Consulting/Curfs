@@ -4,9 +4,9 @@
 //
 //  Firma, informativa sulla privacy e licenza di M-Tre Consulting, secondo la
 //  guida in `brand/README.md` della repo M-Tre-Consulting/m-tre-site (stessa
-//  struttura di MarkIt). La firma sta in fondo alla Libreria su entrambe le
-//  piattaforme; la schermata legale si apre dall'anno della firma, dal pulsante
-//  ⓘ della Libreria su iPhone e dal menu Curfs su Mac.
+//  struttura di MarkIt). La firma sta in fondo alle impostazioni (ingranaggio di
+//  Cerca) su entrambe le piattaforme; la schermata legale si apre da lì, dal
+//  pulsante ⓘ della Libreria su iPhone e dal menu Curfs su Mac.
 //
 
 import SwiftUI
