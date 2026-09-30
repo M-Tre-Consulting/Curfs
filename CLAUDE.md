@@ -11,6 +11,8 @@ immersivo; su Mac il player usa i controlli nativi di AVKit invece del player cu
 progetto Xcode, target, scheme, tipi Swift). Il **bundle identifier è rimasto**
 `com.nicoloperri.Mediapple` di proposito, per non perdere libreria/progressi/cache già presenti
 sul dispositivo reale al prossimo reinstall (iOS tratterebbe un bundle ID diverso come app nuova).
+Diventerà `it.mtreconsulting.curfs` (iOS e Mac, un'unica scheda App Store) solo al passaggio
+all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE.md` di m-tre-site.
 
 ## Vincoli
 
@@ -113,12 +115,18 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   ad hoc (non con Icon Composer), poi ridimensionato via `sips`.
 - **Bundle ID separato**: `com.nicoloperri.CurfsMac` (a differenza di quello iOS, qui non serve
   continuità dati con nessuna installazione precedente).
-- **Non sandboxata** (`ENABLE_APP_SANDBOX = NO`): come una normale app Mac, accesso libero a
-  file/rete per import e sezione Cerca — non essendo per l'App Store non serve la sandbox né le
-  entitlement che richiederebbe. Firma automatica con lo stesso team Apple dell'app iOS (development,
-  non Developer ID): funziona senza problemi sul Mac dell'utente, ma un `.dmg` distribuito ad
-  altri farà comparire l'avviso Gatekeeper "sviluppatore non identificato" (serve tasto destro →
-  Apri la prima volta) — non essendoci un account Developer a pagamento non è evitabile.
+- **Sandboxata** (dal 2026-09-30, obbligatoria per il Mac App Store — piano di pubblicazione in
+  `brand/DISTRIBUZIONE.md` della repo m-tre-site, scheda Curfs): entitlement generati dalle build
+  setting `ENABLE_APP_SANDBOX`, `ENABLE_OUTGOING_NETWORK_CONNECTIONS` (Cerca/streaming/locandine),
+  `ENABLE_USER_SELECTED_FILES = readonly` (import da `fileImporter`, che copia i video nel
+  container: nessun bookmark da conservare). Prima girava senza sandbox e salvava tutto nella home
+  (`~/Documents/Library`, `~/Library/Application Support/default.store`/`Thumbnails`/`Downloads`,
+  preferenze): `CurfsMac/Support/container-migration.plist` li sposta nel container
+  (`~/Library/Containers/com.nicoloperri.CurfsMac/Data/`) al primo avvio sandboxato, una volta
+  sola — verificato sul Mac dell'utente. Firma automatica con lo stesso team Apple dell'app iOS
+  (development, non Developer ID): un `.dmg` distribuito ad altri fa comparire l'avviso Gatekeeper
+  "sviluppatore non identificato" (tasto destro → Apri la prima volta) finché non c'è l'account
+  Developer a pagamento.
 - **Download remoti**: `RemoteDownloadManager` (condiviso) funziona finché l'app Mac è aperta, ma
   non ha l'aggancio equivalente di `AppDelegate.application(_:handleEventsForBackgroundURLSession:)`
   usato su iOS per il risveglio da app terminata — concetto che su Mac non si applica allo stesso

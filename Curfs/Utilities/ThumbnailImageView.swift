@@ -21,6 +21,23 @@ struct ThumbnailImageView: View {
     @State private var cgImage: CGImage?
 
     var body: some View {
+        // La dimensione la decide il contenitore (GeometryReader), non i
+        // pixel della miniatura: con `.fill` un fotogramma più largo del
+        // 16:9 (es. film in 2.39:1) riportava come propria la larghezza
+        // dell'immagine riempita, e la card che la ospita (es.
+        // "Continua a guardare", 210pt fissi) sforava il bordo dello
+        // schermo. Stesso schema di RemotePosterImage.
+        GeometryReader { proxy in
+            content
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipped()
+        }
+        .task(id: item.thumbnailURL) {
+            await loadIfNeeded()
+        }
+    }
+
+    private var content: some View {
         ZStack {
             if let cgImage {
                 Image(decorative: cgImage, scale: 1)
@@ -36,9 +53,6 @@ struct ThumbnailImageView: View {
                     .font(.system(size: 28, weight: .light))
                     .foregroundStyle(.secondary)
             }
-        }
-        .task(id: item.thumbnailURL) {
-            await loadIfNeeded()
         }
     }
 
