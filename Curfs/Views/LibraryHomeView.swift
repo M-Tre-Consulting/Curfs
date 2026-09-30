@@ -58,6 +58,7 @@ struct LibraryHomeView: View {
                 }
             }
             .navigationTitle("Libreria")
+            .cleanWindowToolbar()
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {

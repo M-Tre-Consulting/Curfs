@@ -17,6 +17,12 @@ struct CurfsMacApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabView()
+                // Lo sfondo viola sta anche sulla finestra stessa, non solo
+                // dentro le schermate: durante i cambi di sezione (dissolvenza
+                // tra le due NavigationStack) non si vede più il nero della
+                // finestra tra una e l'altra. Vedi anche WindowChrome.
+                .containerBackground(for: .window) { AppBackground() }
+                .cleanWindowToolbar()
                 .preferredColorScheme(.dark)
                 .frame(minWidth: 900, minHeight: 600)
         }

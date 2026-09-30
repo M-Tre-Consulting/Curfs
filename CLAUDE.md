@@ -100,6 +100,13 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     presentato come sheet, e la sola "Chiudi" in toolbar su Mac non era un'uscita abbastanza
     affidabile/visibile), `RemoteTitleDetailView` ha anche una X separata sempre visibile in alto
     a destra (`#if os(macOS)`, `.overlay(alignment: .topTrailing)`) indipendente dalla toolbar.
+- **Barra in alto della finestra Mac** (2.3.3): aveva una fascia nera all'apertura che spariva
+  al primo cambio di sezione e non tornava più (sfondo della toolbar mostrato/nascosto da
+  SwiftUI a seconda della fase). Fix: `cleanWindowToolbar()` (`Utilities/WindowChrome.swift`,
+  `toolbarBackgroundVisibility(.hidden, for: .windowToolbar)`, no-op su iOS) su Libreria/Cerca/
+  scheda serie e sulla radice, più `.containerBackground(for: .window) { AppBackground() }` in
+  `CurfsMacApp` così durante la dissolvenza tra sezioni non si vede il nero della finestra.
+  Confermato dall'utente sull'app vera.
 - **Icona**: l'asset catalog `AppIcon.appiconset` (condiviso) aveva già gli slot idiom "mac"
   (16→512, @1x/@2x) ma vuoti. Popolati da `icon-any.png` (quello iOS, quadrato pieno) ricomposto
   in stile Big Sur — margine, angoli arrotondati, ombra morbida — con uno script CoreGraphics

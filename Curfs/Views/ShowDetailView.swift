@@ -86,6 +86,7 @@ struct ShowDetailView: View {
         .safeAreaPadding(.horizontal, 16)
         .background(AppBackground())
         .navigationTitle(show.name)
+        .cleanWindowToolbar()
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

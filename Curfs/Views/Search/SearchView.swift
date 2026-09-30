@@ -45,6 +45,7 @@ struct SearchView: View {
             }
             .animation(.easeInOut(duration: 0.25), value: downloadManager.hasActiveDownloads)
             .navigationTitle("Cerca")
+            .cleanWindowToolbar()
             #if os(iOS)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Filtra per titolo")
             #else
