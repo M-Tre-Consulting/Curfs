@@ -21,6 +21,7 @@ struct RemoteSourceSettingsView: View {
 
     @State private var testState: TestState = .idle
     @State private var backfillState: TestState = .idle
+    @State private var showLegal = false
 
     private enum TestState: Equatable {
         case idle
@@ -97,7 +98,21 @@ struct RemoteSourceSettingsView: View {
                 } footer: {
                     Text("Per film ed episodi scaricati che mostrano un fotogramma del video invece della locandina: li confronta col catalogo del server e ripristina la locandina dove il nome corrisponde.")
                 }
+
+                // Firma M-Tre in fondo alle impostazioni (vedi Branding): nella
+                // Libreria stava in un safeAreaInset e il contenuto ci scorreva sotto.
+                Section {
+                    NavigationLink {
+                        legalPage
+                    } label: {
+                        Label("Privacy, licenza e contatti", systemImage: "info.circle")
+                    }
+                } footer: {
+                    BrandFooter { showLegal = true }
+                        .padding(.top, 12)
+                }
             }
+            .navigationDestination(isPresented: $showLegal) { legalPage }
             .navigationTitle("Fonte remota")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -115,6 +130,14 @@ struct RemoteSourceSettingsView: View {
                 }
             }
         }
+    }
+
+    private var legalPage: some View {
+        LegalView()
+            .navigationTitle("Privacy, licenza e contatti")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
     }
 
     @ViewBuilder

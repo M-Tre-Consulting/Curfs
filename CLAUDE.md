@@ -448,8 +448,10 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
 
 - **Firma M-Tre / privacy / licenza** (2.3.0, guida `brand/README.md` della repo
   `M-Tre-Consulting/m-tre-site`): `Utilities/Branding.swift` (`MTre`, `BrandFooter`,
-  `LegalView`, `LegalSheet`), image set `MTreLogo`. Firma in `safeAreaInset(.bottom)` della
-  Libreria (su Mac non c'è barra laterale, quindi stesso posto), ⓘ in toolbar su iPhone, voce
+  `LegalView`, `LegalSheet`), image set `MTreLogo`. Firma in fondo a `RemoteSourceSettingsView`
+  (ultima sezione del `Form`, sotto la riga "Privacy, licenza e contatti") — prima stava in un
+  `safeAreaInset(.bottom)` della Libreria senza sfondo e su iPhone il contenuto ci scorreva sotto
+  sovrapponendosi; spostata su richiesta dell'utente. ⓘ in toolbar della Libreria su iPhone, voce
   "Privacy, licenza e contatti…" nel menu app su Mac (finestra `Window(id: "legal")`).
   `NSHumanReadableCopyright` su tutti i target. La repo è pubblica con licenza **MIT**: la
   schermata dice MIT, non la licenza proprietaria della guida. L'informativa descrive cosa fa
