@@ -1,41 +1,53 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "NSHumanReadableCopyright": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 M-Tre Consulting. Alle Rechte vorbehalten."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Curfs"
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2026 M-Tre Consulting. Alle Rechte vorbehalten."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 M-Tre Consulting. All rights reserved."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2026 M-Tre Consulting. All rights reserved."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 M-Tre Consulting. Todos los derechos reservados."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2026 M-Tre Consulting. Todos los derechos reservados."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 M-Tre Consulting. Tous droits réservés."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2026 M-Tre Consulting. Tous droits réservés."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 M-Tre Consulting. Tutti i diritti riservati."
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2026 M-Tre Consulting. Tutti i diritti riservati."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
