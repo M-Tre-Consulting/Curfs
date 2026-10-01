@@ -16,6 +16,19 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
 
 ## Vincoli
 
+- **Locandine: due versioni** (dal 2026-10-01). Flag di compilazione `EXTRA_POSTERS`, impostato
+  solo nella configurazione **Debug** del progetto: le build personali del proprietario (da Xcode)
+  cercano le locandine con Wikipedia + IMDb + iTunes; in **Release** (archivio per App Store / Mac
+  App Store) il codice Wikipedia/IMDb è escluso e resta solo iTunes, perché le condizioni d'uso di
+  IMDb vietano l'estrazione di dati e le locandine di Wikipedia sono in fair use. Cache separate per
+  le due versioni (`PosterFetcher`). L'informativa in `Branding.swift` segue lo stesso flag e
+  rimanda a https://mtre-consulting.it/privacy/curfs (testo della versione store: se cambia,
+  aggiornare anche la pagina nella repo m-tre-site). Non rimettere IMDb/Wikipedia fuori dal flag.
+- **Requisiti store già a posto** (2026-10-01): `Curfs/PrivacyInfo.xcprivacy` (nessun tracciamento né
+  dato raccolto; unica API con motivo obbligatorio: `UserDefaults`, CA92.1 — se si aggiungono date di
+  file, spazio su disco, uptime ecc. va aggiornato) e `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption =
+  NO` in tutti e quattro i blocchi di build dei target (solo HTTPS di sistema, crittografia esente).
+
 - iPhone reale del proprietario su **iOS 26.6**. Deployment target `IPHONEOS_DEPLOYMENT_TARGET =
   26.0` — necessario per le API Liquid Glass (`.glassEffect`, `GlassEffectContainer`,
   `.buttonStyle(.glass/.glassProminent)`). Non abbassarlo se si toccano quei file.

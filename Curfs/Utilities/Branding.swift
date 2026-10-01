@@ -16,6 +16,8 @@ enum MTre {
     static let name = "M-Tre Consulting"
     static let site = URL(string: "https://mtre-consulting.it")!
     static let email = "info@mtre-consulting.it"
+    /// Informativa pubblicata sul sito (la chiedono App Store e Mac App Store).
+    static let privacyPage = URL(string: "https://mtre-consulting.it/privacy/curfs")!
     static let owners = [
         "Simone Rolando – P.IVA 01866720095",
         "Nicolò Perri – P.IVA 01949510091",
@@ -89,8 +91,17 @@ struct LegalView: View {
                     paragraph("Curfs non raccoglie dati personali e non li invia a M-Tre Consulting. Non ci sono account, pubblicità, statistiche o tracciamento.")
                     paragraph("La libreria resta sul dispositivo, nella cartella dell'app: i video che importi (Curfs ne fa una copia; su Mac nella cartella Library dentro Documenti), l'avanzamento di visione, le miniature e l'analisi di sigle e titoli di coda. Dai File, Curfs legge solo i file e le cartelle che scegli tu; dalle Foto, solo l'immagine che scegli come copertina.")
                     paragraph("La sezione Cerca si collega soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati e le copertine che carichi.")
+                    // Fonti delle locandine: vedi le due versioni in PosterFetcher.swift.
+                    #if EXTRA_POSTERS
                     paragraph("Per trovare le locandine, Curfs invia il solo titolo di film e serie a Wikipedia (Wikimedia Foundation), IMDb e la ricerca di iTunes di Apple, e scarica le immagini da lì. Questi servizi ricevono il titolo e, come per ogni connessione, l'indirizzo IP; nessun altro dato.")
+                    #else
+                    paragraph("Per trovare le locandine, Curfs invia il solo titolo di film e serie alla ricerca di iTunes di Apple e scarica le immagini da lì. Apple riceve il titolo e, come per ogni connessione, l'indirizzo IP; nessun altro dato.")
+                    #endif
                     paragraph("Puoi chiederci informazioni ed esercitare i tuoi diritti previsti dal GDPR (Regolamento UE 2016/679) scrivendo a \(MTre.email). Poiché non conserviamo i tuoi dati, eliminare l'app cancella tutto (su Mac, elimina anche la cartella Library dentro Documenti). I file sul tuo server restano tuoi e non vengono toccati.")
+                    paragraph("Questa informativa è pubblicata anche sul nostro sito:")
+                    Link(destination: MTre.privacyPage) {
+                        Text(verbatim: "mtre-consulting.it/privacy/curfs")
+                    }
                 }
 
                 section("Titolare") {
@@ -103,7 +114,11 @@ struct LegalView: View {
                     Link(destination: URL(string: "https://github.com/M-Tre-Consulting/Curfs")!) {
                         Text(verbatim: "github.com/M-Tre-Consulting/Curfs")
                     }
+                    #if EXTRA_POSTERS
                     paragraph("Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da Wikipedia, IMDb e iTunes.")
+                    #else
+                    paragraph("Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes.")
+                    #endif
                 }
 
                 section("Contatti") {
@@ -111,7 +126,7 @@ struct LegalView: View {
                     Link(destination: URL(string: "mailto:\(MTre.email)")!) { Text(verbatim: MTre.email) }
                 }
 
-                Text("Aggiornata il 29 settembre 2026.")
+                Text("Aggiornata il 1° ottobre 2026.")
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
             }

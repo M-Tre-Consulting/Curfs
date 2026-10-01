@@ -50,9 +50,12 @@ actor RemoteImageLoader {
             for (field, value) in config.authHeaders {
                 request.setValue(value, forHTTPHeaderField: field)
             }
-        } else if url.host?.hasSuffix("wikimedia.org") == true {
+        }
+        #if EXTRA_POSTERS
+        if url.host?.hasSuffix("wikimedia.org") == true {
             request.setValue(PosterFetcher.wikimediaUserAgent, forHTTPHeaderField: "User-Agent")
         }
+        #endif
         guard let (data, response) = try? await URLSession.shared.data(for: request),
               let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
               let source = CGImageSourceCreateWithData(data as CFData, nil),

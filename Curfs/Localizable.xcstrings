@@ -556,36 +556,36 @@
         }
       }
     },
-    "Aggiornata il 29 settembre 2026.": {
+    "Aggiornata il 1° ottobre 2026.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktualisiert am 29. September 2026."
+            "value": "Aktualisiert am 1. Oktober 2026."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last updated September 29, 2026."
+            "value": "Last updated October 1, 2026."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Actualizada el 29 de septiembre de 2026."
+            "value": "Actualizada el 1 de octubre de 2026."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mise à jour le 29 septembre 2026."
+            "value": "Mise à jour le 1er octobre 2026."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aggiornata il 29 settembre 2026."
+            "value": "Aggiornata il 1° ottobre 2026."
           }
         }
       }
@@ -1882,6 +1882,40 @@
         }
       }
     },
+    "Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Erkennung von Intro und Abspann basiert auf dem Difference Hash (dHash) von Neal Krawetz. Die Poster gehören ihren jeweiligen Rechteinhabern und stammen von iTunes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intro and end credits detection is based on Neal Krawetz's difference hash (dHash). Posters belong to their respective owners and come from iTunes."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La detección de intros y créditos finales se basa en el difference hash (dHash) de Neal Krawetz. Los pósteres pertenecen a sus respectivos titulares y proceden de iTunes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La détection des génériques de début et de fin repose sur le difference hash (dHash) de Neal Krawetz. Les affiches appartiennent à leurs titulaires respectifs et proviennent d'iTunes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes."
+          }
+        }
+      }
+    },
     "Il server ha risposto con un errore (HTTP %lld).": {
       "localizations": {
         "de": {
@@ -3072,6 +3106,40 @@
         }
       }
     },
+    "Per trovare le locandine, Curfs invia il solo titolo di film e serie alla ricerca di iTunes di Apple e scarica le immagini da lì. Apple riceve il titolo e, come per ogni connessione, l'indirizzo IP; nessun altro dato.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um Poster zu finden, sendet Curfs nur den Titel von Filmen und Serien an die iTunes-Suche von Apple und lädt die Bilder von dort. Apple erhält den Titel und, wie bei jeder Verbindung, die IP-Adresse; keine weiteren Daten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To find posters, Curfs sends only the title of movies and series to Apple's iTunes Search and downloads the images from there. Apple receives the title and, as with any connection, the IP address; no other data."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para encontrar los pósteres, Curfs envía solo el título de películas y series a la búsqueda de iTunes de Apple y descarga las imágenes desde allí. Apple recibe el título y, como en cualquier conexión, la dirección IP; ningún otro dato."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pour trouver les affiches, Curfs envoie uniquement le titre des films et des séries à la recherche iTunes d'Apple et télécharge les images depuis celle-ci. Apple reçoit le titre et, comme pour toute connexion, l'adresse IP ; aucune autre donnée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per trovare le locandine, Curfs invia il solo titolo di film e serie alla ricerca di iTunes di Apple e scarica le immagini da lì. Apple riceve il titolo e, come per ogni connessione, l'indirizzo IP; nessun altro dato."
+          }
+        }
+      }
+    },
     "Privacy, licenza e contatti": {
       "localizations": {
         "de": {
@@ -3238,6 +3306,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puoi chiederci informazioni ed esercitare i tuoi diritti previsti dal GDPR (Regolamento UE 2016/679) scrivendo a %@. Poiché non conserviamo i tuoi dati, eliminare l'app cancella tutto (su Mac, elimina anche la cartella Library dentro Documenti). I file sul tuo server restano tuoi e non vengono toccati."
+          }
+        }
+      }
+    },
+    "Questa informativa è pubblicata anche sul nostro sito:": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Datenschutzerklärung ist auch auf unserer Website veröffentlicht:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This privacy policy is also published on our website:"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta política de privacidad también está publicada en nuestro sitio web:"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette politique de confidentialité est également publiée sur notre site :"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa informativa è pubblicata anche sul nostro sito:"
           }
         }
       }

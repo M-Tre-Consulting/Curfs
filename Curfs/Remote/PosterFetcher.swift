@@ -3,7 +3,17 @@
 //  Curfs
 //
 //  Locandine ufficiali per i titoli della sezione Cerca, senza chiavi né
-//  account:
+//  account.
+//
+//  Due versioni (decisione in `brand/DISTRIBUZIONE.md` di m-tre-site):
+//  - build per App Store / Mac App Store (Release, senza flag): SOLO iTunes.
+//    Le condizioni d'uso di IMDb vietano l'estrazione di dati e le locandine
+//    di Wikipedia sono in fair use: non vanno nell'app pubblicata;
+//  - build personali (flag `EXTRA_POSTERS`, attivo nella configurazione
+//    Debug, cioè quando si avvia da Xcode): la catena completa qui sotto.
+//  L'informativa in `Branding.swift` segue lo stesso flag.
+//
+//  Catena completa:
 //   1. Wikipedia RICONOSCE il titolo (anche italiano: "Oceania" → voce
 //      inglese "Moana (2026 film)"), vedi `wikiIdentify`;
 //   2. IMDb dà la locandina in alta risoluzione di quel titolo (~1000 px),
@@ -83,16 +93,23 @@ actor PosterFetcher {
         case failed
     }
 
-    /// Copertina automatica (Wikipedia → iTunes) ignorando quelle
+    /// Copertina automatica (vedi le due versioni in cima) ignorando quelle
     /// dell'utente: serve anche al provider quando la copertina
     /// personalizzata viene rimossa.
     func automaticPosterURL(forName name: String, kind: RemoteTitleKind) async -> URL? {
         await loadCacheIfNeeded()
+        // Cache separata per le due versioni: Debug e Release hanno lo stesso
+        // bundle ID, e una non deve mostrare i risultati dell'altra.
+        #if EXTRA_POSTERS
         let key = "v6|" + cacheKey(name: name, kind: kind)
+        #else
+        let key = "store1|" + cacheKey(name: name, kind: kind)
+        #endif
         if let cached = cache[key] {
             return cached.isEmpty ? nil : URL(string: cached)
         }
 
+        #if EXTRA_POSTERS
         var anyFailed = false
         var wikiPoster: URL?
         // Titolo con cui chiedere a IMDb: quello inglese riconosciuto da
@@ -124,6 +141,13 @@ actor PosterFetcher {
         case .failed: break
         }
         return nil
+        #else
+        switch await fetchITunes(name: name, kind: kind) {
+        case .found(let url): return store(url, key: key)
+        case .notFound: return store(nil, key: key)
+        case .failed: return nil
+        }
+        #endif
     }
 
     private func store(_ url: URL?, key: String) -> URL? {
@@ -149,6 +173,9 @@ actor PosterFetcher {
         overrides[cacheKey(name: name, kind: kind)] = url?.absoluteString
         saveOverrides()
     }
+
+    // Wikipedia e IMDb esistono solo nelle build personali (vedi in cima).
+    #if EXTRA_POSTERS
 
     // MARK: - Wikipedia
 
@@ -400,6 +427,8 @@ actor PosterFetcher {
         return matching.first { $0.title.contains(year) }
             ?? matching.first { !$0.title.hasSuffix(")") }
     }
+
+    #endif
 
     // MARK: - iTunes
 
