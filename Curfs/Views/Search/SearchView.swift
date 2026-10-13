@@ -4,8 +4,9 @@
 //
 //  Tab "Cerca": all'apertura mostra già tutto il catalogo della fonte remota
 //  configurata (il server del Raspberry Pi via Tailscale); scrivendo nella
-//  barra si filtra per nome. Dalla scheda di un titolo si riproduce in
-//  streaming, si aggiunge alla libreria come voce streaming, o si scarica.
+//  barra si filtra per nome. Un film parte subito in streaming; tenendolo
+//  premuto si scarica, si aggiunge ai Film o se ne cambia la copertina. Una
+//  serie apre `SeriesDetailView`, la stessa scheda della Libreria.
 //  Finché non è stato inserito un indirizzo valido nelle impostazioni (icona
 //  ingranaggio) ogni richiesta fallisce in modo esplicito.
 //
@@ -15,17 +16,27 @@ import SwiftData
 
 struct SearchView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var libraryItems: [MediaItem]
 
     @State private var query = ""
     @State private var results: [RemoteTitle] = []
     @State private var isSearching = false
     @State private var searchError: String?
-    @State private var selectedTitle: RemoteTitle?
+    @State private var playback: PlaybackRequest?
+    @State private var isPreparingPlayback = false
+    @State private var actionError: String?
+    @State private var posterEditor = PosterEditor()
     @State private var searchTask: Task<Void, Never>?
     @State private var downloadManager = RemoteDownloadManager.shared
     @State private var showSettings = false
-    @State private var provider: RemoteContentProvider = RemoteContentProviderRegistry.makeProvider()
     @State private var didInitialLoad = false
+
+    private var provider: RemoteContentProvider { RemoteContentProviderRegistry.shared }
+
+    private struct PlaybackRequest: Identifiable {
+        let id = UUID()
+        let item: MediaItem
+    }
 
 
     private var trimmedQuery: String {
@@ -44,6 +55,14 @@ struct SearchView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: downloadManager.hasActiveDownloads)
+            .overlay {
+                if isPreparingPlayback {
+                    ZStack {
+                        Color.black.opacity(0.35).ignoresSafeArea()
+                        ProgressView().controlSize(.large)
+                    }
+                }
+            }
             .navigationTitle("Cerca")
             .cleanWindowToolbar()
             #if os(iOS)
@@ -72,8 +91,23 @@ struct SearchView: View {
             .sheet(isPresented: $showSettings) {
                 RemoteSourceSettingsView()
             }
-            .sheet(item: $selectedTitle) { title in
-                RemoteTitleDetailView(title: title, provider: provider, downloadManager: downloadManager, modelContext: modelContext)
+            #if os(iOS)
+            .fullScreenCover(item: $playback) { request in
+                PlayerView(item: request.item, library: [request.item])
+            }
+            #else
+            .sheet(item: $playback) { request in
+                MacPlayerView(item: request.item, library: [request.item])
+            }
+            #endif
+            .posterEditorPickers(posterEditor)
+            .alert("Errore", isPresented: Binding(
+                get: { actionError != nil || posterEditor.error != nil },
+                set: { if !$0 { actionError = nil; posterEditor.error = nil } }
+            )) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(actionError ?? posterEditor.error ?? "")
             }
             // Il provider ha già aggiornato il catalogo in memoria: basta
             // rileggere i risultati per mostrare la copertina nuova in griglia.
@@ -81,7 +115,6 @@ struct SearchView: View {
                 runSearch(for: query, debounce: false)
             }
             .onReceive(NotificationCenter.default.publisher(for: .remoteSourceConfigChanged)) { _ in
-                provider = RemoteContentProviderRegistry.makeProvider()
                 results = []
                 searchError = nil
                 runSearch(for: query, debounce: false)
@@ -123,12 +156,24 @@ struct SearchView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(results) { title in
-                        Button {
-                            selectedTitle = title
-                        } label: {
-                            SearchResultCard(title: title)
+                        if title.kind == .series {
+                            NavigationLink {
+                                SeriesDetailView(remoteTitle: title, showName: libraryShowName(for: title))
+                            } label: {
+                                SearchResultCard(title: title)
+                            }
+                            .buttonStyle(PressableButtonStyle())
+                            .contextMenu { PosterMenuItems(title: title, editor: posterEditor) }
+                        } else {
+                            Button {
+                                playMovie(title)
+                            } label: {
+                                SearchResultCard(title: title)
+                            }
+                            .buttonStyle(PressableButtonStyle())
+                            .disabled(isPreparingPlayback)
+                            .contextMenu { movieMenu(title) }
                         }
-                        .buttonStyle(PressableButtonStyle())
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -137,8 +182,58 @@ struct SearchView: View {
             }
             .safeAreaPadding(.horizontal, 16)
             .refreshable {
-                provider = RemoteContentProviderRegistry.makeProvider()
+                RemoteContentProviderRegistry.invalidate()
                 await performSearch(for: trimmedQuery)
+            }
+        }
+    }
+
+    // MARK: - Film e serie
+
+    private func libraryShowName(for title: RemoteTitle) -> String? {
+        let names = Set(libraryItems.filter { $0.kind == .episode }.compactMap(\.showName))
+        return ShowNameMatcher.bestMatch(for: title.name, in: Array(names).sorted())
+    }
+
+    /// Tenendo premuto un film: scaricarlo (l'azione che il tap non fa),
+    /// aggiungerlo ai Film senza scaricarlo, cambiarne la copertina.
+    @ViewBuilder
+    private func movieMenu(_ title: RemoteTitle) -> some View {
+        let inLibrary = RemoteTitleActions.libraryMovie(named: title.name, in: libraryItems)
+        Button("Riproduci", systemImage: "play.fill") { playMovie(title) }
+        if let inLibrary, !inLibrary.isRemote {
+            Label("Già scaricato", systemImage: "checkmark.circle")
+        } else if downloadManager.movieDownload(title: title.name)?.state.isActive == true {
+            Label("Download in corso", systemImage: "arrow.down.circle.dotted")
+        } else {
+            Button("Scarica per l'offline", systemImage: "arrow.down.circle") {
+                Task {
+                    do { try await RemoteTitleActions.downloadMovie(title, provider: provider) }
+                    catch { actionError = error.localizedDescription }
+                }
+            }
+        }
+        if inLibrary == nil {
+            Button("Aggiungi ai Film", systemImage: "plus.circle") {
+                Task {
+                    do {
+                        try await RemoteTitleActions.addMovieToLibrary(title, provider: provider, library: libraryItems, modelContext: modelContext)
+                    } catch { actionError = error.localizedDescription }
+                }
+            }
+        }
+        PosterMenuItems(title: title, editor: posterEditor)
+    }
+
+    private func playMovie(_ title: RemoteTitle) {
+        isPreparingPlayback = true
+        Task {
+            defer { isPreparingPlayback = false }
+            do {
+                let item = try await RemoteTitleActions.playableMovie(title, provider: provider, library: libraryItems)
+                playback = PlaybackRequest(item: item)
+            } catch {
+                actionError = error.localizedDescription
             }
         }
     }

@@ -419,8 +419,13 @@ actor HTTPTreeProvider: RemoteContentProvider {
                         } catch {
                             // La radice deve segnalare l'errore (configurazione
                             // o credenziali sbagliate). Una sottocartella che
-                            // non si lascia elencare viene semplicemente saltata.
+                            // non si lascia elencare viene semplicemente saltata,
+                            // ma NON se è un errore di rete: saltarle tutte
+                            // dava un catalogo vuoto ("0 elementi", copertine
+                            // personalizzate sparite) con il Pi a singhiozzo,
+                            // invece del messaggio "server non raggiungibile".
                             if rootBatch { throw error }
+                            if case RemoteProviderError.unreachable = error { throw error }
                             return (relComponents, [])
                         }
                     }

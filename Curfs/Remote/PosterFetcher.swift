@@ -25,7 +25,7 @@
 //      non trova nemmeno "Inception" o "The Matrix", e ogni filtro per film
 //      restituisce 0 risultati) ma per le serie funziona bene. L'artwork
 //      iTunes viene ingrandito rispetto alla miniatura 100x100 di default. `RemoteTitle.posterURL` era già usato
-//  da `SearchResultCard`/`RemoteTitleDetailView` (AsyncImage) — mancava solo
+//  da `SearchResultCard`/`SeriesDetailView` (AsyncImage) — mancava solo
 //  chi lo valorizzasse: vedi `HTTPTreeProvider.buildCatalog`.
 //
 //  NB: `media=movie` come parametro della query iTunes restituisce

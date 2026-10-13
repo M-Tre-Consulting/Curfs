@@ -56,9 +56,9 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
   registry), `HTTPTreeProvider` (implementazione per server HTTP statico con elenchi JSON),
   `RemoteSourceConfig`/`RemoteSourceStore` (config persistita), `RemoteDownloadManager` (download
   offline).
-- `Views/` — schermate libreria (`LibraryHomeView`, `ShowDetailView`), card (`ShowCardView`,
+- `Views/` — schermate libreria (`LibraryHomeView`, `SeriesDetailView`), card (`ShowCardView`,
   `MovieCardView`, `ContinueWatchingCard`, `EpisodeRowView`) e `Views/Search/` (`SearchView`,
-  `SearchResultCard`, `RemoteTitleDetailView`, `RemoteSourceSettingsView`, `DownloadsOverlay`).
+  `SearchResultCard`, `RemoteTitleActions`, `RemoteSourceSettingsView`, `DownloadsOverlay`).
 - `Utilities/` — `AppBackground`, `ProgressLineView`, `PressableButtonStyle`, `ThumbnailImageView`,
   `TimeFormatter`, `CardGrid` (colonne delle griglie di card).
 
@@ -106,15 +106,13 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     `.searchable(placement: .navigationBarDrawer)`/`.keyboardType`/`.textInputAutocapitalization`
     dentro `#if os(iOS)` (non esistono su Mac). `.fullScreenCover` (solo iOS) → `#if os(iOS)
     fullScreenCover #else sheet #endif` nei 3 punti che aprono il player
-    (`LibraryHomeView`/`ShowDetailView`/`RemoteTitleDetailView`).
+    (`LibraryHomeView`/`SearchView`/`SeriesDetailView`).
   - ⚠️ **`Menu` con `Button` che mutano uno `@State` che ridisegna lo stesso `Menu`**: su macOS
     l'NSMenu può restare bloccato aperto (non capita su iOS, dove UIKit gestisce i menu
-    diversamente) — capitato con "Salva in:" in `RemoteTitleDetailView`. Mitigato rimandando
+    diversamente) — capitato con "Salva in:" (oggi in `SeriesDetailView`). Mitigato rimandando
     l'assegnazione allo `@State` con `Task { @MainActor in ... }` dentro l'azione del `Button`
-    invece di farla sincrona. Come rete di sicurezza aggiuntiva (il pannello di dettaglio è
-    presentato come sheet, e la sola "Chiudi" in toolbar su Mac non era un'uscita abbastanza
-    affidabile/visibile), `RemoteTitleDetailView` ha anche una X separata sempre visibile in alto
-    a destra (`#if os(macOS)`, `.overlay(alignment: .topTrailing)`) indipendente dalla toolbar.
+    invece di farla sincrona. (La vecchia scheda di Cerca era uno sheet con una X di chiusura extra su Mac: dal 2026-10-13
+    la scheda serie è una pagina in navigazione, il problema non si pone più.)
 - **Barra in alto della finestra Mac** (2.3.3): aveva una fascia nera all'apertura che spariva
   al primo cambio di sezione e non tornava più (sfondo della toolbar mostrato/nascosto da
   SwiftUI a seconda della fase). Fix: `cleanWindowToolbar()` (`Utilities/WindowChrome.swift`,
@@ -162,7 +160,7 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   `ZStack` di sfondo verso l'alto — confermato misurando la geometria a runtime (non solo per
   teoria): su schermi più stretti di 440pt (qualunque iPhone: il più largo, i Pro Max, arriva a
   428/430) lo `ZStack` che contiene `AppBackground()` (in `LibraryHomeView`/`SearchView`/
-  `ShowDetailView`/`RemoteTitleDetailView`, tutte le view che lo montano) finiva centrato su una
+  `SeriesDetailView`, tutte le view che lo montano) finiva centrato su una
   larghezza fittizia di 440pt invece che sulla larghezza vera dello schermo, spingendo fuori dal
   bordo sinistro tutto il contenuto per metà della differenza — inosservabile sugli schermi più
   larghi (13 Pro Max: solo 6pt di offset, sotto la soglia percepibile), vistoso su quelli più
@@ -180,7 +178,7 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   da ricordare come tecnica se si ripresenta un bug di layout simile "isolato ma non capito".
 - Le card di griglia (`ShowCardView`, `MovieCardView`, `SearchResultCard`) usano
   `.aspectRatio(_, contentMode: .fit)` + `.frame(maxWidth: .infinity)` per non spingersi oltre la
-  colonna; dove la miniatura ha già un frame fisso (`EpisodeRowView`, header di `ShowDetailView`)
+  colonna; dove la miniatura ha già un frame fisso (`EpisodeRowView`, header di `SeriesDetailView`)
   resta `.fill` (è comunque limitata).
 
 - **`LibraryStorage.thumbnailsDirectory` è in Application Support, NON in Caches**: un
@@ -240,9 +238,9 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     Tutti gli altri punti si limitano ad accodare: avvio app (`IntroCreditsWarmup` →
     `enqueueLibrary`), import da File e download finalizzati (`enqueueShows`: TUTTA la serie,
     i nuovi prima — un episodio nuovo cambia i vicini e quindi la cache degli altri), apertura di
-    una stagione in `ShowDetailView` e episodio successivo nel player (`prioritize`: solo un cambio
+    una stagione in `SeriesDetailView` e episodio successivo nel player (`prioritize`: solo un cambio
     di ordine, passano in testa). ⚠️ **Mai far girare l'analisi dentro un `.task` di una view**:
-    bug reale (2026-09-30) — l'analisi girava nel `.task` di `ShowDetailView`, uscire/cambiare
+    bug reale (2026-09-30) — l'analisi girava nel `.task` di `SeriesDetailView`, uscire/cambiare
     stagione lo cancellava a metà di un episodio e `FingerprintExtractor`/`analyze` salvavano
     comunque impronte parziali + risultato vuoto ⇒ quell'episodio restava in cache "analizzato,
     nessuna sigla", uno bruciato a ogni uscita. Ora entrambi **non salvano nulla se
@@ -255,7 +253,7 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     la misurino. `PlayerViewModel.onDurationResolved()` rilancia l'analisi una volta appena la
     durata è nota, così il pulsante compare anche alla PRIMA riproduzione di un episodio appena
     importato invece che solo dalla seconda.
-  - **Indicatore di stato** (`IntroAnalysisStatus`, `@Observable`): in `ShowDetailView` mostra
+  - **Indicatore di stato** (`IntroAnalysisStatus`, `@Observable`): in `SeriesDetailView` mostra
     un progresso "Analisi sigla… N/M" mentre l'app calcola. Aggiornato da tutti i punti di warm;
     solo informativo, non tocca la logica. `IntroCreditsAnalyzer.cacheStatus(for:siblings:)` è la
     lettura di sola cache usata per popolarlo senza ricalcolare (`.missing` / `.readyNoIntro` /
@@ -270,18 +268,38 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     semplicemente concluso "niente da saltare qui".
   - **Mai in streaming**: `siblingEpisodes` è popolato solo per item locali (confronterebbe
     fotogrammi di ogni episodio via rete).
-  - **Tasto manuale "Ricalcola"** (icona ⟲ accanto all'indicatore in `ShowDetailView`): agisce
+  - **Tasto manuale "Ricalcola"** (icona ⟲ accanto all'indicatore in `SeriesDetailView`): agisce
     **solo sugli episodi della stagione mostrata** (`IntroAnalysisQueue.recompute(ids)`): ferma
     il worker e aspetta che si fermi (così non riscrive i file appena cancellati), cancella i file
     di quegli episodi (`IntroCreditsAnalyzer.resetDiskCache(for:)`, per prefisso UUID),
     `IntroAnalysisStatus.reset(ids)`, poi li rimette in testa alla coda. Le altre stagioni/serie
     non vengono toccate.
+- **Scheda serie unica `SeriesDetailView`** (2026-10-13, su richiesta dell'utente: prima c'erano
+  due schede diverse — in Cerca uno sheet streaming/aggiungi senza progressi né download per
+  episodio, in Libreria una pagina con progressi ma senza download). Ora la stessa pagina (push,
+  non sheet) si apre da Cerca e da Libreria e **unisce** gli episodi in libreria (locali + voci
+  streaming della serie `showName`) con quelli del catalogo del server, chiave stagione|episodio:
+  il locale vince sullo streaming. Da Libreria il titolo remoto si cerca nel catalogo per nome
+  (`ShowNameMatcher`, best-effort); da Cerca `showName` è la serie in libreria che corrisponde
+  (stesso matcher) o il nome del server, cambiabile con "Salva in:". Tap su un episodio = file
+  scaricato se c'è, altrimenti streaming; la "libreria" passata al player contiene tutti gli
+  episodi di tutte le stagioni (scaricati e non) per l'auto-avanzamento. Ogni riga ha il proprio
+  tasto download con anello di progresso (tocca per annullare) — per questo `RemoteDownloadItem`
+  espone ora la `request` (serie/stagione/episodio/titolo) e `RemoteDownloadManager` ha
+  `download(show:season:episode:)`/`movieDownload(title:)`. Il catalogo è condiviso tramite
+  `RemoteContentProviderRegistry.shared` (si ricrea da solo al cambio di configurazione;
+  `invalidate()` per il pull-to-refresh di Cerca) invece di un provider per view.
+- **Film**: tap = riproduci subito (in Cerca: il file scaricato se c'è, poi la voce streaming già
+  in libreria, sennò una nuova — `RemoteTitleActions.playableMovie`), **tenendo premuto** si
+  scarica / si aggiunge ai Film / si cambia copertina. Niente più scheda film a tre pulsanti
+  (bocciata dall'utente). In Libreria un film ancora in streaming ha "Scarica per l'offline" nel
+  menu contestuale (`RemoteTitleActions.download(_:)`: stesso URL dello streaming).
 - **"Continua a guardare"** in home mostra un solo item (l'ultimo in assoluto per
   `lastPlayedAt`), non tutti i video a metà. Dentro una serie, "Riprendi"
   (`ShowSummary.nextToWatch`) punta all'ultimo episodio *di quella serie* effettivamente lasciato
   a metà (per `lastPlayedAt`), non al primo non finito in ordine numerico.
 - **Eliminazione libreria**: esistono già eliminazione per singolo episodio/film (context menu),
-  intera serie (context menu in home) e singola stagione (tasto cestino in `ShowDetailView`,
+  intera serie (context menu in home) e singola stagione (tasto cestino in `SeriesDetailView`,
   tramite `LibraryMaintenance.deleteSeason`). I file vengono copiati nel sandbox dell'app
   all'import: cancellare la sorgente originale non li tocca, vanno eliminati dall'app stessa.
 - **Sezione "Cerca" / streaming remoto** (`Remote/`, `Views/Search/`): si collega a un server
@@ -327,8 +345,8 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   - **Persistenza lazy**: guardando in streaming senza "aggiungere", l'item viene inserito in
     SwiftData al primo avanzamento reale (`PlayerViewModel.persistProgress`, item ancora senza
     `modelContext`) e da lì compare in "Continua a guardare" e in griglia.
-  - **Aggiungi alla libreria (streaming)** (`RemoteTitleDetailView.addSeasonToLibrary` /
-    `addMovieToLibrary`): inserisce voci `MediaItem` remote per l'intera stagione / il film
+  - **Aggiungi alla libreria (streaming)** (`SeriesDetailView.addAllToLibrary` /
+    `RemoteTitleActions.addMovieToLibrary`): inserisce voci `MediaItem` remote per l'intera stagione / il film
     **senza scaricare**. È l'azione primaria; il download offline via `RemoteDownloadManager`
     (`downloadSeason` / `downloadMovie`) è l'alternativa secondaria.
   - **Serie di destinazione** (menu "Salva in:"): `effectiveShowName` = target scelto tra le
@@ -346,7 +364,7 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     `tailscale serve --https=443`; l'app usa l'URL `*.ts.net` (cert valido ⇒ niente eccezioni ATS).
   - **Locandine ufficiali per film/serie remote** (`Remote/PosterFetcher.swift`): il server del
     Pi non ha metadati, solo file — `HTTPTreeProvider.buildCatalog` valorizza
-    `RemoteTitle.posterURL` (già consumato da `SearchResultCard`/`RemoteTitleDetailView` via
+    `RemoteTitle.posterURL` (già consumato da `SearchResultCard`/`SeriesDetailView` via
     `AsyncImage`, mancava solo chi lo popolasse) interrogando l'**API di ricerca di iTunes**
     (`itunes.apple.com/search`), pubblica e senza chiave/account. ⚠️ **`media=movie` come
     parametro di query restituisce sistematicamente 0 risultati** (comportamento osservato, non
@@ -368,9 +386,9 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     avvolge il contenuto in un `GeometryReader` e forza `.frame(width:proxy.size.width,
     height:proxy.size.height)` — nessuna dimensione naturale propria, si comporta come il
     placeholder. Dove il contenitore ha già un `.frame(height:)` esplicito (es. l'header a 200pt
-    di `RemoteTitleDetailView`/`ShowDetailView`) il problema non si presenta comunque.
+    di `SeriesDetailView`) il problema non si presenta comunque.
     `RemotePosterImage` è anche il punto da cui `ShowCardView`/`MovieCardView`/
-    `ShowDetailView.posterBanner` mostrano la locandina (2:3, invece del frame video 16:9) per un
+    `SeriesDetailView.posterArt` mostrano la locandina (2:3, invece del frame video 16:9) per un
     titolo che viene dal catalogo remoto. ⚠️ **Sta su `MediaItem.isRemoteOrigin`/
     `ShowSummary.hasRemoteOrigin`, non su `isRemote`/`isStreaming`**: la prima versione usava
     `isStreaming` (tutti gli episodi ancora in streaming) e la copertina tornava al frame video
@@ -391,7 +409,8 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     Best-effort per nome, non per ID: un episodio salvato sotto un nome di serie diverso da quello
     del Pi (vedi "Salva in:"/`effectiveShowName`) non viene riconosciuto.
   - **Copertine scelte dall'utente, salvate sul Pi accanto al contenuto** (2026-09-27): in
-    `RemoteTitleDetailView` il pulsante "Cambia copertina" sul banner (iPhone: menu Foto/File/
+    `SeriesDetailView` il pulsante sulla locandina (e per i film il menu contestuale in Cerca,
+    `PosterEditor`/`PosterMenuItems` in `RemoteTitleActions.swift`) (iPhone: Foto/File/
     Ripristina; Mac: pulsanti separati, niente `Menu` per il gotcha NSMenu sopra) prende
     un'immagine, la ritaglia al centro a 2:3 e la ridimensiona a max 1000×1500 JPEG
     (`Utilities/PosterImageProcessing`), poi la carica con **PUT** (WebDAV di nginx) tramite
@@ -471,7 +490,7 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
     stesso meccanismo pensato per la perdita di Caches): un item remoto aggiunto alla libreria
     ottiene la sua miniatura reale la prima volta che la card viene mostrata in griglia.
     ⚠️ **Bug reale trovato e corretto**: un episodio/film aggiunto alla libreria da remoto
-    (`RemoteTitleDetailView.addSeasonToLibrary`/`addMovieToLibrary`) ha `duration == 0` finché non
+    (`SeriesDetailView.addAllToLibrary`/`RemoteTitleActions.addMovieToLibrary`) ha `duration == 0` finché non
     viene riprodotto almeno una volta (per l'import locale e per il download la durata è già nota
     a questo punto, misurata altrove — qui no). Il calcolo del fotogramma target
     (`duration > 4 ? min(duration * 0.1, 30) : 0`) cadeva quindi sempre a t=0 → quasi sempre nero,
@@ -505,6 +524,15 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   plural del catalogo. Un testo nuovo va aggiunto al catalogo in tutte e 5 le lingue (Xcode
   aggiunge la chiave da solo quando si builda dall'IDE, ma senza traduzioni). I testi dell'app
   sono generici (nessun riferimento al Pi/tailnet del proprietario): tenerli così.
+- **Catalogo vuoto con il Pi a singhiozzo** (2026-10-13): `HTTPTreeProvider.walk` salta le
+  sottocartelle che non si lasciano elencare, ma un errore di rete (`.unreachable`) su una di
+  queste ora fa fallire tutto il caricamento. Prima veniva saltato anche quello: con la radice
+  raggiungibile e le sottocartelle in errore il catalogo risultava vuoto ("0 elementi" anche nel
+  test di connessione) e `replaceOverrides([])` cancellava le copertine personalizzate in memoria.
+- **Download e fluidità**: `BackgroundDownloadEngine` avvisa la UI dell'avanzamento al massimo
+  ogni 0,25 s (il callback `didWriteData` arriva centinaia di volte al secondo e faceva scattare
+  lo scorrimento della scheda serie). Per lo stesso motivo in `SeriesDetailView` i download li
+  osservano solo `DownloadControl`/`SeasonDownloadButton`, non il `body` della pagina.
 - **"Errore TLS" su Mac = Tailscale spento**, non la firma dell'app: senza tailnet il nome
   `*.ts.net` si risolve col DNS pubblico ai frontend di Tailscale (185.40.234.x) che chiudono
   l'handshake (`SSL_ERROR_SYSCALL`, `URLError.secureConnectionFailed`). `HTTPTreeProvider.send`

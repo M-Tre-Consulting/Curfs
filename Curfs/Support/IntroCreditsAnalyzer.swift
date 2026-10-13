@@ -61,7 +61,7 @@ actor IntroCreditsAnalyzer {
 
     /// Cancella la cache su disco di sigla/coda (impronte + risultati) SOLO
     /// per questi episodi — usata dal tasto manuale "Ricalcola" in
-    /// `ShowDetailView` per la stagione mostrata, quando l'utente non si fida
+    /// `SeriesDetailView` per la stagione mostrata, quando l'utente non si fida
     /// del risultato. I file di un episodio iniziano tutti con il suo UUID
     /// (`<id>-v<N>.json`, `<id>-introcredits.json`).
     nonisolated static func resetDiskCache(for ids: [UUID]) {

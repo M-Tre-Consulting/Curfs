@@ -163,7 +163,7 @@ struct LibraryHomeView: View {
                             LazyVGrid(columns: columns, spacing: 20) {
                                 ForEach(shows) { show in
                                     NavigationLink {
-                                        ShowDetailView(show: show)
+                                        SeriesDetailView(showName: show.name)
                                     } label: {
                                         ShowCardView(show: show)
                                     }
@@ -188,11 +188,22 @@ struct LibraryHomeView: View {
                                         MovieCardView(item: movie)
                                     }
                                     .buttonStyle(PressableButtonStyle())
+                                    // Tap = guarda (in streaming se non è
+                                    // scaricato); tenendo premuto si scarica.
                                     .contextMenu {
+                                        if movie.isRemote {
+                                            if RemoteDownloadManager.shared.movieDownload(title: movie.title)?.state.isActive == true {
+                                                Label("Download in corso", systemImage: "arrow.down.circle.dotted")
+                                            } else {
+                                                Button("Scarica per l'offline", systemImage: "arrow.down.circle") {
+                                                    RemoteTitleActions.download(movie)
+                                                }
+                                            }
+                                        }
                                         Button(role: .destructive) {
                                             pendingDeleteMovie = movie
                                         } label: {
-                                            Label("Elimina film", systemImage: "trash")
+                                            Label(movie.isRemote ? String(localized: "Togli dai Film") : String(localized: "Elimina film"), systemImage: "trash")
                                         }
                                     }
                                 }

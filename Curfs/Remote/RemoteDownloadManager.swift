@@ -44,6 +44,19 @@ struct RemoteDownloadItem: Identifiable, Sendable {
     let id: UUID
     var label: String
     var state: RemoteDownloadState
+    /// Cosa si sta scaricando: serve alla scheda serie / a Cerca per mostrare
+    /// il progresso sul singolo episodio o film.
+    var request: RemoteDownloadRequest
+}
+
+extension RemoteDownloadState {
+    /// Scaricamento ancora da concludere (anche in pausa, da riprendere).
+    var isActive: Bool {
+        switch self {
+        case .downloading, .paused, .finalizing: return true
+        case .completed, .failed: return false
+        }
+    }
 }
 
 // MARK: - Facciata @MainActor osservata dalla UI
@@ -67,11 +80,23 @@ final class RemoteDownloadManager {
     }
 
     var hasActiveDownloads: Bool {
-        items.contains { item in
-            switch item.state {
-            case .completed, .failed: return false
-            case .downloading, .paused, .finalizing: return true
-            }
+        items.contains { $0.state.isActive }
+    }
+
+    /// Ultimo download (non completato) di un episodio: quelli completati
+    /// sono già in libreria come item locale.
+    func download(show: String, season: Int, episode: Int) -> RemoteDownloadItem? {
+        items.last {
+            $0.request.kind == .episode && $0.request.showName == show
+                && $0.request.season == season && $0.request.episode == episode
+                && $0.state != .completed
+        }
+    }
+
+    func movieDownload(title: String) -> RemoteDownloadItem? {
+        items.last {
+            $0.request.kind == .movie && $0.request.title.caseInsensitiveCompare(title) == .orderedSame
+                && $0.state != .completed
         }
     }
 
@@ -122,6 +147,7 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
     private var autoResumeAttempts: [UUID: Int] = [:]
     private var backgroundCompletionHandler: (() -> Void)?
     private var lastPersist = Date.distantPast
+    private var lastProgressEmit = Date.distantPast
 
     private static let maxAutoResumeAttempts = 4
 
@@ -320,10 +346,19 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
             guard var record = self.records[id] else { return }
             record.receivedBytes = totalBytesWritten
             if totalBytesExpectedToWrite > 0 { record.totalBytes = totalBytesExpectedToWrite }
+            let wasDownloading = record.status == .downloading
             record.status = .downloading
             self.records[id] = record
             self.persist(force: false)
-            self.emit()
+            // Questo callback arriva centinaia di volte al secondo: avvisare
+            // la UI ogni volta la faceva ridisegnare di continuo (scorrimento
+            // a scatti durante i download). Basta qualche volta al secondo;
+            // i cambi di stato (pausa, fine, errore) passano subito.
+            let now = Date()
+            if !wasDownloading || now.timeIntervalSince(self.lastProgressEmit) > 0.25 {
+                self.lastProgressEmit = now
+                self.emit()
+            }
         }
     }
 
@@ -542,7 +577,11 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
         let snapshot: [RemoteDownloadItem] = order.compactMap { id in
             guard let record = records[id] else { return nil }
             let label = record.showName.map { "\($0) · \(record.title)" } ?? record.title
-            return RemoteDownloadItem(id: id, label: label, state: record.uiState)
+            let request = RemoteDownloadRequest(
+                title: record.title, kind: MediaKind(rawValue: record.kind) ?? .movie,
+                showName: record.showName, season: record.season, episode: record.episode
+            )
+            return RemoteDownloadItem(id: id, label: label, state: record.uiState, request: request)
         }
         let onChange = self.onChange
         DispatchQueue.main.async { onChange?(snapshot) }

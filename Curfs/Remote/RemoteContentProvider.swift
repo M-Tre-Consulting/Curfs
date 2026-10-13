@@ -172,4 +172,20 @@ enum RemoteContentProviderRegistry {
         guard config.isConfigured else { return UnconfiguredRemoteProvider() }
         return HTTPTreeProvider(config: config)
     }
+
+    @MainActor private static var cached: (config: RemoteSourceConfig, provider: RemoteContentProvider)?
+
+    /// Provider condiviso da Cerca e dalla scheda serie della libreria, così
+    /// il catalogo del server si costruisce una volta sola. Si ricrea da solo
+    /// se la configurazione salvata cambia.
+    @MainActor static var shared: RemoteContentProvider {
+        let config = RemoteSourceStore.current
+        if let cached, cached.config == config { return cached.provider }
+        let provider = makeProvider(config: config)
+        cached = (config, provider)
+        return provider
+    }
+
+    /// Scarta il catalogo in memoria (pull-to-refresh di Cerca).
+    @MainActor static func invalidate() { cached = nil }
 }
