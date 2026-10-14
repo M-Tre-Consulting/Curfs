@@ -128,9 +128,71 @@ function libraryView() {
   const recency = (t) => store.lastPlayed(t.kind === 'series' ? allEpisodes(t).map((e) => e.id) : [t.id])?.at || 0;
   const order = store.libraryIds();
   titles.sort((a, b) => recency(b) - recency(a) || order.indexOf(a.id) - order.indexOf(b.id));
+  if (state.editing) {
+    return h('div', {},
+      h('p', { class: 'hint' }, 'Premi OK su un titolo per toglierlo dalla libreria.'),
+      h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))));
+  }
+  const resume = continueTarget();
+  const suggestions = suggestedTitles(7);
   return h('div', {},
-    state.editing && h('p', { class: 'hint' }, 'Premi OK su un titolo per toglierlo dalla libreria.'),
-    h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))));
+    resume && continueHero(resume),
+    h('h2', { class: 'section' }, 'La tua libreria'),
+    h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))),
+    suggestions.length && h('h2', { class: 'section' }, 'Da scoprire sul server'),
+    suggestions.length && h('div', { class: 'grid' }, suggestions.map((t) => card(t))));
+}
+
+/**
+ * Cosa riprendere all'apertura: l'episodio o il film lasciato a metà più di
+ * recente; se l'ultimo episodio era finito, il successivo della serie.
+ */
+function continueTarget() {
+  let best = null;
+  for (const title of libraryIdsWithTitles()) {
+    const eps = title.kind === 'series' ? allEpisodes(title) : null;
+    const last = store.lastPlayed(eps ? eps.map((e) => e.id) : [title.id]);
+    if (!last || (best && last.at <= best.last.at)) continue;
+    if (eps) {
+      const i = eps.findIndex((e) => e.id === last.id);
+      const ep = last.done ? eps[i + 1] : eps[i];
+      if (ep) best = { title, ep, last, next: last.done };
+    } else if (!last.done) {
+      best = { title, ep: null, last, next: false };
+    }
+  }
+  return best;
+}
+
+function continueHero(c) {
+  const p = c.next ? null : c.last;
+  const left = p && p.dur ? Math.max(1, Math.round((p.dur - p.pos) / 60)) : 0;
+  return h('button', {
+    class: 'f hero-card', dataset: { key: 'continue', autofocus: true },
+    onclick: () => { state.lastKey = 'continue'; play(c.title, c.ep); },
+  },
+  posterArt(c.title, 'poster hero-poster'),
+  h('div', { class: 'hero-info' },
+    h('div', { class: 'hero-label' }, c.next ? 'Prossimo episodio' : 'Continua a guardare'),
+    h('div', { class: 'hero-title' }, c.title.name),
+    c.ep && h('div', { class: 'hero-sub' }, `${code(c.ep.season, c.ep.number)} · ${c.ep.title}`),
+    p?.dur ? h('div', { class: 'hero-bar' }, h('i', { style: `width:${(p.pos / p.dur * 100).toFixed(1)}%` })) : null,
+    h('div', { class: 'hero-hint' }, left ? `▶  OK per riprendere · mancano ${left} min` : '▶  OK per guardarlo')));
+}
+
+/** Titoli del catalogo mai iniziati e non in libreria; l'ordine cambia una volta al giorno. */
+function suggestedTitles(count) {
+  const day = Math.floor(Date.now() / 86400000);
+  const score = (id) => {
+    let x = day;
+    for (let i = 0; i < id.length; i++) x = (x * 31 + id.charCodeAt(i)) >>> 0;
+    return x;
+  };
+  return (state.catalog?.titles || [])
+    .filter((t) => !store.inLibrary(t.id)
+      && !store.lastPlayed(t.kind === 'series' ? allEpisodes(t).map((e) => e.id) : [t.id]))
+    .sort((a, b) => score(a.id) - score(b.id))
+    .slice(0, count);
 }
 
 function searchView() {
