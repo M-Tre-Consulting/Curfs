@@ -151,6 +151,22 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   usato su iOS per il risveglio da app terminata — concetto che su Mac non si applica allo stesso
   modo (l'app non viene sospesa/terminata dal sistema come su iOS).
 
+## Curfs TV (`tv/`, dal 2026-10-14)
+
+Web app per la TV Hisense VIDAA dell'utente, **non Swift**: HTML/CSS/JS senza framework né build
+(`tv/app/`, moduli ES), servita dal Pi e aperta da un riquadro nel launcher della TV (installato
+con le funzioni di Sidee, vedi `tv/README.md`). Scope voluto dall'utente: libreria, serie →
+episodi, film → parte, rimozione, catalogo; **niente sottotitoli e niente download** (una web app
+non può salvare video sulla TV). Decisioni:
+- `catalog.js` è il port di `FileNameParser` + `HTTPTreeProvider.classify`/`resolveGroupsAndMovies`:
+  se cambiano le regole di riconoscimento in Swift, allinearlo.
+- Navigazione spaziale in `focus.js` (elemento più vicino nella direzione, classe `f`), niente indici.
+- TV lenta (MT9602): niente blur/ombre grandi, solo transform/opacity, scroll senza animazione.
+- nginx: ingresso separato `:8092` solo LAN e **senza password** (il `<video>` della TV non gestisce
+  la basic auth), `/media/` = cartella video, `/imdb/` = proxy per le locandine IMDb (niente CORS).
+- `tv/server/faststart.sh`: sposta il `moov` all'inizio (ffmpeg `-c copy`); senza, sulla TV ~7 s
+  per partire. Sul Pi gira anche di notte da cron.
+
 ## Decisioni/gotcha non ovvi dal codice
 
 - **Griglie di card responsive**: `LibraryHomeView` / `SearchView` NON usano

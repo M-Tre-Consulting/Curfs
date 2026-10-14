@@ -1,0 +1,135 @@
+/* Curfs TV. Pensato per 1920×1080 visto dal divano, su una TV con GPU
+   debole: colori pieni, niente sfocature né ombre grandi, animazioni solo di
+   transform/opacity. */
+
+:root {
+  --bg: #12081f;
+  --bg-2: #1d0f33;
+  --card: #2a1748;
+  --line: #3a2263;
+  --accent: #8b4dff;
+  --accent-2: #b388ff;
+  --text: #ffffff;
+  --muted: #b9a6d9;
+  --danger: #e5484d;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; width: 1920px; height: 1080px; overflow: hidden;
+  background: radial-gradient(ellipse at 20% 0%, #2b1452 0%, var(--bg) 55%) var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.scroll::-webkit-scrollbar { display: none; }
+.hidden { opacity: 0 !important; pointer-events: none; }
+
+/* --- Barra in alto */
+.top { display: flex; align-items: center; gap: 48px; padding: 44px 96px 20px; }
+.brand { font-size: 44px; font-weight: 800; letter-spacing: .5px; color: var(--accent-2); }
+.tabs { display: flex; gap: 14px; flex: 1; }
+.tab {
+  font-size: 30px; font-weight: 600; padding: 12px 30px; border-radius: 40px; color: var(--muted);
+  border: 3px solid transparent; transition: transform .12s ease-out;
+}
+.tab.active { color: var(--text); background: var(--card); }
+.tab.focus { border-color: var(--accent-2); color: var(--text); transform: scale(1.06); }
+
+.pill {
+  font-size: 28px; font-weight: 600; padding: 16px 34px; border-radius: 40px; background: var(--card);
+  border: 3px solid transparent; transition: transform .12s ease-out; white-space: nowrap;
+}
+.pill.primary { background: var(--accent); }
+.pill.danger { background: var(--danger); }
+.pill.focus { border-color: #fff; transform: scale(1.06); }
+
+/* --- Griglie di card */
+main.scroll { padding: 10px 96px 80px; }
+.section { font-size: 34px; margin: 26px 0 22px; color: var(--muted); font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(7, 220px); gap: 46px 30px; justify-content: space-between; }
+.hint { font-size: 26px; color: var(--muted); margin: 0 0 20px; }
+
+.card { position: relative; display: block; width: 220px; transition: transform .14s ease-out; }
+.card .poster { border: 4px solid transparent; }
+.card.focus { transform: scale(1.08); z-index: 1; }
+.card.focus .poster { border-color: var(--accent-2); }
+.card-title {
+  margin-top: 12px; font-size: 22px; line-height: 1.25; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.card.focus .card-title { color: var(--text); }
+.card.editing .poster { opacity: .55; }
+.badge, .remove {
+  position: absolute; top: 10px; right: 10px; width: 42px; height: 42px; border-radius: 21px;
+  display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800;
+}
+.badge { background: var(--accent); }
+.remove { background: var(--danger); }
+.bar { position: absolute; left: 14px; right: 14px; top: 300px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); }
+.bar i, .ep-bar i, .osd-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent-2); }
+
+.poster { position: relative; width: 220px; height: 330px; border-radius: 18px; overflow: hidden; background: var(--card); }
+.poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .25s; }
+.poster.loaded img { opacity: 1; }
+.poster-fallback {
+  position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 22px; font-size: 26px; font-weight: 700;
+  background: linear-gradient(160deg, #3b1f6b, #1a0d30);
+}
+
+/* --- Stati vuoti / caricamento */
+.empty { height: 700px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.empty h2 { font-size: 44px; margin: 0 0 12px; }
+.empty p { font-size: 28px; color: var(--muted); margin: 6px 0; }
+.error { color: #ff9a9e !important; font-size: 26px; }
+.spinner {
+  width: 72px; height: 72px; border-radius: 50%; border: 7px solid rgba(255,255,255,.18); border-top-color: var(--accent-2);
+  animation: spin .9s linear infinite;
+}
+.spinner.center { position: absolute; left: 50%; top: 50%; margin: -36px 0 0 -36px; transition: opacity .2s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Scheda serie */
+.detail { padding: 70px 96px 80px; }
+.hero { display: flex; gap: 60px; align-items: flex-end; }
+.poster.big { width: 300px; height: 450px; border-radius: 22px; flex: none; }
+.hero-text h1 { font-size: 64px; margin: 0 0 12px; line-height: 1.1; }
+.meta { font-size: 28px; color: var(--muted); margin: 0 0 36px; }
+.row { display: flex; gap: 24px; flex-wrap: wrap; }
+.seasons { display: flex; gap: 14px; margin: 54px 0 10px; flex-wrap: wrap; }
+.episodes { display: flex; flex-direction: column; gap: 14px; margin-top: 30px; }
+.episode {
+  display: flex; align-items: center; gap: 34px; padding: 22px 34px; border-radius: 20px; background: var(--bg-2);
+  border: 3px solid transparent; transition: transform .12s ease-out;
+}
+.episode.focus { border-color: var(--accent-2); background: var(--card); transform: scale(1.015); }
+.ep-code { font-size: 24px; color: var(--muted); font-weight: 700; width: 120px; flex: none; }
+.ep-title { font-size: 30px; flex: 1; }
+.ep-done { font-size: 30px; color: var(--accent-2); font-weight: 800; }
+.ep-bar { width: 180px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); }
+
+/* --- Finestra di conferma */
+.dialog-layer { position: fixed; inset: 0; background: rgba(8, 3, 16, .82); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.dialog { width: 900px; padding: 56px 64px; border-radius: 30px; background: var(--bg-2); border: 2px solid var(--line); }
+.dialog h2 { font-size: 40px; margin: 0 0 14px; }
+.dialog p { font-size: 26px; color: var(--muted); margin: 0 0 36px; }
+
+/* --- Player */
+.player { position: absolute; inset: 0; background: #000; }
+.video { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; }
+.osd {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 120px 96px 64px;
+  background: linear-gradient(transparent, rgba(0,0,0,.85)); transition: opacity .3s;
+}
+.osd-title { font-size: 32px; font-weight: 700; margin-bottom: 22px; }
+.osd-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.25); }
+.osd-time { margin-top: 16px; font-size: 26px; color: #ddd; font-variant-numeric: tabular-nums; white-space: pre; }
+.next {
+  position: absolute; right: 96px; bottom: 210px; width: 640px; padding: 34px 40px; border-radius: 26px;
+  background: rgba(29, 15, 51, .94); border: 2px solid var(--accent); transition: opacity .3s;
+}
+.next-label { font-size: 24px; color: var(--accent-2); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.next-title { font-size: 32px; font-weight: 700; margin: 10px 0 14px; }
+.next-hint { font-size: 22px; color: var(--muted); }

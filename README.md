@@ -40,6 +40,9 @@ mobile sempre in primo piano).
   streaming remoto") per il contratto lato server (in breve: nginx con
   `autoindex_format json;` + supporto alle richieste Range, nessun endpoint custom).
 
+- **Curfs TV** (cartella [`tv/`](tv/README.md)): versione minimale per le TV Hisense con VIDAA OS,
+  web app servita dallo stesso server dei video, da usare col telecomando.
+
 ## Requisiti
 
 - Xcode con SDK iOS 26 / macOS 26.
