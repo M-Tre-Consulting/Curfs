@@ -112,6 +112,13 @@ struct RemoteSourceSettingsView: View {
                         .padding(.top, 12)
                 }
             }
+            #if os(macOS)
+            // Su Mac il foglio prendeva la larghezza minima del contenuto e le
+            // etichette dei campi ("Indirizzo del server") finivano a filo del
+            // bordo: stile a riquadri con i suoi margini e una larghezza vera.
+            .formStyle(.grouped)
+            .frame(minWidth: 560, idealWidth: 620, minHeight: 600, idealHeight: 680)
+            #endif
             .navigationDestination(isPresented: $showLegal) { legalPage }
             .navigationTitle("Fonte remota")
             #if os(iOS)
