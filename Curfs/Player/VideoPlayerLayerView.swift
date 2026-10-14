@@ -17,11 +17,11 @@ final class PlayerLayerContainerView: UIView {
 struct VideoPlayerLayerView: UIViewRepresentable {
     let player: AVPlayer
 
+    /// Sempre lo stesso layer, quello a cui è legato il Picture-in-Picture
+    /// (vedi PictureInPictureSession).
     func makeUIView(context: Context) -> PlayerLayerContainerView {
-        let view = PlayerLayerContainerView()
+        let view = PictureInPictureSession.shared.containerView
         view.playerLayer.player = player
-        view.playerLayer.videoGravity = .resizeAspect
-        view.backgroundColor = .black
         return view
     }
 

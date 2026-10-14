@@ -406,13 +406,15 @@ struct SeriesDetailView: View {
         return String(localized: "Guarda \(entry.code)")
     }
 
+    /// Solo la stagione mostrata: prima contava tutte, e dopo aver eliminato
+    /// una stagione già vista "Aggiungi altri N" compariva su tutte le altre.
     private var missingFromLibrary: [Entry] {
-        entries.filter { $0.item == nil && $0.remoteURL != nil }
+        seasonEntries.filter { $0.item == nil && $0.remoteURL != nil }
     }
 
     private var libraryButton: some View {
         let missing = missingFromLibrary.count
-        let inLibrary = !libraryEpisodes.isEmpty
+        let inLibrary = seasonEntries.contains { $0.item != nil }
         let text: String = !inLibrary ? String(localized: "Aggiungi")
             : (missing > 0 ? String(localized: "Aggiungi altri \(missing)") : String(localized: "In libreria"))
         return Button {

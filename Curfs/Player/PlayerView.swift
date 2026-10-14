@@ -16,10 +16,17 @@ struct PlayerView: View {
 
     let library: [MediaItem]
     @State private var vm: PlayerViewModel
+    @State private var pip = PictureInPictureSession.shared
 
     init(item: MediaItem, library: [MediaItem]) {
         self.library = library
         _vm = State(initialValue: PlayerViewModel(item: item, library: library))
+    }
+
+    /// Riapertura dal Picture-in-Picture: stesso player, già avviato.
+    init(resuming vm: PlayerViewModel) {
+        self.library = vm.library
+        _vm = State(initialValue: vm)
     }
 
     var body: some View {
@@ -40,6 +47,8 @@ struct PlayerView: View {
             // in modo affidabile in entrambe le direzioni.
             PlayerControlsOverlay(
                 vm: vm,
+                showsPictureInPicture: pip.isPossible,
+                onPictureInPicture: { pip.start() },
                 onClose: { dismiss() },
                 onNextEpisode: { if let next = vm.nextEpisode { playNext(next) } }
             )
@@ -60,6 +69,7 @@ struct PlayerView: View {
             NextEpisodePromptView(
                 next: vm.nextEpisode,
                 isPresented: vm.showNextEpisodePrompt,
+                isPlaying: vm.isPlaying || vm.didFinish,
                 onPlayNow: { if let next = vm.nextEpisode { playNext(next) } },
                 onDismiss: { vm.dismissNextEpisodePrompt() }
             )
@@ -71,10 +81,19 @@ struct PlayerView: View {
         .persistentSystemOverlays(.hidden)
         .onAppear {
             vm.attach(modelContext: modelContext)
+            pip.attach(vm)
             vm.start()
         }
         .onDisappear {
-            vm.stop()
+            // Chiuso per passare al Picture-in-Picture: il video va avanti.
+            if pip.detach(vm) {
+                vm.resetOrientation()
+            } else {
+                vm.stop()
+            }
+        }
+        .onChange(of: pip.dismissToken) {
+            if pip.isShowing(vm) { dismiss() }
         }
         .onChange(of: vm.didFinish) { _, finished in
             guard finished else { return }
@@ -90,6 +109,7 @@ struct PlayerView: View {
             // orizzontale (e il tasto di rotazione richiederebbe due tocchi
             // per tornare utile, vedi PlayerViewModel.toggleOrientation).
             guard newPhase == .active else { return }
+            pip.stopIfPlayerIsOpen()
             OrientationController.requestOrientation(vm.isLandscape ? .landscape : .portrait)
         }
     }
@@ -100,6 +120,7 @@ struct PlayerView: View {
         let newVM = PlayerViewModel(item: next, library: library)
         newVM.attach(modelContext: modelContext)
         newVM.isLandscape = wasLandscape
+        pip.attach(newVM)
         vm = newVM
         vm.start()
     }

@@ -32,9 +32,11 @@ struct LibraryHomeView: View {
     /// Solo l'ultimo video in corso, non tutti quelli lasciati a metà: ha
     /// senso continuare solo da dove si era rimasti l'ultima volta.
     private var continueWatchingItem: MediaItem? {
+        // A pari data vince la copia scaricata: dopo un download eredita i
+        // progressi della voce streaming (vedi RemoteDownloadManager).
         allItems
             .filter { $0.hasProgress }
-            .max { ($0.lastPlayedAt ?? .distantPast) < ($1.lastPlayedAt ?? .distantPast) }
+            .max { ($0.lastPlayedAt ?? .distantPast, $0.isRemote ? 0 : 1) < ($1.lastPlayedAt ?? .distantPast, $1.isRemote ? 0 : 1) }
     }
 
     var body: some View {

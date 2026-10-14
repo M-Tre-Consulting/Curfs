@@ -12,6 +12,11 @@ import SwiftUI
 import SwiftData
 
 struct RootTabView: View {
+    #if os(iOS)
+    @State private var pip = PictureInPictureSession.shared
+    #else
+    @State private var miniPlayer = MacMiniPlayer.shared
+    #endif
 
     var body: some View {
         TabView {
@@ -23,6 +28,18 @@ struct RootTabView: View {
                 SearchView()
             }
         }
+        #if os(iOS)
+        // "Ripristina" dalla finestrella del Picture-in-Picture dopo aver
+        // chiuso il player: lo riapre da qui, ovunque si sia nell'app.
+        .fullScreenCover(item: $pip.restoring) { vm in
+            PlayerView(resuming: vm)
+        }
+        #else
+        // "Torna alla finestra" dalla finestra mobile (MacMiniPlayer).
+        .sheet(item: $miniPlayer.restoring) { vm in
+            MacPlayerView(resuming: vm)
+        }
+        #endif
         .task {
             // Scalda l'analisi "salta intro" di tutta la libreria locale, così
             // il pulsante c'è alla prima riproduzione (vedi IntroCreditsWarmup).

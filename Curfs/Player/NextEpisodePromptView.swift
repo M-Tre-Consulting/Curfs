@@ -17,12 +17,14 @@ struct NextEpisodePromptView: View {
     /// scatterebbe una sola volta in assoluto invece che ogni volta che
     /// il pannello ricompare.
     let isPresented: Bool
+    /// Il countdown avanza solo mentre il video va: in pausa si ferma
+    /// (prima scattava comunque e partiva l'episodio successivo).
+    var isPlaying: Bool = true
     var onPlayNow: () -> Void
     var onDismiss: () -> Void
 
     private let countdownSeconds = 8
     @State private var remaining = 8
-    @State private var task: Task<Void, Never>?
 
     var body: some View {
         VStack {
@@ -34,12 +36,17 @@ struct NextEpisodePromptView: View {
         }
         .padding(20)
         .onChange(of: isPresented) { _, presented in
-            if presented {
-                remaining = countdownSeconds
-                startCountdown()
-            } else {
-                task?.cancel()
+            if presented { remaining = countdownSeconds }
+        }
+        // Ripartendo dopo una pausa riprende da dove era, senza azzerarsi.
+        .task(id: isPresented && isPlaying) {
+            guard isPresented, isPlaying else { return }
+            while remaining > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
+                remaining -= 1
             }
+            onPlayNow()
         }
     }
 
@@ -109,16 +116,5 @@ struct NextEpisodePromptView: View {
         .frame(width: 250)
         .glassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: Color.accentColor.opacity(0.4), radius: 18, y: 8)
-    }
-
-    private func startCountdown() {
-        task = Task {
-            while remaining > 0 {
-                try? await Task.sleep(for: .seconds(1))
-                if Task.isCancelled { return }
-                remaining -= 1
-            }
-            if !Task.isCancelled { onPlayNow() }
-        }
     }
 }

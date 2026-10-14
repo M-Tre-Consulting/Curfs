@@ -23,6 +23,8 @@ private let buttonGlassTint = Color.black.opacity(0.4)
 
 struct PlayerControlsOverlay: View {
     let vm: PlayerViewModel
+    var showsPictureInPicture = false
+    var onPictureInPicture: () -> Void = {}
     var onClose: () -> Void
     var onNextEpisode: () -> Void
 
@@ -39,45 +41,78 @@ struct PlayerControlsOverlay: View {
         .padding(.bottom, 14)
     }
 
+    /// Con spazio a sufficienza tutti i tasti in fila; se il titolo verrebbe
+    /// tagliato (iPhone stretti, verticale), quelli secondari vanno nel "⋯".
     private var topBar: some View {
         GlassEffectContainer(spacing: 10) {
-            HStack(alignment: .top, spacing: 10) {
-                glassIconButton("chevron.down", action: onClose)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    if let show = vm.item.showName, let code = vm.item.episodeCode {
-                        Text(show)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        Text("\(code) · \(vm.item.title)")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.75))
-                            .lineLimit(1)
-                    } else {
-                        Text(vm.item.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                    }
-                }
-                .shadow(color: .black.opacity(0.5), radius: 4)
-                .padding(.top, 6)
-
-                Spacer()
-
-                if vm.nextEpisode != nil {
-                    glassIconButton("forward.end.fill", action: onNextEpisode)
-                }
-
-                glassIconButton(vm.isLandscape ? "rectangle.portrait.rotate" : "rectangle.landscape.rotate") {
-                    vm.toggleOrientation()
-                }
-
-                speedMenu
+            ViewThatFits(in: .horizontal) {
+                topBarRow(compact: false)
+                topBarRow(compact: true)
             }
         }
         .glassEffectTransition(.materialize)
+    }
+
+    private func topBarRow(compact: Bool) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            glassIconButton("chevron.down", action: onClose)
+
+            // Nella versione completa il titolo non si accorcia mai: se non
+            // ci sta per intero, ViewThatFits passa a quella compatta.
+            titleBlock
+                .fixedSize(horizontal: !compact, vertical: false)
+
+            Spacer(minLength: 0)
+
+            if !compact {
+                if showsPictureInPicture {
+                    glassIconButton("pip.enter", action: onPictureInPicture)
+                        .accessibilityLabel("Picture in Picture")
+                }
+                if vm.nextEpisode != nil {
+                    glassIconButton("forward.end.fill", action: onNextEpisode)
+                        .accessibilityLabel("Episodio successivo")
+                }
+            }
+
+            glassIconButton(vm.isLandscape ? "rectangle.portrait.rotate" : "rectangle.landscape.rotate") {
+                vm.toggleOrientation()
+            }
+
+            if compact {
+                PlayerOptionsMenu(
+                    vm: vm,
+                    showsPictureInPicture: showsPictureInPicture,
+                    onPictureInPicture: onPictureInPicture,
+                    onNextEpisode: onNextEpisode
+                )
+            } else {
+                TracksMenu(vm: vm)
+                PlaybackSpeedMenu(vm: vm)
+            }
+        }
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let show = vm.item.showName, let code = vm.item.episodeCode {
+                Text(show)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text("\(code) · \(vm.item.title)")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+            } else {
+                Text(vm.item.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
+        }
+        .shadow(color: .black.opacity(0.5), radius: 4)
+        .padding(.top, 6)
     }
 
     private func glassIconButton(_ systemName: String, action: @escaping () -> Void) -> some View {
@@ -91,36 +126,6 @@ struct PlayerControlsOverlay: View {
         .buttonStyle(.glass)
         .tint(buttonGlassTint)
         .buttonBorderShape(.circle)
-    }
-
-    private var speedMenu: some View {
-        Menu {
-            ForEach(availableRates, id: \.self) { rate in
-                Button {
-                    vm.setPlaybackRate(rate)
-                } label: {
-                    if rate == vm.playbackRate {
-                        Label(rateLabel(rate), systemImage: "checkmark")
-                    } else {
-                        Text(rateLabel(rate))
-                    }
-                }
-            }
-        } label: {
-            Text(rateLabel(vm.playbackRate))
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(minWidth: 26, minHeight: 26)
-                .contentShape(Rectangle())
-        }
-        .menuStyle(.button)
-        .buttonStyle(.glass)
-        .tint(buttonGlassTint)
-        .padding(.top, 3)
-    }
-
-    private func rateLabel(_ rate: Double) -> String {
-        rate == 1.0 ? "1x" : (rate.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(rate))x" : "\(rate)x")
     }
 
     private var centerControls: some View {
@@ -189,5 +194,170 @@ struct PlayerControlsOverlay: View {
             .foregroundStyle(.white.opacity(0.85))
             .shadow(color: .black.opacity(0.5), radius: 3)
         }
+    }
+}
+
+/// Velocità come tasto a sé (barra completa). `Picker` nativo dentro un
+/// `Menu`, in una view che legge solo `playbackRate`: vedi PlayerOptionsMenu.
+private struct PlaybackSpeedMenu: View {
+    let vm: PlayerViewModel
+
+    var body: some View {
+        Menu {
+            Picker("Velocità di riproduzione", selection: Binding(
+                get: { vm.playbackRate },
+                set: { vm.setPlaybackRate($0) }
+            )) {
+                ForEach(availableRates, id: \.self) { rate in
+                    Text(verbatim: rateLabel(rate)).tag(rate)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Text(verbatim: rateLabel(vm.playbackRate))
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(minWidth: 26, minHeight: 26)
+                .contentShape(Rectangle())
+        }
+        .menuOrder(.fixed)
+        .menuStyle(.button)
+        .buttonStyle(.glass)
+        .tint(buttonGlassTint)
+        .padding(.top, 3)
+        .simultaneousGesture(TapGesture().onEnded { vm.holdControls() })
+    }
+}
+
+/// Audio e sottotitoli come tasto a sé (barra completa), solo se il file ne
+/// ha da scegliere.
+private struct TracksMenu: View {
+    let vm: PlayerViewModel
+
+    var body: some View {
+        if vm.audioTracks.count > 1 || !vm.subtitleTracks.isEmpty {
+            // Liste piatte, non sottomenu: nei sottomenu non si può trascinare
+            // il dito e rilasciare sulla voce (era quello il "tocco rotto").
+            Menu {
+                TrackPickers(vm: vm, inline: true)
+            } label: {
+                Image(systemName: "text.bubble")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .menuOrder(.fixed)
+            .buttonStyle(.glass)
+            .tint(buttonGlassTint)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Sottotitoli")
+            .simultaneousGesture(TapGesture().onEnded { vm.holdControls() })
+        }
+    }
+}
+
+/// Sottotitoli/audio, condivisi tra TracksMenu (liste piatte con
+/// intestazione) e il "⋯" (sottomenu, mostrano anche la scelta attuale).
+private struct TrackPickers: View {
+    let vm: PlayerViewModel
+    let inline: Bool
+
+    var body: some View {
+        if !vm.subtitleTracks.isEmpty {
+            styled(Picker(selection: Binding(
+                get: { vm.selectedSubtitleTrack },
+                set: { vm.selectSubtitleTrack($0) }
+            )) {
+                Text("Disattivati").tag(Int?.none)
+                ForEach(vm.subtitleTracks) { track in
+                    Text(verbatim: track.name).tag(Int?.some(track.id))
+                }
+            } label: {
+                Label("Sottotitoli", systemImage: "captions.bubble")
+            }, title: "Sottotitoli")
+        }
+
+        if vm.audioTracks.count > 1 {
+            styled(Picker(selection: Binding(
+                get: { vm.selectedAudioTrack ?? 0 },
+                set: { vm.selectAudioTrack($0) }
+            )) {
+                ForEach(vm.audioTracks) { track in
+                    Text(verbatim: track.name).tag(track.id)
+                }
+            } label: {
+                Label("Audio", systemImage: "waveform")
+            }, title: "Audio")
+        }
+    }
+
+    @ViewBuilder
+    private func styled(_ picker: some View, title: LocalizedStringKey) -> some View {
+        if inline {
+            Section(title) {
+                picker.pickerStyle(.inline).labelsHidden()
+            }
+        } else {
+            picker.pickerStyle(.menu)
+        }
+    }
+}
+
+private func rateLabel(_ rate: Double) -> String {
+    rate.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(rate))x" : "\(rate)x"
+}
+
+/// Barra compatta (il titolo non ci starebbe): tutto il resto nel "⋯", episodio
+/// successivo, Picture-in-Picture e, come sottomenu nativi (`Picker` con
+/// stile `.menu`, mostrano anche la scelta attuale), velocità, sottotitoli e
+/// audio. Sta in una view a sé apposta: non legge `currentTime`, che cambia
+/// più volte al secondo e ridisegnando il menu aperto gli faceva perdere il
+/// tocco scorrendoci sopra.
+private struct PlayerOptionsMenu: View {
+    let vm: PlayerViewModel
+    let showsPictureInPicture: Bool
+    let onPictureInPicture: () -> Void
+    let onNextEpisode: () -> Void
+
+    var body: some View {
+        Menu {
+            Section {
+                if vm.nextEpisode != nil {
+                    Button("Episodio successivo", systemImage: "forward.end.fill", action: onNextEpisode)
+                }
+                if showsPictureInPicture {
+                    Button("Picture in Picture", systemImage: "pip.enter", action: onPictureInPicture)
+                }
+            }
+            Section {
+                Picker(selection: Binding(
+                    get: { vm.playbackRate },
+                    set: { vm.setPlaybackRate($0) }
+                )) {
+                    ForEach(availableRates, id: \.self) { rate in
+                        Text(verbatim: rateLabel(rate)).tag(rate)
+                    }
+                } label: {
+                    Label("Velocità di riproduzione", systemImage: "gauge.with.dots.needle.67percent")
+                }
+                .pickerStyle(.menu)
+
+                TrackPickers(vm: vm, inline: false)
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .menuOrder(.fixed)
+        .buttonStyle(.glass)
+        .tint(buttonGlassTint)
+        .buttonBorderShape(.circle)
+        .accessibilityLabel("Altre opzioni")
+        // Aprendo il menu i controlli non devono sparire sotto il dito.
+        .simultaneousGesture(TapGesture().onEnded { vm.holdControls() })
     }
 }

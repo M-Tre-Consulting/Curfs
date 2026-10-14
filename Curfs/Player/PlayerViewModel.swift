@@ -17,6 +17,9 @@ import SwiftUI
 final class PlayerViewModel {
     let item: MediaItem
     let player: AVPlayer
+    /// La libreria con cui è stato aperto (episodio successivo), tenuta qui
+    /// per riaprire il player dal Picture-in-Picture.
+    let library: [MediaItem]
     var nextEpisode: MediaItem?
 
     var isPlaying = false
@@ -31,6 +34,22 @@ final class PlayerViewModel {
     var isInIntro = false
     var isInCredits = false
 
+    /// Tracce audio e sottotitoli contenute nel file (vuote se non ce ne
+    /// sono, o se ce n'è una sola audio: allora non c'è niente da scegliere).
+    struct TrackChoice: Identifiable, Hashable {
+        let id: Int
+        let name: String
+    }
+    private(set) var audioTracks: [TrackChoice] = []
+    private(set) var subtitleTracks: [TrackChoice] = []
+    private(set) var selectedAudioTrack: Int?
+    /// nil = sottotitoli disattivati.
+    private(set) var selectedSubtitleTrack: Int?
+    @ObservationIgnored private var audioGroup: AVMediaSelectionGroup?
+    @ObservationIgnored private var audioOptions: [AVMediaSelectionOption] = []
+    @ObservationIgnored private var subtitleGroup: AVMediaSelectionGroup?
+    @ObservationIgnored private var subtitleOptions: [AVMediaSelectionOption] = []
+
     /// Finché la durata reale non è nota, lo slider non è affidabile: uno
     /// scrub in quella finestra finirebbe per cercare una posizione quasi a
     /// zero (perché il range dello slider sarebbe anch'esso quasi a zero).
@@ -42,6 +61,10 @@ final class PlayerViewModel {
     private var hideControlsTask: Task<Void, Never>?
     private var introCreditsTask: Task<Void, Never>?
     private var lastSavedAt: Date = .distantPast
+    private var statusObservation: NSKeyValueObservation?
+    /// "Annulla" sul pannello dell'episodio successivo: non riproporlo
+    /// finché non si torna indietro fuori dagli ultimi secondi.
+    private var nextPromptDismissed = false
 
     /// Altri episodi della stessa serie, ordinati per vicinanza a questo:
     /// usati da IntroCreditsAnalyzer per riconoscere sigla/coda per davvero,
@@ -62,6 +85,7 @@ final class PlayerViewModel {
 
     init(item: MediaItem, library: [MediaItem]) {
         self.item = item
+        self.library = library
         self.player = Self.makePlayer(for: item)
         self.duration = item.duration
         self.nextEpisode = Self.findNext(after: item, in: library)
@@ -134,7 +158,12 @@ final class PlayerViewModel {
         self.modelContext = modelContext
     }
 
+    private var hasStarted = false
+
     func start() {
+        // Riaprendo il player dal Picture-in-Picture è già avviato.
+        guard !hasStarted else { return }
+        hasStarted = true
         activateAudioSession()
 
         // Prima di tutto il resto: se non è già in cache, l'analisi della
@@ -154,10 +183,17 @@ final class PlayerViewModel {
         ) { [weak self] _ in
             Task { @MainActor in self?.handleReachedEnd() }
         }
+        // Il player può mettersi in pausa da solo (app in background,
+        // chiamata, cuffie staccate, controlli nativi su Mac): senza questo
+        // l'interfaccia restava su "in riproduzione" e serviva un tocco a vuoto.
+        statusObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in self?.syncPlayingState() }
+        }
 
         if !isDurationReady {
             resolveDuration()
         }
+        loadMediaSelections()
 
         let resumeAt = item.playbackPosition
         if resumeAt > 3, duration <= 0 || resumeAt < duration - 5 {
@@ -176,6 +212,8 @@ final class PlayerViewModel {
         timeObserverToken = nil
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         endObserver = nil
+        statusObservation?.invalidate()
+        statusObservation = nil
         hideControlsTask?.cancel()
         introCreditsTask?.cancel()
         player.pause()
@@ -293,10 +331,93 @@ final class PlayerViewModel {
         scheduleAutoHide()
     }
 
+    private func syncPlayingState() {
+        switch player.timeControlStatus {
+        case .paused where isPlaying:
+            isPlaying = false
+            hideControlsTask?.cancel()
+            withAnimation(Self.controlsAnimation) { controlsVisible = true }
+            persistProgress(force: true)
+        case .playing where !isPlaying:
+            isPlaying = true
+            scheduleAutoHide()
+        default:
+            break
+        }
+    }
+
+    private func loadMediaSelections() {
+        guard let playerItem = player.currentItem else { return }
+        let asset = playerItem.asset
+        Task { [weak self] in
+            let audible = try? await asset.loadMediaSelectionGroup(for: .audible)
+            let legible = try? await asset.loadMediaSelectionGroup(for: .legible)
+            guard let self else { return }
+            if let audible, audible.options.count > 1 {
+                self.audioGroup = audible
+                self.audioOptions = audible.options
+                self.audioTracks = audible.options.enumerated().map { TrackChoice(id: $0.offset, name: $0.element.displayName) }
+            }
+            if let legible {
+                // I sottotitoli "forzati" (solo i cartelli in lingua straniera)
+                // li gestisce il sistema da solo: non sono una scelta.
+                let options = AVMediaSelectionGroup.mediaSelectionOptions(
+                    from: legible.options, withoutMediaCharacteristics: [.containsOnlyForcedSubtitles]
+                )
+                if !options.isEmpty {
+                    self.subtitleGroup = legible
+                    self.subtitleOptions = options
+                    self.subtitleTracks = options.enumerated().map { TrackChoice(id: $0.offset, name: $0.element.displayName) }
+                }
+            }
+            self.refreshSelectedTracks()
+            // Nomi veri al posto di "Lingua sconosciuta" (vedi SubtitleLabeler).
+            if !self.subtitleOptions.isEmpty {
+                let names = await SubtitleLabeler.names(for: self.subtitleOptions, asset: asset)
+                // Le tracce vuote spariscono; gli id restano gli indici in subtitleOptions.
+                self.subtitleTracks = names.enumerated().compactMap { index, name in
+                    name.map { TrackChoice(id: index, name: $0) }
+                }
+            }
+        }
+    }
+
+    private func refreshSelectedTracks() {
+        guard let selection = player.currentItem?.currentMediaSelection else { return }
+        if let audioGroup, let option = selection.selectedMediaOption(in: audioGroup) {
+            selectedAudioTrack = audioOptions.firstIndex(of: option)
+        }
+        if let subtitleGroup {
+            selectedSubtitleTrack = selection.selectedMediaOption(in: subtitleGroup).flatMap { subtitleOptions.firstIndex(of: $0) }
+        }
+    }
+
+    func selectAudioTrack(_ index: Int) {
+        guard let audioGroup, audioOptions.indices.contains(index) else { return }
+        player.currentItem?.select(audioOptions[index], in: audioGroup)
+        selectedAudioTrack = index
+        scheduleAutoHide()
+    }
+
+    func selectSubtitleTrack(_ index: Int?) {
+        guard let subtitleGroup else { return }
+        let option = index.flatMap { subtitleOptions.indices.contains($0) ? subtitleOptions[$0] : nil }
+        player.currentItem?.select(option, in: subtitleGroup)
+        selectedSubtitleTrack = index
+        scheduleAutoHide()
+    }
+
     func setPlaybackRate(_ rate: Double) {
         playbackRate = rate
         if isPlaying { player.rate = Float(rate) }
         UserDefaults.standard.set(rate, forKey: Self.playbackRateDefaultsKey)
+        scheduleAutoHide()
+    }
+
+    /// Tiene i controlli visibili (es. menu velocità aperto) finché non si
+    /// sceglie qualcosa o si tocca di nuovo il video.
+    func holdControls() {
+        hideControlsTask?.cancel()
     }
 
     func pause() {
@@ -340,6 +461,7 @@ final class PlayerViewModel {
     }
 
     func dismissNextEpisodePrompt() {
+        nextPromptDismissed = true
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
             showNextEpisodePrompt = false
         }
@@ -419,9 +541,22 @@ final class PlayerViewModel {
         }
         isInCredits = inCredits
 
-        if duration > 20, duration - seconds < 20, !showNextEpisodePrompt, nextEpisode != nil {
+        // Prima il pannello ricompariva al tick successivo all'"Annulla", e
+        // tornando indietro con lo slider restava aperto col countdown attivo.
+        // Con i titoli di coda riconosciuti compare appena iniziano (come
+        // Netflix), altrimenti negli ultimi 20 secondi.
+        let inLastSeconds = duration > 20 && duration - seconds < 20
+        let inPromptWindow = nextEpisode != nil && (inCredits || inLastSeconds)
+        if inPromptWindow, !showNextEpisodePrompt, !nextPromptDismissed {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                 showNextEpisodePrompt = true
+            }
+        } else if !inPromptWindow {
+            nextPromptDismissed = false
+            if showNextEpisodePrompt {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                    showNextEpisodePrompt = false
+                }
             }
         }
         persistProgress(force: false)
@@ -466,13 +601,17 @@ final class PlayerViewModel {
               let season = item.seasonNumber,
               let episode = item.episodeNumber else { return nil }
 
-        let sameShow = library.filter { $0.kind == .episode && $0.showName == show }
+        // Se lo stesso episodio c'è sia scaricato sia in streaming, il file
+        // scaricato prima: non dipende dall'ordine della libreria.
+        let sameShow = library
+            .filter { $0.kind == .episode && $0.showName == show }
+            .sorted { !$0.isRemote && $1.isRemote }
         if let next = sameShow.first(where: { $0.seasonNumber == season && $0.episodeNumber == episode + 1 }) {
             return next
         }
         let laterSeasons = sameShow.filter { ($0.seasonNumber ?? 0) > season }
         return laterSeasons.sorted {
-            ($0.seasonNumber ?? 0, $0.episodeNumber ?? 0) < ($1.seasonNumber ?? 0, $1.episodeNumber ?? 0)
+            ($0.seasonNumber ?? 0, $0.episodeNumber ?? 0, $0.isRemote ? 1 : 0) < ($1.seasonNumber ?? 0, $1.episodeNumber ?? 0, $1.isRemote ? 1 : 0)
         }.first
     }
 }

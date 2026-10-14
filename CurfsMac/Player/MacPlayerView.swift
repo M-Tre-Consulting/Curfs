@@ -24,6 +24,12 @@ struct MacPlayerView: View {
         _vm = State(initialValue: PlayerViewModel(item: item, library: library))
     }
 
+    /// Riapertura dalla finestra mobile: stesso player, già avviato.
+    init(resuming vm: PlayerViewModel) {
+        self.library = vm.library
+        _vm = State(initialValue: vm)
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -45,6 +51,7 @@ struct MacPlayerView: View {
             NextEpisodePromptView(
                 next: vm.nextEpisode,
                 isPresented: vm.showNextEpisodePrompt,
+                isPlaying: vm.isPlaying || vm.didFinish,
                 onPlayNow: { if let next = vm.nextEpisode { playNext(next) } },
                 onDismiss: { vm.dismissNextEpisodePrompt() }
             )
@@ -57,13 +64,25 @@ struct MacPlayerView: View {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Chiudi") { dismiss() }
             }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    MacMiniPlayer.shared.open(vm)
+                    dismiss()
+                } label: {
+                    Label("Finestra mobile", systemImage: "pip.enter")
+                }
+                .help("Finestra mobile")
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+            }
         }
         .onAppear {
             vm.attach(modelContext: modelContext)
+            MacMiniPlayer.shared.playerOpened(vm)
             vm.start()
         }
         .onDisappear {
-            vm.stop()
+            // Passato alla finestra mobile: il video va avanti lì.
+            if !MacMiniPlayer.shared.isShowing(vm) { vm.stop() }
         }
         .onChange(of: vm.didFinish) { _, finished in
             guard finished else { return }

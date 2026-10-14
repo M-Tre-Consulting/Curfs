@@ -88,8 +88,16 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
 - **Player Mac**: `CurfsMac/Player/MacVideoPlayerView.swift` (`NSViewRepresentable` su
   `AVPlayerView`) + `MacPlayerView.swift`, invece di `VideoPlayerLayerView`/
   `PlayerControlsOverlay`/`PlayerGestureZones`. Scelta deliberata: `AVPlayerView` dà scrubber,
-  fullscreen e **Picture-in-Picture flottante/ridimensionabile già pronti** — esattamente quello
-  che serviva ("mettere il video dove si vuole, ridimensionarlo") senza ricostruirlo a mano.
+  fullscreen, menu velocità/audio/sottotitoli già pronti. Il suo Picture-in-Picture è **spento**:
+  quello di sistema si aggancia sempre a un angolo e l'utente vuole il video esattamente dove lo
+  lascia. Al suo posto `CurfsMac/Player/MacMiniPlayer.swift` (tasto nella barra del player, ⇧⌘P):
+  `NSPanel` `.floating` non attivante, su tutte le scrivanie e sopra le app a schermo intero,
+  `contentAspectRatio` = proporzioni del video, posizione/grandezza ricordate
+  (`setFrameAutosaveName`), trascinabile dalla striscia in alto (`WindowDragGesture`, sul video i clic
+  vanno ai controlli). Stesso `PlayerViewModel`: "Torna alla finestra" lo riapre da `RootTabView`
+  (`MacPlayerView(resuming:)`), la X fa `vm.stop()`. In modalità compatta `MacVideoPlayerView` non
+  installa i tasti A/D (il monitor locale ruberebbe le lettere scritte altrove nell'app) né nasconde
+  il cursore.
   `PlayerViewModel` resta **condiviso** (progresso, salta-intro, prossimo episodio): solo
   `toggleOrientation()`/`resetOrientation()` e `activate/deactivateAudioSession()` sono dentro
   `#if os(iOS)` (rotazione e `AVAudioSession` non esistono su macOS).
@@ -202,6 +210,45 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   spariva di scatto invece di sfumare all'"Annulla"; ora è sempre montata, `next` è opzionale, e
   il countdown/reset è guidato da `isPresented` via `.onChange` invece che da `.onAppear`/
   `.onDisappear` — che con la view sempre montata scatterebbero una volta sola in assoluto).
+- **Streaming poi scaricato**: restano due `MediaItem`, ma `RemoteDownloadManager.inheritStreamingProgress`
+  copia posizione/visto/ultima visione sulla copia scaricata (la voce streaming non si cancella:
+  potrebbe essere aperta nel player). A pari data "Continua a guardare" e `findNext` preferiscono il
+  file scaricato.
+- **Pannello "Prossimo episodio"**: compare all'inizio dei titoli di coda riconosciuti, altrimenti
+  negli ultimi 20 s. "Annulla" vale finché non si esce da quella zona (`nextPromptDismissed`); il
+  countdown avanza solo mentre il video va (`.task(id: isPresented && isPlaying)`). `isPlaying` segue
+  `timeControlStatus` via KVO: le pause decise dal sistema (background, chiamate, cuffie) aggiornano
+  l'interfaccia.
+- **Picture-in-Picture (iPhone)**: `Player/PictureInPictureSession.swift`, singleton che possiede
+  l'**unico** `PlayerLayerContainerView` dell'app (`VideoPlayerLayerView` lo riusa sempre) e il
+  controller PiP legato a quel layer. Tasto PiP → parte la finestrella e il player a schermo intero
+  si chiude (`dismissToken`), `PlayerView.onDisappear` NON chiama `vm.stop()` se `pip.detach(vm)`;
+  "ripristina" riapre il player da `RootTabView` (`restoring` → `PlayerView(resuming:)`, stesso
+  `PlayerViewModel`, `start()` idempotente) e il completion di sistema si chiama in `attach`. Uscendo
+  dall'app mentre va parte da solo (`canStartPictureInPictureAutomaticallyFromInline`), rientrando
+  si richiude (`stopIfPlayerIsOpen`). Chiuso con la X a player chiuso → `vm.stop()` (progressi salvati).
+  Serve `UIBackgroundModes = audio`: Xcode non lo accetta come `INFOPLIST_KEY_`, sta in
+  `Curfs-iOS-Info.plist` alla radice (fuori dal gruppo sincronizzato, sennò finirebbe anche nel
+  target Mac), `INFOPLIST_FILE` solo nei due blocchi del target iOS, unito al plist generato.
+- **Barra in alto del player iPhone** (`PlayerControlsOverlay.topBar`): `ViewThatFits` tra la
+  versione completa (tutti i tasti: PiP, episodio successivo, rotazione, `TracksMenu`, velocità) col
+  titolo `fixedSize` — quindi scelta solo se il titolo ci sta per intero — e quella compatta
+  (rotazione + "⋯" `PlayerOptionsMenu` con tutto il resto, sottomenu `Picker` `.menu`). Voluto
+  dall'utente: il menu solo quando il titolo verrebbe tagliato. Menu velocità/tracce/"⋯" sono view a
+  sé che non leggono `currentTime`: ridisegnandosi 4 volte al secondo il menu aperto perdeva il tocco.
+- **Audio/sottotitoli** (`PlayerViewModel.loadMediaSelections`): solo tracce dentro al file
+  (`AVMediaSelectionGroup` audible/legible, i sottotitoli "solo forzati" esclusi dalla scelta); le
+  voci compaiono solo se c'è qualcosa da scegliere. Su Mac lo dà AVPlayerView. Nel tasto a sé
+  (`TracksMenu`) sono liste piatte con intestazione, non sottomenu: nei sottomenu iOS non si può
+  trascinare il dito e rilasciare sulla voce (segnalato come "tocco rotto").
+  **Nomi delle tracce** (`Player/SubtitleLabeler.swift`): gli mp4 dell'utente (convertiti da mkv)
+  hanno 4-5 tracce tx3g tutte `und` → "Lingua sconosciuta" ×5, inutilizzabili. La lingua si
+  riconosce dai primi 40 sottotitoli (`AVAssetReader` sulla sola traccia + `NLLanguageRecognizer`,
+  soglia 0.8; lituano/lettone non supportati da NL → dalle lettere tipiche, solo se frequenti:
+  "Māui" faceva lettone un film inglese), "(non udenti)" da rumori tra parentesi/"Nome:"/tutto
+  maiuscolo, "(parti straniere)" se la traccia pesa < 1/7 della più grande, tracce < 200 byte
+  nascoste (ce n'è una vuota da 11 byte). Mappa opzione↔traccia per ordine, solo se il numero
+  coincide; altrimenti "Sottotitoli N". Verificato su GoT S1 e Oceania.
 - **Doppio tap per skip ±10s** (`PlayerGestureZones`, zone sinistra/destra + zona centrale per
   mostra/nascondi controlli): il timestamp dell'ultimo tap va aggiornato a `now` dopo ogni salto
   registrato, MAI azzerato a `nil` — azzerarlo (bug reale, corretto) faceva sì che un terzo tap
@@ -541,8 +588,6 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
 
 ## Non ancora implementato
 
-- Picture-in-Picture, layout dedicato iPad, sync iCloud.
+- Layout dedicato iPad, sync iCloud. Sottotitoli esterni (.srt accanto al file): oggi solo le tracce dentro al file.
 - Sezione Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si
-  ricava dai nomi file), pull-to-refresh del catalogo remoto, riconciliazione tra un episodio
-  guardato in streaming e lo stesso poi scaricato offline (oggi coesistono come due `MediaItem`),
-  auto-avanzamento a cavallo di stagione testato solo con cataloghi piccoli.
+  ricava dai nomi file), auto-avanzamento a cavallo di stagione testato solo con cataloghi piccoli.

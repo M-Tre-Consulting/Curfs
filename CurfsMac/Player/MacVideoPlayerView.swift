@@ -57,17 +57,23 @@ struct MacVideoPlayerView: NSViewRepresentable {
     let player: AVPlayer
     let onSkip: (Double) -> Void
     let onRateChange: (Double) -> Void
+    /// Nella finestra mobile (MacMiniPlayer): niente schermo intero, niente
+    /// tasti A/D (prenderebbero le lettere scritte altrove nell'app) e niente
+    /// cursore nascosto; i controlli li mostra AVPlayerView al passaggio.
+    var isCompact = false
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(player: player, onSkip: onSkip, onRateChange: onRateChange)
+        Coordinator(player: player, onSkip: onSkip, onRateChange: onRateChange, isCompact: isCompact)
     }
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
         view.player = player
         view.controlsStyle = .floating
-        view.showsFullScreenToggleButton = true
-        view.allowsPictureInPicturePlayback = true
+        view.showsFullScreenToggleButton = !isCompact
+        // Il PiP di sistema si aggancia agli angoli: c'è la finestra mobile
+        // (tasto nella barra del player, vedi MacMiniPlayer).
+        view.allowsPictureInPicturePlayback = false
         view.videoGravity = .resizeAspect
         context.coordinator.playerView = view
         context.coordinator.startMonitoring()
@@ -95,6 +101,7 @@ struct MacVideoPlayerView: NSViewRepresentable {
         weak var playerView: AVPlayerView?
 
         private let player: AVPlayer
+        private let isCompact: Bool
         private var keyMonitor: Any?
         private var activityMonitor: Any?
         private var resignObserver: NSObjectProtocol?
@@ -107,14 +114,23 @@ struct MacVideoPlayerView: NSViewRepresentable {
         private static let idleDelay: TimeInterval = 2.5
         private static let fadeDuration: TimeInterval = 0.2
 
-        init(player: AVPlayer, onSkip: @escaping (Double) -> Void, onRateChange: @escaping (Double) -> Void) {
+        init(player: AVPlayer, onSkip: @escaping (Double) -> Void, onRateChange: @escaping (Double) -> Void, isCompact: Bool) {
             self.player = player
+            self.isCompact = isCompact
             self.onSkip = onSkip
             self.onRateChange = onRateChange
         }
 
         func startMonitoring() {
-            guard keyMonitor == nil else { return }
+            guard keyMonitor == nil, rateObservation == nil else { return }
+            if isCompact {
+                rateObservation = player.observe(\.rate, options: [.new]) { [weak self] player, _ in
+                    DispatchQueue.main.async {
+                        if player.rate > 0 { self?.onRateChange(Double(player.rate)) }
+                    }
+                }
+                return
+            }
 
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
                 guard let self else { return event }

@@ -4,8 +4,8 @@ App SwiftUI/SwiftData: un media player personale, per iPhone (**Curfs**) e Mac (
 Xcode `CurfsMac`, stesso progetto). Importa video da Files, riconosce automaticamente
 stagioni ed episodi dai nomi di cartelle/file, li organizza in Film/Serie, tiene traccia
 dell'avanzamento visto, e li riproduce con AVFoundation/AVKit (Liquid Glass, tema viola scuro
-immersivo; su Mac i controlli di riproduzione sono quelli nativi di AVKit, con Picture-in-Picture
-flottante incluso).
+immersivo; su Mac i controlli di riproduzione sono quelli nativi di AVKit, più una finestra
+mobile sempre in primo piano).
 
 > Nata come progetto personale, non è pensata per l'App Store. La versione iPhone non distribuisce
 > un binario: va buildata e installata con un proprio account Apple Developer. La versione Mac ha
@@ -22,7 +22,11 @@ flottante incluso).
   cartelle e file, senza bisogno di rinominare nulla a mano.
 - **Libreria** con avanzamento visto, "Continua a guardare", "Riprendi" per serie.
 - **Player custom** su AVPlayer/AVKit nativo (nessuna dipendenza esterna): copre mp4/mov/m4v
-  (H.264/HEVC/AAC); mkv/avi vengono importati ma potrebbero non riprodursi.
+  (H.264/HEVC/AAC); mkv/avi vengono importati ma potrebbero non riprodursi. Velocità, scelta di
+  audio e sottotitoli contenuti nel file (con la lingua riconosciuta dal testo quando il file non
+  la dice), pannello "prossimo episodio" all'inizio dei titoli di coda.
+- **Picture-in-Picture** su iPhone (anche automatico uscendo dall'app). Su Mac una finestra
+  mobile sempre in primo piano che resta dove la si lascia, ridimensionabile in proporzione.
 - **Salta intro / titoli di coda**: riconoscimento basato sul confronto reale dei fotogrammi tra
   episodi della stessa serie (hash percettivo), non su timing/percentuali — funziona anche con
   cold open di lunghezza variabile tra un episodio e l'altro.
@@ -71,25 +75,15 @@ Panoramica rapida, dettagli e decisioni non ovvie in [CLAUDE.md](CLAUDE.md):
 - `Remote/` — sezione Cerca/streaming da server remoto e download offline.
 - `Views/` — schermate libreria, card, sezione Cerca (condivise tra i due target).
 - `Utilities/` — helper UI condivisi.
-- `CurfsMac/` — target Mac: entry point e player nativo AVKit (controlli, fullscreen e
-  Picture-in-Picture già pronti). Riusa Models/Support/Remote/Views/Utilities as-is.
-
-## Bug noto
-
-Su alcuni dispositivi/simulatori, dentro le `ScrollView` di `LibraryHomeView`/`SearchView`/
-`ShowDetailView`, le card possono perdere il margine sinistro e finire a filo del bordo dello
-schermo. Isolato con un repro minimo (non è la griglia, non è il tipo di bottone, non è il
-valore del padding) ma la causa non è confermata — sospetto un bug di SwiftUI/iOS 26 in
-`ScrollView` + `VStack` con figli di larghezza eterogenea. Dettagli, repro e tentativi già
-esclusi in [CLAUDE.md](CLAUDE.md). PR benvenute.
+- `CurfsMac/` — target Mac: entry point, player nativo AVKit (controlli e fullscreen già
+  pronti) e finestra mobile. Riusa Models/Support/Remote/Views/Utilities as-is.
 
 ## Non ancora implementato
 
-Picture-in-Picture su iPhone (su Mac c'è già, nativo di AVKit), layout dedicato iPad, sync
-iCloud, icona Mac disegnata a mano (quella attuale è generata per ricomposizione dell'icona
-iOS). Nella sezione Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo
-quello che si ricava dai nomi file), pull-to-refresh del catalogo remoto, riconciliazione tra un
-episodio guardato in streaming e lo stesso poi scaricato offline.
+Layout dedicato iPad, sync iCloud, sottotitoli esterni (.srt accanto al file), icona Mac
+disegnata a mano (quella attuale è generata per ricomposizione dell'icona iOS). Nella sezione
+Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si ricava dai
+nomi file).
 
 ## Licenza
 

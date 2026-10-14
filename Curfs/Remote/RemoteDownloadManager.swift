@@ -470,6 +470,30 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
 
     // MARK: Finalizzazione: staging → libreria + MediaItem
 
+    /// Se lo stesso episodio/film era già stato guardato in streaming, la
+    /// copia scaricata parte da lì (posizione, visto, ultima visione) invece
+    /// che da zero. La voce streaming resta: potrebbe essere aperta nel player.
+    private static func inheritStreamingProgress(into media: MediaItem, context: ModelContext) {
+        let descriptor = FetchDescriptor<MediaItem>(predicate: #Predicate { $0.remoteURLString != nil })
+        guard let streams = try? context.fetch(descriptor) else { return }
+        let source = streams
+            .filter { stream in
+                guard stream.kindRaw == media.kindRaw else { return false }
+                if media.kind == .episode {
+                    return stream.showName == media.showName
+                        && (stream.seasonNumber ?? 1) == (media.seasonNumber ?? 1)
+                        && stream.episodeNumber == media.episodeNumber
+                }
+                return stream.title == media.title
+            }
+            .filter { $0.lastPlayedAt != nil || $0.isFinished }
+            .max { ($0.lastPlayedAt ?? .distantPast) < ($1.lastPlayedAt ?? .distantPast) }
+        guard let source else { return }
+        media.playbackPosition = source.playbackPosition
+        media.isFinished = source.isFinished
+        media.lastPlayedAt = source.lastPlayedAt
+    }
+
     private func finalize(id: UUID, staging: URL, record: DownloadRecord) {
         Task.detached(priority: .utility) {
             do {
@@ -497,6 +521,7 @@ final class BackgroundDownloadEngine: NSObject, URLSessionDownloadDelegate, @unc
                     remoteOrigin: true,
                     duration: seconds
                 )
+                Self.inheritStreamingProgress(into: media, context: context)
                 context.insert(media)
                 try context.save()
                 await ThumbnailGenerator.generateIfNeeded(for: media)
