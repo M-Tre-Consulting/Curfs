@@ -5,7 +5,7 @@ import { loadCatalog, allEpisodes } from './catalog.js';
 import * as store from './store.js';
 import { posterFor } from './posters.js';
 import { listProfiles, avatarURL } from './profiles.js';
-import { t, plural } from './i18n.js';
+import { t, plural, lang } from './i18n.js';
 import { focus, focusFirst, focused, move, setScope } from './focus.js';
 
 const KEY = {
@@ -187,7 +187,7 @@ function openProfilePicker(required) {
 function renderTabs() {
   const previous = focused()?.dataset.key || state.lastKey;
   app.replaceChildren(
-    h('header', { class: 'top' },
+    h('header', { class: 'top', dataset: { zone: 'top' } },
       h('div', { class: 'brand' }, 'Curfs'),
       h('nav', { class: 'tabs' },
         tabButton('library', t('Libreria')),
@@ -197,7 +197,7 @@ function renderTabs() {
         ? h('button', { class: `f pill ${state.editing ? 'danger' : ''}`, dataset: { key: 'edit' }, onclick: toggleEdit },
           state.editing ? t('Fine') : t('Modifica'))
         : null),
-    h('main', { class: 'scroll' }, state.tab === 'library' ? libraryView() : searchView()),
+    h('main', { class: 'scroll', dataset: { zone: 'main' } }, state.tab === 'library' ? libraryView() : searchView()),
   );
   const again = previous && app.querySelector(`.f[data-key="${CSS.escape(previous)}"]`);
   if (again) focus(again);
@@ -208,8 +208,15 @@ function renderTabs() {
 function tabButton(tab, label) {
   return h('button', {
     class: `f tab ${state.tab === tab ? 'active' : ''}`, dataset: { key: 'tab-' + tab },
-    onclick: () => { state.tab = tab; state.editing = false; renderTabs(); },
+    onclick: () => { openTab(tab); },
   }, label);
+}
+
+function openTab(tab) {
+  if (state.tab !== tab) state.mainKey = null;
+  state.tab = tab;
+  state.editing = false;
+  renderTabs();
 }
 
 function toggleEdit() {
@@ -430,10 +437,13 @@ function play(title, episode) {
   const label = h('div', { class: 'osd-title' });
   const bar = h('i');
   const time = h('div', { class: 'osd-time' });
-  const osd = h('div', { class: 'osd' }, label, h('div', { class: 'osd-bar' }, bar), time);
+  const osd = h('div', { class: 'osd' }, label, h('div', { class: 'osd-bar' }, bar), time,
+    h('div', { class: 'osd-hint' }, t('↑ Lingua audio')));
   const spinner = h('div', { class: 'spinner center' });
   const nextBox = h('div', { class: 'next hidden' });
-  const root = h('div', { class: 'player' }, video, spinner, osd, nextBox);
+  const audioBox = h('div', { class: 'audio hidden' });
+  const root = h('div', { class: 'player' }, video, spinner, osd, nextBox, audioBox);
+  let audioOpen = false;
 
   let hideTimer = 0;
   let saveTimer = 0;
@@ -470,9 +480,57 @@ function play(title, episode) {
     video.src = ep ? ep.url : title.url;
     video.onloadedmetadata = () => {
       if (p && !p.done && p.pos > 10 && p.pos < video.duration - 30) video.currentTime = p.pos;
+      applyPreferredAudio();
       updateOSD();
     };
     video.play().catch(() => {});
+    showOSD();
+  }
+
+  // --- Lingua audio: tracce dentro il file (HTMLMediaElement.audioTracks).
+  // Non tutti i browser delle TV lo permettono: in quel caso lo si dice.
+
+  function tracks() {
+    const list = video.audioTracks;
+    return list ? Array.from({ length: list.length }, (_, i) => list[i]) : null;
+  }
+
+  function applyPreferredAudio() {
+    const list = tracks();
+    const preferred = store.preferredAudio();
+    if (!list || list.length < 2 || !preferred) return;
+    const i = list.findIndex((tr) => audioCode(tr.language) === preferred);
+    if (i >= 0) list.forEach((tr, j) => { tr.enabled = j === i; });
+  }
+
+  function openAudio() {
+    const list = tracks();
+    let body;
+    if (!list) body = [h('p', {}, t('Questa TV non permette di scegliere la lingua audio.'))];
+    else if (list.length < 2) body = [h('p', {}, t('Questo video ha una sola lingua audio: {l}.', { l: trackName(list[0], 0) }))];
+    else {
+      body = list.map((tr, i) => h('button', {
+        class: `f audio-row ${tr.enabled ? 'active' : ''}`, dataset: { key: 'a' + i, autofocus: tr.enabled || null },
+        onclick: () => {
+          list.forEach((x, j) => { x.enabled = j === i; });
+          store.setPreferredAudio(audioCode(tr.language));
+          closeAudio();
+        },
+      }, (tr.enabled ? '✓  ' : '') + trackName(tr, i)));
+    }
+    audioBox.replaceChildren(h('div', { class: 'audio-title' }, t('Lingua audio')), ...body,
+      h('div', { class: 'audio-hint' }, list && list.length > 1 ? t('OK per scegliere · Indietro per chiudere') : t('Indietro per chiudere')));
+    audioBox.classList.remove('hidden');
+    audioOpen = true;
+    setScope(audioBox);
+    focusFirst(audioBox);
+    showOSD(true);
+  }
+
+  function closeAudio() {
+    audioOpen = false;
+    audioBox.classList.add('hidden');
+    setScope(null);
     showOSD();
   }
 
@@ -512,6 +570,7 @@ function play(title, episode) {
   }
 
   function close() {
+    if (audioOpen) closeAudio();
     save();
     store.flush();
     clearInterval(saveTimer);
@@ -538,6 +597,13 @@ function play(title, episode) {
   push({
     render: () => { app.replaceChildren(root); },
     onKey: (k) => {
+      if (audioOpen) {
+        if (k === KEY.UP) move('up');
+        else if (k === KEY.DOWN) move('down');
+        else if (k === KEY.OK) { const f = focused(); if (f && audioBox.contains(f)) f.click(); else closeAudio(); }
+        else if (isBack(k)) closeAudio();
+        return true;
+      }
       if (!nextBox.classList.contains('hidden')) {
         if (k === KEY.OK) { const n = nextEpisode(); if (n) load(n); return true; }
         if (isBack(k)) { close(); return true; }
@@ -550,7 +616,8 @@ function play(title, episode) {
         case KEY.PAUSE: video.pause(); return true;
         case KEY.LEFT: case KEY.RW: seekBy(-10); return true;
         case KEY.RIGHT: case KEY.FF: seekBy(10); return true;
-        case KEY.UP: case KEY.DOWN: showOSD(); updateOSD(); return true;
+        case KEY.UP: openAudio(); return true;
+        case KEY.DOWN: showOSD(); updateOSD(); return true;
         case KEY.STOP: close(); return true;
         default:
           if (isBack(k)) { close(); return true; }
@@ -559,6 +626,28 @@ function play(title, episode) {
     },
   });
   load(episode);
+}
+
+// ---------- lingue delle tracce audio
+
+const ISO3 = { ita: 'it', eng: 'en', spa: 'es', fra: 'fr', fre: 'fr', deu: 'de', ger: 'de', por: 'pt', jpn: 'ja', rus: 'ru', zho: 'zh', chi: 'zh', kor: 'ko', nld: 'nl', dut: 'nl' };
+
+/** "ita" / "it-IT" / "it" → "it"; vuoto o "und" → "". */
+function audioCode(language) {
+  const base = String(language || '').toLowerCase().split('-')[0];
+  if (!base || base === 'und') return '';
+  return ISO3[base] || base;
+}
+
+function trackName(track, index) {
+  const code = audioCode(track.language);
+  let name = '';
+  try { if (code) name = new Intl.DisplayNames([lang], { type: 'language' }).of(code) || ''; } catch { /* lingua sconosciuta */ }
+  if (name) name = name[0].toLocaleUpperCase() + name.slice(1);
+  // Le etichette tecniche che i convertitori lasciano nel file ("SoundHandler") non servono.
+  const label = /handler|media file|^sound$/i.test(track.label || '') ? '' : track.label;
+  if (label && label !== name) name = name ? `${name} · ${label}` : label;
+  return name || t('Traccia {n}', { n: index + 1 });
 }
 
 // ---------- pila delle schermate
@@ -575,6 +664,32 @@ function pop() {
   else renderTabs();
 }
 
+/** Dal contenuto alla barra in alto: sulla scheda in cui si è, non su quella più vicina. */
+function toHeader() {
+  const from = focused();
+  const main = from?.closest('[data-zone="main"]');
+  if (!main) return;
+  state.mainKey = from.dataset.key || null;
+  const tab = app.querySelector(`[data-key="tab-${state.tab}"]`);
+  if (tab) focus(tab);
+}
+
+/**
+ * Dalla barra al contenuto: dove si era, altrimenti il primo elemento. Da
+ * una scheda non aperta (ci si è solo passati sopra) prima la apre.
+ */
+function toContent() {
+  const from = focused();
+  if (!from?.closest('[data-zone="top"]')) return;
+  const tab = (from.dataset.key || '').startsWith('tab-') ? from.dataset.key.slice(4) : null;
+  if (tab && tab !== state.tab) openTab(tab);
+  const main = app.querySelector('main');
+  if (!main) return;
+  const again = state.mainKey && main.querySelector(`.f[data-key="${CSS.escape(state.mainKey)}"]`);
+  if (again) focus(again);
+  else focusFirst(main);
+}
+
 function isBack(k) {
   return k === KEY.BACK || k === KEY.ESC || k === KEY.BACK_WEBOS || k === KEY.BACK_TIZEN;
 }
@@ -586,8 +701,14 @@ document.addEventListener('keydown', (e) => {
   switch (k) {
     case KEY.LEFT: move('left'); break;
     case KEY.RIGHT: move('right'); break;
-    case KEY.UP: move('up'); break;
-    case KEY.DOWN: move('down'); break;
+    case KEY.UP: if (!move('up')) toHeader(); break;
+    case KEY.DOWN: {
+      // Sopra una stagione non aperta: giù la apre e va ai suoi episodi.
+      const f = focused();
+      if (f?.dataset.key?.startsWith('season-') && !f.classList.contains('active')) f.click();
+      if (!move('down')) toContent();
+      break;
+    }
     case KEY.OK: focused()?.click(); break;
     default:
       if (!isBack(k)) return;

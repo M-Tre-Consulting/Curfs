@@ -6966,6 +6966,74 @@
           }
         }
       }
+    },
+    "Cambio profilo…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil wird gewechselt …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switching profile…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiando de perfil…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changement de profil…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambio profilo…"
+          }
+        }
+      }
+    },
+    "Tocca un altro profilo per passarci. Libreria e minutaggio del profilo di prima restano salvati sul server." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf ein anderes Profil, um zu wechseln. Mediathek und Fortschritt des vorherigen Profils bleiben auf dem Server gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap another profile to switch to it. The previous profile's library and progress stay saved on the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca otro perfil para cambiar a él. La biblioteca y el progreso del perfil anterior quedan guardados en el servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez un autre profil pour y passer. La bibliothèque et la progression du profil précédent restent enregistrées sur le serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca un altro profilo per passarci. Libreria e minutaggio del profilo di prima restano salvati sul server."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

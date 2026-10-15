@@ -2,8 +2,9 @@
 //  ProfilesView.swift
 //  Curfs
 //
-//  Scheda dei profili (dal tasto in alto nella Libreria): il profilo attivo,
-//  quelli salvati sul server per entrarci, e "Nuovo profilo". Con
+//  Scheda dei profili (dal tasto in alto nella Libreria): la riga delle foto
+//  (`ProfileSwitcher`, tocca un altro profilo per passarci: le foto si
+//  scambiano di posto), il profilo attivo e "Nuovo profilo". Con
 //  `required` è la schermata "Chi guarda?" che RootTabView mostra al posto
 //  dell'app finché non si entra in un profilo: senza profilo Curfs non si
 //  usa (scelta dell'utente), e non c'è un "esci". Profili e
@@ -21,14 +22,19 @@ struct ProfilesView: View {
     @State private var sync = ProfileSync.shared
 
     @State private var isLoading = false
-    @State private var isWorking = false
     @State private var loadError: String?
     @State private var actionError: String?
-    @State private var pendingSwitch: UserProfile?
+    /// Il profilo mostrato come attivo: cambia subito al tocco (animazione),
+    /// mentre il cambio vero (sincronizzazione) finisce in background.
+    @State private var shownActiveID: String? = ProfileSync.shared.active?.id
+    @State private var swap: ProfileSwap?
+    @State private var isSwitching = false
     @State private var isConfigured = RemoteSourceStore.current.isConfigured
     @State private var showServerSettings = false
 
-    private var others: [UserProfile] { sync.profiles.filter { $0.id != sync.active?.id } }
+    private var shownActive: UserProfile? {
+        sync.profiles.first { $0.id == shownActiveID } ?? (sync.active?.id == shownActiveID ? sync.active : nil)
+    }
 
     var body: some View {
         NavigationStack {
@@ -40,10 +46,10 @@ struct ProfilesView: View {
                         Button("Imposta il server…") { showServerSettings = true }
                     }
                 } else {
-                    if let active = sync.active {
+                    profilesSection
+                    if let active = sync.active, active.id == shownActiveID {
                         activeSection(active)
                     }
-                    profilesSection
                     Section {
                         NavigationLink {
                             ProfileEditorView(profile: nil)
@@ -59,10 +65,6 @@ struct ProfilesView: View {
             .formStyle(.grouped)
             .frame(minWidth: 520, idealWidth: 560, minHeight: 520, idealHeight: 600)
             #endif
-            .disabled(isWorking)
-            .overlay {
-                if isWorking { ProgressView().controlSize(.large) }
-            }
             .navigationTitle(required ? String(localized: "Chi guarda?") : String(localized: "Profili"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -88,35 +90,17 @@ struct ProfilesView: View {
             } message: {
                 Text(actionError ?? "")
             }
-            .confirmationDialog(
-                "Entrare nel profilo \"\(pendingSwitch?.name ?? "")\"?",
-                isPresented: Binding(get: { pendingSwitch != nil }, set: { if !$0 { pendingSwitch = nil } }),
-                titleVisibility: .visible
-            ) {
-                Button("Entra") {
-                    if let profile = pendingSwitch { switchTo(profile) }
-                    pendingSwitch = nil
+            .onChange(of: sync.active?.id) { _, id in
+                // Cambiato altrove (profilo cancellato, primo accesso).
+                if !isSwitching, id != shownActiveID {
+                    withAnimation(ProfileSwitcher.animation) { shownActiveID = id }
                 }
-                Button("Annulla", role: .cancel) { pendingSwitch = nil }
-            } message: {
-                Text("Su questo dispositivo vedrai il minutaggio di \"\(pendingSwitch?.name ?? "")\". Quello di \"\(sync.active?.name ?? "")\" resta salvato sul server.")
             }
         }
     }
 
     private func activeSection(_ active: UserProfile) -> some View {
         Section {
-            HStack(spacing: 14) {
-                ProfileAvatar(profile: active, size: 56)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(active.name)
-                        .font(.title3.weight(.semibold))
-                    syncStatus
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.vertical, 4)
-
             Button {
                 sync.sync()
             } label: {
@@ -129,8 +113,6 @@ struct ProfilesView: View {
             } label: {
                 Label("Modifica profilo", systemImage: "pencil")
             }
-        } header: {
-            Text("Profilo attivo")
         }
     }
 
@@ -156,36 +138,35 @@ struct ProfilesView: View {
         Section {
             if isLoading && sync.profiles.isEmpty {
                 HStack { Spacer(); ProgressView(); Spacer() }
-            } else if let loadError {
+            } else if let loadError, sync.profiles.isEmpty {
                 Label(loadError, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
                     .font(.callout)
-            } else if others.isEmpty {
-                Text(sync.active == nil ? "Ancora nessun profilo sul server." : "Nessun altro profilo sul server.")
+            } else if sync.profiles.isEmpty {
+                Text("Ancora nessun profilo sul server.")
                     .foregroundStyle(.secondary)
-            }
-            ForEach(others) { profile in
-                Button {
-                    if sync.active == nil { switchTo(profile) } else { pendingSwitch = profile }
-                } label: {
-                    HStack(spacing: 12) {
-                        ProfileAvatar(profile: profile, size: 36)
-                        Text(profile.name)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProfileSwitcher(profiles: sync.profiles, activeID: shownActiveID, swap: swap, onSelect: select)
+                        .allowsHitTesting(!isSwitching)
+                    if shownActive != nil {
+                        if isSwitching {
+                            Label("Cambio profilo…", systemImage: "arrow.triangle.2.circlepath")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            syncStatus
+                        }
                     }
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
             }
         } header: {
-            Text(sync.active == nil ? "Entra in un profilo" : "Altri profili")
+            Text(shownActiveID == nil ? "Entra in un profilo" : "Profilo attivo")
         } footer: {
-            if sync.active == nil && !others.isEmpty {
+            if shownActiveID == nil && !sync.profiles.isEmpty {
                 Text("Entrando, il minutaggio già presente su questo dispositivo si unisce a quello del profilo.")
+            } else if sync.profiles.count > 1 {
+                Text("Tocca un altro profilo per passarci. Libreria e minutaggio del profilo di prima restano salvati sul server.")
             }
         }
     }
@@ -202,13 +183,24 @@ struct ProfilesView: View {
         }
     }
 
-    private func switchTo(_ profile: UserProfile) {
+    /// Lo scambio delle foto parte subito; se il cambio non riesce (server
+    /// irraggiungibile) le foto tornano com'erano.
+    private func select(_ profile: UserProfile) {
+        let previous = shownActiveID
+        withAnimation(ProfileSwitcher.animation) {
+            swap = ProfileSwap(incoming: profile.id, outgoing: previous)
+            shownActiveID = profile.id
+        }
         Task {
-            isWorking = true
-            defer { isWorking = false }
+            isSwitching = true
+            defer { isSwitching = false }
             do {
                 try await sync.switchTo(profile)
             } catch {
+                withAnimation(ProfileSwitcher.animation) {
+                    swap = previous.map { ProfileSwap(incoming: $0, outgoing: profile.id) }
+                    shownActiveID = previous
+                }
                 actionError = error.localizedDescription
             }
         }

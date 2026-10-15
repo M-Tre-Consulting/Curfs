@@ -81,6 +81,21 @@ const STRINGS = {
     'Empieza en {n} s · OK para verlo ya · Atrás para salir',
     'Commence dans {n} s · OK pour regarder maintenant · Retour pour quitter',
     'Startet in {n} s · OK zum sofortigen Ansehen · Zurück zum Beenden'],
+  '↑ Lingua audio': ['↑ Audio language', '↑ Idioma del audio', '↑ Langue audio', '↑ Audiosprache'],
+  'Lingua audio': ['Audio Language', 'Idioma del audio', 'Langue audio', 'Audiosprache'],
+  'Questa TV non permette di scegliere la lingua audio.': [
+    'This TV doesn’t let you choose the audio language.',
+    'Esta TV no permite elegir el idioma del audio.',
+    'Cette TV ne permet pas de choisir la langue audio.',
+    'Dieser Fernseher erlaubt keine Auswahl der Audiosprache.'],
+  'Questo video ha una sola lingua audio: {l}.': [
+    'This video has only one audio language: {l}.', 'Este vídeo solo tiene un idioma de audio: {l}.',
+    'Cette vidéo n’a qu’une seule langue audio : {l}.', 'Dieses Video hat nur eine Audiosprache: {l}.'],
+  'OK per scegliere · Indietro per chiudere': [
+    'OK to choose · Back to close', 'OK para elegir · Atrás para cerrar',
+    'OK pour choisir · Retour pour fermer', 'OK zum Auswählen · Zurück zum Schließen'],
+  'Indietro per chiudere': ['Back to close', 'Atrás para cerrar', 'Retour pour fermer', 'Zurück zum Schließen'],
+  'Traccia {n}': ['Track {n}', 'Pista {n}', 'Piste {n}', 'Spur {n}'],
   'Questo video non si riesce a riprodurre sulla TV.': [
     'This video can’t be played on the TV.',
     'Este vídeo no se puede reproducir en la TV.',

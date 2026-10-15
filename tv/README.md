@@ -29,8 +29,11 @@ modello provato). Questa non usa framework né build: i file in `app/` sono già
 
 ## Telecomando
 
-Frecce per muoversi, OK per scegliere, Indietro per tornare (dalla Libreria chiude l'app).
-Nel player: OK pausa/play, ← → ±10 secondi (i salti ravvicinati si sommano), ↑ ↓ mostrano la barra.
+Frecce per muoversi, OK per scegliere, Indietro per tornare (dalla Libreria chiude l'app). Giù
+da Libreria/Cerca (o da una stagione) la apre e scende nel contenuto; su dal contenuto torna
+sulla scheda aperta.
+Nel player: OK pausa/play, ← → ±10 secondi (i salti ravvicinati si sommano), ↓ mostra la barra,
+↑ la lingua audio (tracce dentro il file; se il browser della TV non lo permette, lo dice).
 
 ## Installazione
 

@@ -74,10 +74,15 @@ struct ProfileToolbarButton: View {
         } label: {
             if let profile = sync.active {
                 ProfileAvatar(profile: profile, size: 28)
+                    // Cambiando profilo la foto nuova entra al posto della vecchia.
+                    .id(profile.id)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.4).combined(with: .opacity),
+                                            removal: .scale(scale: 1.4).combined(with: .opacity)))
             } else {
                 Image(systemName: "person.crop.circle")
             }
         }
+        .animation(.spring(duration: 0.45, bounce: 0.3), value: sync.active?.id)
         .accessibilityLabel(sync.active?.name ?? String(localized: "Profilo"))
         .help(sync.active?.name ?? String(localized: "Profilo"))
         .sheet(isPresented: $showProfiles) {

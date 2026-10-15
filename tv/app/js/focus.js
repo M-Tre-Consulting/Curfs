@@ -28,35 +28,52 @@ export function focusFirst(root = scope) {
   focus(preferred || root.querySelector('.f'));
 }
 
-function center(r) {
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-}
-
+/**
+ * Sposta la selezione nella direzione data, restando nella stessa zona
+ * (`data-zone`: la barra in alto, il contenuto): passare da una zona
+ * all'altra lo decide app.js. Restituisce false se in quella direzione non
+ * c'è niente.
+ */
 export function move(direction) {
   const from = focused();
-  if (!from) { focusFirst(); return; }
+  if (!from) { focusFirst(); return true; }
+  const zone = from.closest('[data-zone]') || scope;
   const a = from.getBoundingClientRect();
-  const ca = center(a);
+  const vertical = direction === 'up' || direction === 'down';
   let best = null;
   let bestScore = Infinity;
-  for (const el of scope.querySelectorAll('.f')) {
+  for (const el of zone.querySelectorAll('.f')) {
     if (el === from || el.offsetParent === null) continue;
     const b = el.getBoundingClientRect();
-    const cb = center(b);
-    let primary;
-    let secondary;
+    // Quanto è lontano nella direzione (0 se si tocca) e se è "in linea".
+    let gap;
     switch (direction) {
-      case 'left': primary = a.left - b.right; secondary = Math.abs(ca.y - cb.y); if (cb.x >= ca.x) continue; break;
-      case 'right': primary = b.left - a.right; secondary = Math.abs(ca.y - cb.y); if (cb.x <= ca.x) continue; break;
-      case 'up': primary = a.top - b.bottom; secondary = Math.abs(ca.x - cb.x); if (cb.y >= ca.y) continue; break;
-      default: primary = b.top - a.bottom; secondary = Math.abs(ca.x - cb.x); if (cb.y <= ca.y) continue;
+      case 'left': if (b.right > a.left + a.width / 2) continue; gap = a.left - b.right; break;
+      case 'right': if (b.left < a.right - a.width / 2) continue; gap = b.left - a.right; break;
+      case 'up': if (b.bottom > a.top + a.height / 2) continue; gap = a.top - b.bottom; break;
+      default: if (b.top < a.bottom - a.height / 2) continue; gap = b.top - a.bottom;
     }
-    // Sovrapposti sull'asse principale contano come vicinissimi; lo
-    // scostamento laterale pesa di più così si resta "in colonna"/"in riga".
-    const score = Math.max(primary, 0) + secondary * 2.5;
-    if (score < bestScore) { bestScore = score; best = el; }
+    const overlap = vertical
+      ? Math.min(a.right, b.right) - Math.max(a.left, b.left)
+      : Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    // Destra/sinistra solo nella stessa riga: niente salti in diagonale.
+    if (!vertical && overlap <= 0) continue;
+    // Prima la riga (o colonna) più vicina, poi l'elemento più "in linea":
+    // se si sovrappone conta quanto, sennò quanto è distante di lato.
+    const side = overlap > 0 ? -Math.min(overlap, 400) / 400 : (vertical
+      ? Math.max(b.left - a.right, a.left - b.right)
+      : Math.max(b.top - a.bottom, a.top - b.bottom));
+    const score = Math.max(gap, 0) * 4 + side;
+    if (score < bestScore - 0.001) { bestScore = score; best = el; }
+  }
+  // Entrando in un gruppo di schede (stagioni, Libreria/Cerca) si va su
+  // quella aperta, non sulla più vicina.
+  if (best && best.parentElement !== from.parentElement) {
+    const active = best.parentElement.querySelector(':scope > .f.active');
+    if (active) best = active;
   }
   if (best) focus(best);
+  return !!best;
 }
 
 /** Porta l'elemento in vista nel suo contenitore scorrevole, senza animazioni (pesanti sulla TV). */

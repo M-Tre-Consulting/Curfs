@@ -193,6 +193,10 @@ dal telefono. Creazione/modifica/foto solo da iPhone/Mac; la TV sceglie e mostra
   minutaggio, arriva il nuovo; i download restano ed entrano nel nuovo. Sulla TV libreria e
   minutaggio di prima dei profili si buttano (deciso dall'utente). Sulla TV guardare un episodio
   aggiunge solo quello, "Aggiungi alla libreria" tutta la serie, "Rimuovi" toglie dal profilo.
+- Cambio profilo (`ProfileSwitcher`): riga di foto, l'attivo primo e cerchiato; al tocco le due
+  foto si scambiano di posto subito (chi entra fa un arco sopra, chi esce sotto: non si
+  scontrano), il cambio vero va in background e se fallisce tornano com'erano. Voluto
+  dall'utente al posto della lista con conferma.
 - Collaudato il 2026-10-15 con autotest temporanei su una copia Mac con bundle ID diverso
   (⚠️ senza `container-migration.plist`: in `~/Library/Application Support` c'è un
   `default.store` di un'altra app che la migrazione si porterebbe via) e la logica TV con Node
@@ -209,7 +213,17 @@ non può salvare video sulla TV). Decisioni:
   `app/js/i18n.js` con chiavi = testo italiano: un testo nuovo va aggiunto lì nelle 5 lingue.
 - `catalog.js` è il port di `FileNameParser` + `HTTPTreeProvider.classify`/`resolveGroupsAndMovies`:
   se cambiano le regole di riconoscimento in Swift, allinearlo.
-- Navigazione spaziale in `focus.js` (elemento più vicino nella direzione, classe `f`), niente indici.
+- Navigazione spaziale in `focus.js` (classe `f`), niente indici: prima la riga/colonna più
+  vicina, poi l'elemento più in linea; destra/sinistra solo nella stessa riga. Zone `data-zone`
+  (barra in alto / contenuto): non si passa da una all'altra con la geometria ma con
+  `toHeader`/`toContent` in app.js (su → scheda aperta, giù → dove si era). Entrando in un
+  gruppo con un `.f.active` (schede, stagioni) si va su quello. Bug reale (2026-10-15): giù da
+  "Cerca" restava tra Libreria e Cerca. Provata con Chrome headless pilotato via DevTools
+  (tasti simulati) contro il Pi — ⚠️ non premere OK a caso: fa partire video e scrive il
+  minutaggio del profilo (usare un profilo di prova).
+- Lingua audio nel player (↑): `video.audioTracks`, che in Chrome è dietro un flag
+  (`AudioVideoTracks`): se manca lo dice. A ottobre 2026 tutti i video sul Pi hanno una sola
+  traccia (ita). Lingua scelta ricordata (`curfs.audioLang`).
 - TV lenta (MT9602): niente blur/ombre grandi, solo transform/opacity, scroll senza animazione.
 - nginx: ingresso separato `:8092` solo LAN e **senza password** (il `<video>` della TV non gestisce
   la basic auth), `/media/` = cartella video, `/imdb/` = proxy per le locandine IMDb (niente CORS).

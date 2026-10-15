@@ -274,6 +274,16 @@ export async function pull() {
   if (mirror.libraryDirty || mirror.progressDirty) await flush();
 }
 
+// --- Lingua audio preferita (codice a 2 lettere): vale per i video seguenti.
+
+export function preferredAudio() {
+  return read('curfs.audioLang', '');
+}
+
+export function setPreferredAudio(code) {
+  write('curfs.audioLang', code || '');
+}
+
 // --- Catalogo in cache: l'app si apre subito, poi si aggiorna dal server.
 
 export function cachedCatalog() {
