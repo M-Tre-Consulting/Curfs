@@ -59,11 +59,11 @@ const STRINGS = {
   'Togliere "{t}" dalla libreria?': [
     'Remove “{t}” from the library?', '¿Quitar «{t}» de la biblioteca?',
     'Retirer « {t} » de la bibliothèque ?', '„{t}“ aus der Mediathek entfernen?'],
-  'Si toglie solo dalla TV: sul server resta tutto.': [
-    'It’s only removed from the TV: everything stays on the server.',
-    'Solo se quita de la TV: en el servidor queda todo.',
-    'Il est retiré uniquement de la TV : tout reste sur le serveur.',
-    'Es wird nur vom Fernseher entfernt: auf dem Server bleibt alles.'],
+  'Si toglie dalla libreria del profilo, anche su iPhone e Mac. I video sul server restano.': [
+    'It’s removed from the profile’s library, on iPhone and Mac too. The videos stay on the server.',
+    'Se quita de la biblioteca del perfil, también en iPhone y Mac. Los vídeos se quedan en el servidor.',
+    'Il est retiré de la bibliothèque du profil, aussi sur iPhone et Mac. Les vidéos restent sur le serveur.',
+    'Es wird aus der Mediathek des Profils entfernt, auch auf iPhone und Mac. Die Videos bleiben auf dem Server.'],
   'Rimuovi': ['Remove', 'Quitar', 'Retirer', 'Entfernen'],
   'Annulla': ['Cancel', 'Cancelar', 'Annuler', 'Abbrechen'],
   'Guarda {c}': ['Watch {c}', 'Ver {c}', 'Regarder {c}', '{c} ansehen'],

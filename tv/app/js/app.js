@@ -340,7 +340,7 @@ function card(title, { library = false } = {}) {
 }
 
 function confirmRemove(title) {
-  dialog(t('Togliere "{t}" dalla libreria?', { t: title.name }), t('Si toglie solo dalla TV: sul server resta tutto.'), [
+  dialog(t('Togliere "{t}" dalla libreria?', { t: title.name }), t('Si toglie dalla libreria del profilo, anche su iPhone e Mac. I video sul server restano.'), [
     { label: t('Rimuovi'), danger: true, action: () => { store.removeFromLibrary(title); if (!libraryIdsWithTitles().length) state.editing = false; renderTabs(); } },
     { label: t('Annulla'), action: () => renderTabs() },
   ]);
@@ -422,7 +422,8 @@ function openSeries(title) {
 // ---------- player
 
 function play(title, episode) {
-  store.addToLibrary(title.id); // guardare qualcosa lo mette in libreria, come su iPhone
+  // Guardare qualcosa lo mette in libreria, come su iPhone: di una serie solo l'episodio.
+  store.addToLibrary(title.id, episode ? episode.id : null);
   const episodes = title.kind === 'series' ? allEpisodes(title) : [];
   let current = episode;
   const video = h('video', { class: 'video', preload: 'auto' });

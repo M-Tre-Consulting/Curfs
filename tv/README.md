@@ -15,13 +15,12 @@ modello provato). Questa non usa framework né build: i file in `app/` sono già
   solo per la rete di casa e senza password: vedi `server/nginx-curfs-tv.conf`. L'app legge il
   catalogo da `/media/` e lo ricostruisce con le stesse regole di Curfs (`app/js/catalog.js`).
 - **Profili** (obbligatori): all'avvio "Chi guarda?" con i profili creati da Curfs su iPhone o Mac
-  (nome e foto); la TV non li crea né li modifica, scrive solo il loro minutaggio
-  (`.curfs/profiles/<id>/progress.json`), condiviso con gli altri dispositivi. Si cambia profilo
-  dal tasto in alto. Senza profili sul server, la TV chiede di crearne uno dal telefono. Il
-  minutaggio salvato sulla TV prima dei profili si cancella alla prima scelta (non si unisce).
-- **Libreria** nella TV (localStorage), il minutaggio nel profilo con una copia locale. Un titolo
-  guardato altrove entra in libreria da solo. Niente download: una web app non può salvare video
-  sulla TV, e in casa lo streaming dal server è equivalente.
+  (nome e foto); la TV non li crea né li modifica, scrive solo libreria e minutaggio
+  (`.curfs/profiles/<id>/library.json` e `progress.json`), condivisi con gli altri dispositivi. Si cambia profilo
+  dal tasto in alto. Senza profili sul server, la TV chiede di crearne uno dal telefono.
+  Libreria e minutaggio salvati sulla TV prima dei profili si cancellano alla prima scelta.
+- Copia locale (localStorage) di libreria e minutaggio per aprire subito. Niente download: una
+  web app non può salvare video sulla TV, e in casa lo streaming dal server è equivalente.
 - **Locandine**: copertine accanto ai video sul server (`poster.jpg`, `<film>-poster.jpg`, come
   Curfs), altrimenti Wikipedia → IMDb (tramite il proxy `/imdb/` di nginx, facoltativo) → iTunes.
 - **Lingua**: quella della TV (italiano, inglese, spagnolo, francese, tedesco; le altre in

@@ -107,6 +107,21 @@ struct ProfileServer: Sendable {
         try await put(encoder.encode(file), to: folder(id).appending(path: "progress.json"), type: "application/json")
     }
 
+    // MARK: - Libreria
+
+    func library(for id: String) async throws -> LibraryFile {
+        let (data, response) = try await send(URLRequest(url: folder(id).appending(path: "library.json")))
+        if response.statusCode == 404 { return LibraryFile() }
+        try Self.check(response)
+        return (try? JSONDecoder().decode(LibraryFile.self, from: data)) ?? LibraryFile()
+    }
+
+    func saveLibrary(_ file: LibraryFile, for id: String) async throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        try await put(encoder.encode(file), to: folder(id).appending(path: "library.json"), type: "application/json")
+    }
+
     // MARK: - HTTP
 
     private func put(_ data: Data, to url: URL, type: String) async throws {

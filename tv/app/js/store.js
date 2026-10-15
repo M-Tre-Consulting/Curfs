@@ -1,8 +1,8 @@
-// Libreria e progressi. La libreria sta nella TV (localStorage); i progressi
-// sono del profilo (obbligatorio) e stanno sul server insieme a quelli di
-// iPhone e Mac (vedi profiles.js), con una copia qui per aprire tutto subito
-// e per non perdere nulla se il server non risponde. I progressi "locali"
-// (di prima dei profili) si cancellano alla prima scelta di un profilo.
+// Libreria e progressi del profilo scelto (obbligatorio): stanno sul server
+// insieme a quelli di iPhone e Mac (vedi profiles.js), con una copia qui per
+// aprire tutto subito e per non perdere nulla se il server non risponde.
+// Libreria e progressi salvati sulla TV prima dei profili si cancellano alla
+// prima scelta di un profilo.
 
 import * as profiles from './profiles.js';
 
@@ -10,8 +10,7 @@ const LIBRARY_KEY = 'curfs.library';
 const PROGRESS_KEY = 'curfs.progress';
 const CATALOG_KEY = 'curfs.catalog';
 const PROFILE_KEY = 'curfs.profile';
-const MIRROR_KEY = 'curfs.profileProgress';
-const APPLIED_KEY = 'curfs.profileApplied';
+const MIRROR_KEY = 'curfs.profileData';
 
 function read(key, fallback) {
   try {
@@ -24,37 +23,6 @@ function read(key, fallback) {
 
 function write(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* spazio pieno: pazienza */ }
-}
-
-// --- Libreria: id dei titoli (film "m|…", serie "s|…") con la data di aggiunta.
-
-export function libraryIds() {
-  return read(LIBRARY_KEY, []).map((e) => e.id);
-}
-
-export function inLibrary(id) {
-  return libraryIds().includes(id);
-}
-
-export function addToLibrary(id) {
-  const list = read(LIBRARY_KEY, []);
-  if (!list.some((e) => e.id === id)) {
-    list.unshift({ id, added: Date.now() });
-    write(LIBRARY_KEY, list);
-  }
-}
-
-export function removeFromLibrary(title) {
-  write(LIBRARY_KEY, read(LIBRARY_KEY, []).filter((e) => e.id !== title.id));
-  // Senza profilo via anche i progressi: tolto dalla libreria = visto, non
-  // serve più. Con un profilo restano: sono anche degli altri dispositivi.
-  if (activeProfile()) return;
-  const progress = read(PROGRESS_KEY, {});
-  const ids = title.kind === 'series'
-    ? (title.seasons || []).flatMap((s) => s.episodes.map((e) => e.id))
-    : [title.id];
-  ids.forEach((id) => delete progress[id]);
-  write(PROGRESS_KEY, progress);
 }
 
 // --- Chiavi condivise: dagli id del catalogo (percorsi sul server) alle
@@ -80,6 +48,7 @@ export function indexCatalog(catalog) {
       }
     }
   }
+  libraryCache = null;
 }
 
 function add(id, m) {
@@ -87,9 +56,28 @@ function add(id, m) {
   if (!byKey.has(m.key)) byKey.set(m.key, id);
 }
 
+function describe(m, at) {
+  const entry = { at, kind: m.kind, title: m.title, path: m.path };
+  if (m.kind === 'episode') Object.assign(entry, { show: m.show, season: m.season, episode: m.episode });
+  return entry;
+}
+
 // --- Profilo scelto su questa TV
 
-let mirror = read(MIRROR_KEY, null); // { id, entries, rev, dirty }
+// { id, progress: {chiave: voce}, library: {chiave: voce}, rev, progressDirty, libraryDirty }
+let mirror = read(MIRROR_KEY, null);
+
+// TV che aveva già scelto un profilo con la versione che sincronizzava solo
+// il minutaggio: si riparte da lì, la libreria arriva dal server.
+if (!mirror && activeProfile()) {
+  const old = read('curfs.profileProgress', null);
+  const same = old?.id === activeProfile().id;
+  mirror = {
+    id: activeProfile().id, progress: same ? old.entries : {}, library: {}, rev: 0,
+    progressDirty: same && !!old.dirty, libraryDirty: false,
+  };
+  write(MIRROR_KEY, mirror);
+}
 
 export function activeProfile() {
   return read(PROFILE_KEY, null);
@@ -102,29 +90,94 @@ export function refreshProfile(profile) {
 
 /** `null` solo quando il profilo è stato cancellato da iPhone/Mac. */
 export function setProfile(profile) {
+  libraryCache = null;
   if (!profile) {
     write(PROFILE_KEY, null);
     mirror = null;
     write(MIRROR_KEY, null);
     return;
   }
-  if (mirror?.id === profile.id) { write(PROFILE_KEY, profile); return; }
-  mirror = { id: profile.id, entries: {}, rev: 0, dirty: false };
-  // Il minutaggio di prima dei profili, salvato solo sulla TV, non passa al
-  // profilo (che ha già quello di iPhone/Mac): si butta.
-  write(PROGRESS_KEY, {});
+  if (mirror?.id !== profile.id) {
+    mirror = { id: profile.id, progress: {}, library: {}, rev: 0, progressDirty: false, libraryDirty: false };
+    // Quello salvato solo sulla TV prima dei profili non passa al profilo
+    // (che ha già quello di iPhone/Mac): si butta.
+    write(PROGRESS_KEY, {});
+    write(LIBRARY_KEY, []);
+  }
   write(PROFILE_KEY, profile);
   write(MIRROR_KEY, mirror);
 }
 
-function entryFor(m, pos, dur, done, at) {
-  const entry = { pos, dur, done, at, kind: m.kind, title: m.title, path: m.path };
-  if (m.kind === 'episode') Object.assign(entry, { show: m.show, season: m.season, episode: m.episode });
-  return entry;
-}
-
 function usingProfile() {
   return mirror && activeProfile()?.id === mirror.id;
+}
+
+function changed(flag) {
+  mirror.rev += 1;
+  mirror[flag] = true;
+  write(MIRROR_KEY, mirror);
+}
+
+// --- Libreria: titoli (film "m|…", serie "s|…") con almeno un episodio/film
+// presente nella libreria del profilo, dal più recente.
+
+let libraryCache = null;
+
+export function libraryIds() {
+  if (!usingProfile()) return read(LIBRARY_KEY, []).map((e) => e.id);
+  if (libraryCache) return libraryCache;
+  const latest = new Map();
+  for (const [key, e] of Object.entries(mirror.library)) {
+    if (e.removed) continue;
+    const m = meta.get(byKey.get(key));
+    if (m && !(latest.get(m.titleId) >= e.at)) latest.set(m.titleId, e.at);
+  }
+  libraryCache = [...latest.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+  return libraryCache;
+}
+
+export function inLibrary(id) {
+  return libraryIds().includes(id);
+}
+
+/** Senza `episodeId` tutta la serie; con, solo quell'episodio (quello che si guarda). */
+export function addToLibrary(titleId, episodeId = null) {
+  if (!usingProfile()) {
+    const list = read(LIBRARY_KEY, []);
+    if (!list.some((e) => e.id === titleId)) { list.unshift({ id: titleId, added: Date.now() }); write(LIBRARY_KEY, list); }
+    return;
+  }
+  const ids = episodeId ? [episodeId] : [...meta.entries()].filter(([, m]) => m.titleId === titleId).map(([id]) => id);
+  const now = Date.now();
+  let any = false;
+  for (const id of ids) {
+    const m = meta.get(id);
+    const e = m && mirror.library[m.key];
+    if (!m || (e && !e.removed)) continue;
+    mirror.library[m.key] = describe(m, now);
+    any = true;
+  }
+  if (!any) return;
+  libraryCache = null;
+  changed('libraryDirty');
+  flush();
+}
+
+export function removeFromLibrary(title) {
+  if (!usingProfile()) {
+    write(LIBRARY_KEY, read(LIBRARY_KEY, []).filter((e) => e.id !== title.id));
+    return;
+  }
+  // Si toglie dalla libreria del profilo: anche da iPhone e Mac (i file
+  // scaricati lì restano). Il minutaggio resta.
+  const now = Date.now();
+  for (const [key, e] of Object.entries(mirror.library)) {
+    const m = meta.get(byKey.get(key));
+    if (!e.removed && m?.titleId === title.id) mirror.library[key] = { ...e, at: now, removed: true };
+  }
+  libraryCache = null;
+  changed('libraryDirty');
+  flush();
 }
 
 // --- Progressi: { pos, dur, at, done } per episodio o film.
@@ -132,7 +185,7 @@ function usingProfile() {
 export function progressOf(id) {
   if (usingProfile()) {
     const m = meta.get(id);
-    const e = m && mirror.entries[m.key];
+    const e = m && mirror.progress[m.key];
     return e ? { pos: e.pos, dur: e.dur, at: e.at, done: e.done } : null;
   }
   return read(PROGRESS_KEY, {})[id] || null;
@@ -145,10 +198,8 @@ export function saveProgress(id, pos, dur) {
   if (usingProfile()) {
     const m = meta.get(id);
     if (!m) return;
-    mirror.entries[m.key] = entryFor(m, p.pos, p.dur, p.done, p.at);
-    mirror.rev += 1;
-    mirror.dirty = true;
-    write(MIRROR_KEY, mirror);
+    mirror.progress[m.key] = { ...describe(m, p.at), pos: p.pos, dur: p.dur, done: p.done };
+    changed('progressDirty');
     schedulePush();
     return;
   }
@@ -177,53 +228,50 @@ function schedulePush() {
   if (!pushTimer) pushTimer = setTimeout(() => { pushTimer = 0; flush(); }, 30000);
 }
 
-/** Manda subito al server quello che manca (pausa, chiusura del player). */
+/** Manda subito al server quello che manca (pausa, chiusura del player, libreria). */
 export async function flush() {
   if (pushing) await pushing.catch(() => {});
-  if (!usingProfile() || !mirror.dirty) return;
+  if (!usingProfile() || !(mirror.progressDirty || mirror.libraryDirty)) return;
   pushing = (async () => {
     const id = mirror.id;
     const rev = mirror.rev;
-    const remote = await profiles.fetchProgress(id);
-    profiles.merge(remote, mirror.entries);
-    await profiles.saveProgress(id, remote);
+    let progress = null;
+    let library = null;
+    if (mirror.libraryDirty) {
+      library = await profiles.fetchLibrary(id);
+      profiles.merge(library, mirror.library);
+      await profiles.saveLibrary(id, library);
+    }
+    if (mirror.progressDirty) {
+      progress = await profiles.fetchProgress(id);
+      profiles.merge(progress, mirror.progress);
+      await profiles.saveProgress(id, progress);
+    }
     if (mirror?.id !== id) return;
-    profiles.merge(mirror.entries, remote);
-    if (mirror.rev === rev) mirror.dirty = false;
+    if (library) profiles.merge(mirror.library, library);
+    if (progress) profiles.merge(mirror.progress, progress);
+    if (mirror.rev === rev) { mirror.progressDirty = false; mirror.libraryDirty = false; }
+    libraryCache = null;
     write(MIRROR_KEY, mirror);
   })();
-  try { await pushing; } catch { /* riprova al prossimo salvataggio */ } finally { pushing = null; }
+  try { await pushing; } catch { /* riprova al prossimo cambiamento */ } finally { pushing = null; }
 }
 
-/**
- * Legge il minutaggio del profilo dal server. I titoli guardati altrove dopo
- * l'ultima lettura entrano in libreria, come se li avessi guardati qui.
- */
+const newerThan = (mine, theirs) => Object.entries(mine).some(([k, e]) => !theirs[k] || e.at > theirs[k].at);
+
+/** Legge libreria e minutaggio del profilo dal server (cambiati su iPhone, Mac o un'altra TV). */
 export async function pull() {
   if (!usingProfile()) return;
   const id = mirror.id;
-  const remote = await profiles.fetchProgress(id);
+  const [library, progress] = await Promise.all([profiles.fetchLibrary(id), profiles.fetchProgress(id)]);
   if (mirror?.id !== id) return;
-  const localNewer = Object.entries(mirror.entries).some(([k, e]) => !remote[k] || e.at > remote[k].at);
-  // Le voci che questa TV conosce già (magari le ha scritte lei) non
-  // rimettono in libreria un titolo tolto.
-  const known = new Set(Object.entries(remote).filter(([k, e]) => mirror.entries[k]?.at >= e.at).map(([k]) => k));
-  profiles.merge(mirror.entries, remote);
-  if (localNewer) mirror.dirty = true;
+  if (newerThan(mirror.library, library)) mirror.libraryDirty = true;
+  if (newerThan(mirror.progress, progress)) mirror.progressDirty = true;
+  profiles.merge(mirror.library, library);
+  profiles.merge(mirror.progress, progress);
+  libraryCache = null;
   write(MIRROR_KEY, mirror);
-
-  const applied = read(APPLIED_KEY, {});
-  const since = applied[id] || 0;
-  let newest = since;
-  for (const [key, e] of Object.entries(remote)) {
-    newest = Math.max(newest, e.at);
-    if (e.at <= since || known.has(key)) continue;
-    const m = meta.get(byKey.get(key));
-    if (m) addToLibrary(m.titleId);
-  }
-  applied[id] = newest;
-  write(APPLIED_KEY, applied);
-  if (mirror.dirty) await flush();
+  if (mirror.libraryDirty || mirror.progressDirty) await flush();
 }
 
 // --- Catalogo in cache: l'app si apre subito, poi si aggiorna dal server.

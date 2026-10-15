@@ -206,7 +206,9 @@ struct SeriesDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Rimuovi", role: .destructive) {
-                if let item = pendingDelete { LibraryMaintenance.delete(item, modelContext: modelContext) }
+                // Eliminare il download libera spazio qui ma lascia l'episodio
+                // nella libreria del profilo (in streaming sugli altri dispositivi).
+                if let item = pendingDelete { LibraryMaintenance.delete(item, modelContext: modelContext, removeFromProfile: item.isRemote) }
                 pendingDelete = nil
             }
             Button("Annulla", role: .cancel) { pendingDelete = nil }

@@ -6933,36 +6933,36 @@
         }
       }
     },
-    "La sezione Cerca e i profili si collegano soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati, le copertine che carichi e i profili: nome, foto facoltativa e a che punto sei di ogni episodio e film." : {
+    "La sezione Cerca e i profili si collegano soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati, le copertine che carichi e i profili: nome, foto facoltativa, cosa hai in libreria e a che punto sei di ogni episodio e film." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Der Bereich Suchen und die Profile verbinden sich nur mit dem Server, den du einrichtest (zum Beispiel einem bei dir zu Hause). Adresse, Benutzername und Passwort bleiben in den Einstellungen der App auf dem Gerät. Mit diesem Server werden Ordnerlisten, gestreamte oder geladene Videos, die von dir hochgeladenen Cover und die Profile ausgetauscht: Name, optionales Foto und wo du bei jeder Folge und jedem Film bist."
+            "value" : "Der Bereich Suchen und die Profile verbinden sich nur mit dem Server, den du einrichtest (zum Beispiel einem bei dir zu Hause). Adresse, Benutzername und Passwort bleiben in den Einstellungen der App auf dem Gerät. Mit diesem Server werden Ordnerlisten, gestreamte oder geladene Videos, die von dir hochgeladenen Cover und die Profile ausgetauscht: Name, optionales Foto, was in deiner Mediathek ist und wo du bei jeder Folge und jedem Film bist."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Search section and profiles only connect to the server you set up (for example one at your home). Its address, username and password stay in the app's settings on the device. That server exchanges folder listings, streamed or downloaded videos, the covers you upload and profiles: name, optional photo and where you are in every episode and movie."
+            "value" : "The Search section and profiles only connect to the server you set up (for example one at your home). Its address, username and password stay in the app's settings on the device. That server exchanges folder listings, streamed or downloaded videos, the covers you upload and profiles: name, optional photo, what's in your library and where you are in every episode and movie."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La sección Buscar y los perfiles solo se conectan al servidor que configuras tú (por ejemplo, uno en tu casa). La dirección, el usuario y la contraseña se quedan en los ajustes de la app en el dispositivo. Con ese servidor se intercambian las listas de carpetas, los vídeos en streaming o descargados, las portadas que subes y los perfiles: nombre, foto opcional y por dónde vas en cada episodio y película."
+            "value" : "La sección Buscar y los perfiles solo se conectan al servidor que configuras tú (por ejemplo, uno en tu casa). La dirección, el usuario y la contraseña se quedan en los ajustes de la app en el dispositivo. Con ese servidor se intercambian las listas de carpetas, los vídeos en streaming o descargados, las portadas que subes y los perfiles: nombre, foto opcional, lo que tienes en la biblioteca y por dónde vas en cada episodio y película."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La section Rechercher et les profils se connectent uniquement au serveur que vous configurez (par exemple un serveur chez vous). L'adresse, le nom d'utilisateur et le mot de passe restent dans les réglages de l'app sur l'appareil. Avec ce serveur transitent les listes de dossiers, les vidéos en streaming ou téléchargées, les affiches que vous envoyez et les profils : nom, photo facultative et où vous en êtes dans chaque épisode et film."
+            "value" : "La section Rechercher et les profils se connectent uniquement au serveur que vous configurez (par exemple un serveur chez vous). L'adresse, le nom d'utilisateur et le mot de passe restent dans les réglages de l'app sur l'appareil. Avec ce serveur transitent les listes de dossiers, les vidéos en streaming ou téléchargées, les affiches que vous envoyez et les profils : nom, photo facultative, ce que contient votre bibliothèque et où vous en êtes dans chaque épisode et film."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La sezione Cerca e i profili si collegano soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati, le copertine che carichi e i profili: nome, foto facoltativa e a che punto sei di ogni episodio e film."
+            "value" : "La sezione Cerca e i profili si collegano soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati, le copertine che carichi e i profili: nome, foto facoltativa, cosa hai in libreria e a che punto sei di ogni episodio e film."
           }
         }
       }

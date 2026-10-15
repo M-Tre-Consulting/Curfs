@@ -154,35 +154,49 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
 ## Profili (2.4.0, dal 2026-10-15)
 
 Voluti dall'utente: un profilo (nome + foto facoltativa) che vive **sul server dei video**, non
-sul dispositivo, con il minutaggio di ogni episodio/film, così iPhone, Mac e TV sono "lo stesso
-account". **Obbligatori ovunque** (richiesta esplicita): senza profilo attivo `RootTabView` mostra
-solo `ProfilesView(required: true)` ("Chi guarda?", con "Imposta il server…" se manca), non esiste
+sul dispositivo, con **libreria e minutaggio**, così iPhone, Mac e TV sono "lo stesso account"
+(la prima versione sincronizzava solo il minutaggio: l'utente si aspettava anche la libreria). I
+file scaricati restano del dispositivo: sugli altri lo stesso episodio compare in streaming.
+**Obbligatori ovunque** (richiesta esplicita): senza profilo attivo `RootTabView` mostra solo
+`ProfilesView(required: true)` ("Chi guarda?", con "Imposta il server…" se manca), non esiste
 "Esci dal profilo"; la TV mostra solo "Chi guarda?" e senza profili sul server dice di crearne uno
 dal telefono. Creazione/modifica/foto solo da iPhone/Mac; la TV sceglie e mostra le foto.
-- Server: `.curfs/profiles/<id>/{profile.json,avatar.jpg,progress.json}` dentro la cartella dei
-  video (nginx autoindex non elenca i nomi col punto ⇒ fuori dal catalogo, anche per la TV).
-  Scrittura con WebDAV solo lì (`tv/server/nginx-curfs-profiles.conf`, `create_full_put_path`);
-  sull'ingresso TV `:8092` solo PUT di `progress.json` di un profilo esistente (map + `if` →
-  403). Applicato sul Pi il 2026-10-15 (backup `/home/nicop/*.nginx.bak-20261015-111935`).
+- Server: `.curfs/profiles/<id>/{profile.json,avatar.jpg,progress.json,library.json}` dentro la
+  cartella dei video (nginx autoindex non elenca i nomi col punto ⇒ fuori dal catalogo, anche per
+  la TV). Scrittura con WebDAV solo lì (`tv/server/nginx-curfs-profiles.conf`,
+  `create_full_put_path`); sull'ingresso TV `:8092` solo PUT di `progress.json`/`library.json` di
+  un profilo esistente (map + `if` → 403). Applicato sul Pi il 2026-10-15 (backup
+  `/home/nicop/*.nginx.bak-20261015-*`).
 - Chiave condivisa per nome (`SyncKey` in Swift = `normalized/episodeKey/movieKey` in
   `tv/app/js/profiles.js`, verificate identiche): `e:<serie>:<s>:<e>` / `m:<titolo>`, minuscole,
   senza accenti, solo lettere/cifre, senza "(anno)" finale — locale importato e streaming del Pi
-  combaciano; nomi diversi ("Il Trono di Spade" vs "Game of Thrones") no. La voce porta anche il
-  `path` sul server: un dispositivo che non ha quell'episodio lo aggiunge in libreria in streaming.
-- Unione: per chiave vince `at` (ms) più recente. `ProfileSync.sync()` = GET, applica alla
-  libreria le voci più nuove di `lastPlayedAt`, PUT di quelle locali più nuove. All'avvio, al
-  ritorno in primo piano, ogni 30 s di riproduzione e a pausa/chiusura (`persistProgress`).
-  Gli item creati da voci remote solo per voci più nuove dell'ultima sync
-  (`Curfs.profile.appliedAt.<id>`): un titolo tolto dalla libreria non ricompare; stessa regola
-  sulla TV (e lì non contano le voci che la TV conosce già).
-- Primo profilo su iPhone/Mac: il minutaggio locale si unisce al profilo. Sulla TV invece quello
-  di prima dei profili si butta (deciso dall'utente: il profilo ha già quello del telefono). Cambio profilo:
-  prima si salva il vecchio (se fallisce non si cambia), poi il minutaggio locale si azzera e
-  arriva quello del nuovo. La libreria (e i download) restano del dispositivo.
-- Collaudato il 2026-10-15 con un autotest temporaneo su una copia Mac con bundle ID diverso
+  combaciano; nomi diversi ("Il Trono di Spade" vs "Game of Thrones") no.
+- `library.json`: una voce per episodio/film, con `at` e `removed` (le rimozioni restano come
+  voci per arrivare agli altri). `progress.json`: minutaggio. Per entrambi vince `at` (ms) più
+  recente. `ProfileSync.performSync`: libreria (aggiunte → voci in streaming, rimozioni → via le
+  voci **in streaming** aggiunte prima, mai i file scaricati), poi minutaggio (solo sugli item già
+  in libreria), poi PUT di quello in cui il dispositivo è più avanti. Le aggiunte remote si
+  applicano solo se più nuove dell'ultima sync (`Curfs.profile.libraryAppliedAt.<id>`) e non
+  tolte qui nel frattempo (`Curfs.profile.pendingRemovals`, scritte da
+  `LibraryMaintenance.delete`). ⚠️ "Elimina il download" di un episodio (`removeFromProfile:
+  false`) libera spazio ma lo lascia nel profilo.
+- Il percorso del file sul server serve per aggiungere in streaming: le voci lo portano se
+  l'origine era in streaming; per gli scaricati/importati (che non ricordano da dove vengono, bug
+  della prima versione: sul Mac non arrivava nulla dall'iPhone) lo trova `ServerPathResolver` nel
+  catalogo di Cerca per nome (+ `ShowNameMatcher`). Una serie già in libreria tiene il suo nome
+  locale per le voci nuove ("Game Of Thrones" vs "Game of Thrones").
+- Sync all'avvio, al ritorno in primo piano, quando cambia il numero di item (`ModelContext.didSave`
+  + `fetchCount`: i salvataggi del minutaggio non la fanno partire), ogni 30 s di riproduzione e a
+  pausa/chiusura (`persistProgress`).
+- Primo profilo su iPhone/Mac: libreria e minutaggio locali si uniscono al profilo. Cambio
+  profilo: prima si salva il vecchio (se fallisce non si cambia), poi via le voci in streaming e il
+  minutaggio, arriva il nuovo; i download restano ed entrano nel nuovo. Sulla TV libreria e
+  minutaggio di prima dei profili si buttano (deciso dall'utente). Sulla TV guardare un episodio
+  aggiunge solo quello, "Aggiungi alla libreria" tutta la serie, "Rimuovi" toglie dal profilo.
+- Collaudato il 2026-10-15 con autotest temporanei su una copia Mac con bundle ID diverso
   (⚠️ senza `container-migration.plist`: in `~/Library/Application Support` c'è un
   `default.store` di un'altra app che la migrazione si porterebbe via) e la logica TV con Node
-  contro il Pi. Non verificato a mano sui dispositivi veri.
+  contro il Pi.
 
 ## Curfs TV (`tv/`, dal 2026-10-14)
 

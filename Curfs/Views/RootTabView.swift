@@ -58,6 +58,7 @@ struct RootTabView: View {
             if phase == .active { ProfileSync.shared.sync() }
         }
         .task {
+            ProfileSync.shared.observeLibraryChanges()
             ProfileSync.shared.sync()
             // Scalda l'analisi "salta intro" di tutta la libreria locale, così
             // il pulsante c'è alla prima riproduzione (vedi IntroCreditsWarmup).

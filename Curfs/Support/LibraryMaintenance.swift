@@ -10,7 +10,10 @@ import Foundation
 import SwiftData
 
 enum LibraryMaintenance {
-    static func delete(_ item: MediaItem, modelContext: ModelContext) {
+    /// `removeFromProfile: false` solo per "elimina il download" di un
+    /// episodio: si libera spazio qui, ma resta nella libreria del profilo.
+    static func delete(_ item: MediaItem, modelContext: ModelContext, removeFromProfile: Bool = true) {
+        if removeFromProfile { ProfileSync.shared.noteRemoved(item) }
         // Un item in streaming non ha file locali (e `fileURL` punterebbe
         // alla cartella Library stessa): si cancella solo il record.
         if !item.isRemote {

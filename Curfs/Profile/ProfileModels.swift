@@ -10,6 +10,7 @@
 //    .curfs/profiles/<id>/profile.json   nome + versione della foto
 //    .curfs/profiles/<id>/avatar.jpg     foto profilo (facoltativa)
 //    .curfs/profiles/<id>/progress.json  minutaggio per episodio/film
+//    .curfs/profiles/<id>/library.json   cosa c'è in libreria (episodi/film)
 //
 //  Lo stesso formato lo legge e lo scrive l'app TV (`tv/app/js/profiles.js`):
 //  se cambia qui, va cambiato anche lì.
@@ -70,6 +71,43 @@ struct ProgressFile: Codable, Sendable {
                 entries[key] = winner
             } else if existing.path == nil, let path = incoming.path {
                 entries[key]?.path = path
+            }
+        }
+    }
+}
+
+/// Un episodio o film nella libreria del profilo, o tolto (`removed`): le
+/// rimozioni restano come voci, così arrivano anche agli altri dispositivi.
+/// `at` = ultima aggiunta o rimozione (ms); a parità di chiave vince la più recente.
+struct LibraryEntry: Codable, Equatable, Sendable {
+    var at: Int64
+    var removed: Bool?
+    var kind: String
+    var title: String
+    var show: String?
+    var season: Int?
+    var episode: Int?
+    var path: String?
+
+    var isRemoved: Bool { removed == true }
+}
+
+struct LibraryFile: Codable, Sendable {
+    var version = 1
+    var items: [String: LibraryEntry] = [:]
+
+    mutating func merge(_ other: [String: LibraryEntry]) {
+        for (key, incoming) in other {
+            guard let existing = items[key] else {
+                items[key] = incoming
+                continue
+            }
+            if incoming.at > existing.at {
+                var winner = incoming
+                if winner.path == nil { winner.path = existing.path }
+                items[key] = winner
+            } else if existing.path == nil, let path = incoming.path {
+                items[key]?.path = path
             }
         }
     }

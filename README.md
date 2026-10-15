@@ -41,8 +41,9 @@ mobile sempre in primo piano).
   `autoindex_format json;` + supporto alle richieste Range, nessun endpoint custom).
 
 - **Profili** (dalla 2.4.0, obbligatori): nome e foto facoltativa, salvati sul server dei video
-  insieme al minutaggio di ogni episodio e film, così iPhone, Mac e TV riprendono dallo stesso
-  punto. I download restano su ciascun dispositivo. Si creano da iPhone/Mac; la TV li sceglie
+  insieme alla libreria e al minutaggio di ogni episodio e film, così iPhone, Mac e TV hanno la
+  stessa libreria e riprendono dallo stesso punto. I download restano su ciascun dispositivo
+  (sugli altri lo stesso episodio è in streaming). Si creano da iPhone/Mac; la TV li sceglie
   soltanto. Lato server: WebDAV di nginx sulla sola cartella nascosta `.curfs/`
   ([`tv/server/nginx-curfs-profiles.conf`](tv/server/nginx-curfs-profiles.conf)).
 - **Curfs TV** (cartella [`tv/`](tv/README.md)): versione minimale per le TV Hisense con VIDAA OS,
