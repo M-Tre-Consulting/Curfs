@@ -175,7 +175,8 @@ dal telefono. Creazione/modifica/foto solo da iPhone/Mac; la TV sceglie e mostra
   Gli item creati da voci remote solo per voci più nuove dell'ultima sync
   (`Curfs.profile.appliedAt.<id>`): un titolo tolto dalla libreria non ricompare; stessa regola
   sulla TV (e lì non contano le voci che la TV conosce già).
-- Primo profilo su un dispositivo: il minutaggio locale si unisce al profilo. Cambio profilo:
+- Primo profilo su iPhone/Mac: il minutaggio locale si unisce al profilo. Sulla TV invece quello
+  di prima dei profili si butta (deciso dall'utente: il profilo ha già quello del telefono). Cambio profilo:
   prima si salva il vecchio (se fallisce non si cambia), poi il minutaggio locale si azzera e
   arriva quello del nuovo. La libreria (e i download) restano del dispositivo.
 - Collaudato il 2026-10-15 con un autotest temporaneo su una copia Mac con bundle ID diverso
@@ -190,6 +191,8 @@ Web app per la TV Hisense VIDAA dell'utente, **non Swift**: HTML/CSS/JS senza fr
 con le funzioni di Sidee, vedi `tv/README.md`). Scope voluto dall'utente: libreria, serie →
 episodi, film → parte, rimozione, catalogo; **niente sottotitoli e niente download** (una web app
 non può salvare video sulla TV). Decisioni:
+- Lingue come l'app (it/en/es/fr/de, fallback en) dalla lingua della TV (`navigator.language`),
+  `app/js/i18n.js` con chiavi = testo italiano: un testo nuovo va aggiunto lì nelle 5 lingue.
 - `catalog.js` è il port di `FileNameParser` + `HTTPTreeProvider.classify`/`resolveGroupsAndMovies`:
   se cambiano le regole di riconoscimento in Swift, allinearlo.
 - Navigazione spaziale in `focus.js` (elemento più vicino nella direzione, classe `f`), niente indici.

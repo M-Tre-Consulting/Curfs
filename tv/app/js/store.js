@@ -2,7 +2,7 @@
 // sono del profilo (obbligatorio) e stanno sul server insieme a quelli di
 // iPhone e Mac (vedi profiles.js), con una copia qui per aprire tutto subito
 // e per non perdere nulla se il server non risponde. I progressi "locali"
-// sono quelli di prima dei profili: passano al primo profilo scelto.
+// (di prima dei profili) si cancellano alla prima scelta di un profilo.
 
 import * as profiles from './profiles.js';
 
@@ -110,16 +110,9 @@ export function setProfile(profile) {
   }
   if (mirror?.id === profile.id) { write(PROFILE_KEY, profile); return; }
   mirror = { id: profile.id, entries: {}, rev: 0, dirty: false };
-  // Prima volta con questo profilo su questa TV: quello già guardato qui
-  // senza profilo diventa suo.
-  const applied = read(APPLIED_KEY, {});
-  if (!(profile.id in applied)) {
-    for (const [id, p] of Object.entries(read(PROGRESS_KEY, {}))) {
-      const m = meta.get(id);
-      if (m && (p.pos > 5 || p.done)) mirror.entries[m.key] = entryFor(m, p.pos, p.dur, p.done, p.at);
-    }
-    mirror.dirty = Object.keys(mirror.entries).length > 0;
-  }
+  // Il minutaggio di prima dei profili, salvato solo sulla TV, non passa al
+  // profilo (che ha già quello di iPhone/Mac): si butta.
+  write(PROGRESS_KEY, {});
   write(PROFILE_KEY, profile);
   write(MIRROR_KEY, mirror);
 }

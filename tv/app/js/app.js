@@ -5,6 +5,7 @@ import { loadCatalog, allEpisodes } from './catalog.js';
 import * as store from './store.js';
 import { posterFor } from './posters.js';
 import { listProfiles, avatarURL } from './profiles.js';
+import { t, plural } from './i18n.js';
 import { focus, focusFirst, focused, move, setScope } from './focus.js';
 
 const KEY = {
@@ -70,7 +71,7 @@ async function refreshCatalog() {
     store.cacheCatalog(catalog);
     store.indexCatalog(catalog);
   } catch (e) {
-    state.error = 'Il server non risponde. Controlla che la TV sia sulla rete di casa.';
+    state.error = t('Il server non risponde. Controlla che la TV sia sulla rete di casa.');
   }
   if (await startProfiles()) return;
   if (stack.length) return;
@@ -92,7 +93,7 @@ async function startProfiles() {
     state.profiles = await listProfiles();
     state.profilesError = null;
   } catch {
-    state.profilesError = 'Non riesco a leggere i profili dal server.';
+    state.profilesError = t('Non riesco a leggere i profili dal server.');
   }
   const current = store.activeProfile();
   if (current && state.profiles) {
@@ -154,9 +155,9 @@ function openProfilePicker(required) {
       body = h('div', { class: 'spinner' });
     } else if (!list.length) {
       body = h('div', { class: 'profiles-empty' },
-        h('p', {}, state.profilesError || 'Sul server non c’è ancora nessun profilo.'),
-        h('p', {}, 'Crea il tuo dall’app Curfs su iPhone o Mac (in alto nella Libreria), poi riprova.'),
-        h('button', { class: 'f pill primary', dataset: { key: 'retry', autofocus: true }, onclick: retry }, 'Riprova'));
+        h('p', {}, state.profilesError || t('Sul server non c’è ancora nessun profilo.')),
+        h('p', {}, t('Crea il tuo dall’app Curfs su iPhone o Mac (in alto nella Libreria), poi riprova.')),
+        h('button', { class: 'f pill primary', dataset: { key: 'retry', autofocus: true }, onclick: retry }, t('Riprova')));
     } else {
       body = h('div', { class: 'profile-row' }, list.map((p) => h('button', {
         class: 'f profile', dataset: { key: 'p-' + p.id, autofocus: current?.id === p.id || null },
@@ -164,9 +165,9 @@ function openProfilePicker(required) {
       }, avatar(p, 'avatar'), h('div', { class: 'profile-name' }, p.name))));
     }
     app.replaceChildren(h('div', { class: 'profiles' },
-      h('h1', {}, 'Chi guarda?'),
+      h('h1', {}, t('Chi guarda?')),
       body,
-      list.length ? h('p', { class: 'hint' }, 'I profili si creano dall’app Curfs su iPhone o Mac. Riprendi da dove eri rimasto anche lì.') : null));
+      list.length ? h('p', { class: 'hint' }, t('I profili si creano dall’app Curfs su iPhone o Mac. Riprendi da dove eri rimasto anche lì.')) : null));
     focusFirst(app);
   };
   push({
@@ -189,12 +190,12 @@ function renderTabs() {
     h('header', { class: 'top' },
       h('div', { class: 'brand' }, 'Curfs'),
       h('nav', { class: 'tabs' },
-        tabButton('library', 'Libreria'),
-        tabButton('search', 'Cerca')),
+        tabButton('library', t('Libreria')),
+        tabButton('search', t('Cerca'))),
       profileButton(),
       state.tab === 'library' && libraryIdsWithTitles().length
         ? h('button', { class: `f pill ${state.editing ? 'danger' : ''}`, dataset: { key: 'edit' }, onclick: toggleEdit },
-          state.editing ? 'Fine' : 'Modifica')
+          state.editing ? t('Fine') : t('Modifica'))
         : null),
     h('main', { class: 'scroll' }, state.tab === 'library' ? libraryView() : searchView()),
   );
@@ -226,8 +227,8 @@ function libraryView() {
   const titles = libraryIdsWithTitles();
   if (!titles.length) {
     return h('div', { class: 'empty' },
-      h('h2', {}, 'La libreria è vuota'),
-      h('p', {}, 'Vai su Cerca e aggiungi film e serie dal tuo server.'),
+      h('h2', {}, t('La libreria è vuota')),
+      h('p', {}, t('Vai su Cerca e aggiungi film e serie dal tuo server.')),
       state.error && h('p', { class: 'error' }, state.error));
   }
   const recency = (t) => store.lastPlayed(t.kind === 'series' ? allEpisodes(t).map((e) => e.id) : [t.id])?.at || 0;
@@ -235,16 +236,16 @@ function libraryView() {
   titles.sort((a, b) => recency(b) - recency(a) || order.indexOf(a.id) - order.indexOf(b.id));
   if (state.editing) {
     return h('div', {},
-      h('p', { class: 'hint' }, 'Premi OK su un titolo per toglierlo dalla libreria.'),
+      h('p', { class: 'hint' }, t('Premi OK su un titolo per toglierlo dalla libreria.')),
       h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))));
   }
   const resume = continueTarget();
   const suggestions = suggestedTitles(7);
   return h('div', {},
     resume && continueHero(resume),
-    h('h2', { class: 'section' }, 'La tua libreria'),
+    h('h2', { class: 'section' }, t('La tua libreria')),
     h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))),
-    suggestions.length && h('h2', { class: 'section' }, 'Da scoprire sul server'),
+    suggestions.length && h('h2', { class: 'section' }, t('Da scoprire sul server')),
     suggestions.length && h('div', { class: 'grid' }, suggestions.map((t) => card(t))));
 }
 
@@ -278,11 +279,11 @@ function continueHero(c) {
   },
   posterArt(c.title, 'poster hero-poster'),
   h('div', { class: 'hero-info' },
-    h('div', { class: 'hero-label' }, c.next ? 'Prossimo episodio' : 'Continua a guardare'),
+    h('div', { class: 'hero-label' }, c.next ? t('Prossimo episodio') : t('Continua a guardare')),
     h('div', { class: 'hero-title' }, c.title.name),
     c.ep && h('div', { class: 'hero-sub' }, `${code(c.ep.season, c.ep.number)} · ${c.ep.title}`),
     p?.dur ? h('div', { class: 'hero-bar' }, h('i', { style: `width:${(p.pos / p.dur * 100).toFixed(1)}%` })) : null,
-    h('div', { class: 'hero-hint' }, left ? `▶  OK per riprendere · mancano ${left} min` : '▶  OK per guardarlo')));
+    h('div', { class: 'hero-hint' }, left ? t('▶  OK per riprendere · mancano {n} min', { n: left }) : t('▶  OK per guardarlo'))));
 }
 
 /** Titoli del catalogo mai iniziati e non in libreria; l'ordine cambia una volta al giorno. */
@@ -302,14 +303,14 @@ function suggestedTitles(count) {
 
 function searchView() {
   if (!state.catalog) return loadingView();
-  if (!state.catalog.titles.length) return h('div', { class: 'empty' }, h('h2', {}, 'Nessun video sul server'));
+  if (!state.catalog.titles.length) return h('div', { class: 'empty' }, h('h2', {}, t('Nessun video sul server')));
   const series = state.catalog.titles.filter((t) => t.kind === 'series');
   const movies = state.catalog.titles.filter((t) => t.kind === 'movie');
   return h('div', {},
     state.error && h('p', { class: 'error' }, state.error),
-    series.length && h('h2', { class: 'section' }, 'Serie TV'),
+    series.length && h('h2', { class: 'section' }, t('Serie TV')),
     series.length && h('div', { class: 'grid' }, series.map((t) => card(t))),
-    movies.length && h('h2', { class: 'section' }, 'Film'),
+    movies.length && h('h2', { class: 'section' }, t('Film')),
     movies.length && h('div', { class: 'grid' }, movies.map((t) => card(t))));
 }
 
@@ -339,9 +340,9 @@ function card(title, { library = false } = {}) {
 }
 
 function confirmRemove(title) {
-  dialog(`Togliere "${title.name}" dalla libreria?`, 'Si toglie solo dalla TV: sul server resta tutto.', [
-    { label: 'Rimuovi', danger: true, action: () => { store.removeFromLibrary(title); if (!libraryIdsWithTitles().length) state.editing = false; renderTabs(); } },
-    { label: 'Annulla', action: () => renderTabs() },
+  dialog(t('Togliere "{t}" dalla libreria?', { t: title.name }), t('Si toglie solo dalla TV: sul server resta tutto.'), [
+    { label: t('Rimuovi'), danger: true, action: () => { store.removeFromLibrary(title); if (!libraryIdsWithTitles().length) state.editing = false; renderTabs(); } },
+    { label: t('Annulla'), action: () => renderTabs() },
   ]);
 }
 
@@ -370,10 +371,10 @@ function openSeries(title) {
   const episodes = allEpisodes(title);
   const resumeTarget = () => {
     const last = store.lastPlayed(episodes.map((e) => e.id));
-    if (!last) return { ep: episodes[0], label: `Guarda ${code(episodes[0].season, episodes[0].number)}` };
+    if (!last) return { ep: episodes[0], label: t('Guarda {c}', { c: code(episodes[0].season, episodes[0].number) }) };
     const i = episodes.findIndex((e) => e.id === last.id);
-    if (last.done && episodes[i + 1]) return { ep: episodes[i + 1], label: `Guarda ${code(episodes[i + 1].season, episodes[i + 1].number)}` };
-    return { ep: episodes[i], label: `${last.done ? 'Rivedi' : 'Riprendi'} ${code(episodes[i].season, episodes[i].number)}` };
+    if (last.done && episodes[i + 1]) return { ep: episodes[i + 1], label: t('Guarda {c}', { c: code(episodes[i + 1].season, episodes[i + 1].number) }) };
+    return { ep: episodes[i], label: t(last.done ? 'Rivedi {c}' : 'Riprendi {c}', { c: code(episodes[i].season, episodes[i].number) }) };
   };
 
   const render = () => {
@@ -392,17 +393,17 @@ function openSeries(title) {
         posterArt(title, 'poster big'),
         h('div', { class: 'hero-text' },
           h('h1', {}, title.name),
-          h('p', { class: 'meta' }, `${title.seasons.length} ${title.seasons.length === 1 ? 'stagione' : 'stagioni'} · ${episodes.length} episodi`),
+          h('p', { class: 'meta' }, `${plural(title.seasons.length, '1 stagione', '{n} stagioni')} · ${plural(episodes.length, '1 episodio', '{n} episodi')}`),
           h('div', { class: 'row' },
             h('button', { class: 'f pill primary', dataset: { key: 'resume', autofocus: true }, onclick: () => { screen.lastKey = 'resume'; play(title, target.ep); } }, '▶  ' + target.label),
             h('button', {
               class: 'f pill', dataset: { key: 'add' },
               onclick: () => { added ? store.removeFromLibrary(title) : store.addToLibrary(title.id); render(); },
-            }, added ? '✓  In libreria' : '+  Aggiungi alla libreria')))),
+            }, added ? t('✓  In libreria') : t('+  Aggiungi alla libreria'))))),
       title.seasons.length > 1 && h('div', { class: 'seasons' }, title.seasons.map((s) => h('button', {
         class: `f tab ${s.number === season.number ? 'active' : ''}`, dataset: { key: 'season-' + s.number },
         onclick: () => { screen.season = s.number; render(); },
-      }, `Stagione ${s.number}`))),
+      }, t('Stagione {n}', { n: s.number })))),
       h('div', { class: 'episodes' }, season.episodes.map((e) => {
         const p = store.progressOf(e.id);
         return h('button', { class: 'f episode', dataset: { key: e.id }, onclick: () => { screen.lastKey = e.id; play(title, { ...e, season: season.number }); } },
@@ -486,9 +487,9 @@ function play(title, episode) {
     let left = 8;
     const paint = () => {
       nextBox.replaceChildren(
-        h('div', { class: 'next-label' }, 'Prossimo episodio'),
+        h('div', { class: 'next-label' }, t('Prossimo episodio')),
         h('div', { class: 'next-title' }, `${code(next.season, next.number)} · ${next.title}`),
-        h('div', { class: 'next-hint' }, `Parte tra ${left} s · OK per guardarlo ora · Indietro per uscire`));
+        h('div', { class: 'next-hint' }, t('Parte tra {n} s · OK per guardarlo ora · Indietro per uscire', { n: left })));
     };
     paint();
     nextBox.classList.remove('hidden');
@@ -528,7 +529,7 @@ function play(title, episode) {
   video.onended = () => { save(); store.saveProgress(id(), video.duration, video.duration); store.flush(); offerNext(); };
   video.onerror = () => {
     spinner.classList.add('hidden');
-    label.textContent = 'Questo video non si riesce a riprodurre sulla TV.';
+    label.textContent = t('Questo video non si riesce a riprodurre sulla TV.');
     showOSD(true);
   };
   saveTimer = setInterval(save, 5000);

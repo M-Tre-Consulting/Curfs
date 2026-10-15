@@ -17,12 +17,15 @@ modello provato). Questa non usa framework né build: i file in `app/` sono già
 - **Profili** (obbligatori): all'avvio "Chi guarda?" con i profili creati da Curfs su iPhone o Mac
   (nome e foto); la TV non li crea né li modifica, scrive solo il loro minutaggio
   (`.curfs/profiles/<id>/progress.json`), condiviso con gli altri dispositivi. Si cambia profilo
-  dal tasto in alto. Senza profili sul server, la TV chiede di crearne uno dal telefono.
+  dal tasto in alto. Senza profili sul server, la TV chiede di crearne uno dal telefono. Il
+  minutaggio salvato sulla TV prima dei profili si cancella alla prima scelta (non si unisce).
 - **Libreria** nella TV (localStorage), il minutaggio nel profilo con una copia locale. Un titolo
   guardato altrove entra in libreria da solo. Niente download: una web app non può salvare video
   sulla TV, e in casa lo streaming dal server è equivalente.
 - **Locandine**: copertine accanto ai video sul server (`poster.jpg`, `<film>-poster.jpg`, come
   Curfs), altrimenti Wikipedia → IMDb (tramite il proxy `/imdb/` di nginx, facoltativo) → iTunes.
+- **Lingua**: quella della TV (italiano, inglese, spagnolo, francese, tedesco; le altre in
+  inglese), come Curfs su iPhone e Mac. Testi in `app/js/i18n.js`, con il testo italiano come chiave.
 - **Niente sottotitoli** per ora.
 
 ## Telecomando
