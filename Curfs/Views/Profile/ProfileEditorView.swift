@@ -133,8 +133,18 @@ struct ProfileEditorView: View {
         }
     }
 
-    @ViewBuilder
+    /// Su iPhone stretti (mini, SE, testo grande) i tre tasti con la scritta
+    /// non ci stanno e andavano a capo lettera per lettera: se non entrano
+    /// su una riga restano solo le icone.
     private var photoButtons: some View {
+        ViewThatFits(in: .horizontal) {
+            photoButtonRow.labelStyle(.titleAndIcon)
+            photoButtonRow.labelStyle(.iconOnly)
+        }
+        .font(.subheadline)
+    }
+
+    private var photoButtonRow: some View {
         HStack(spacing: 10) {
             #if os(iOS)
             PhotosPicker(selection: $photoItem, matching: .images) {
@@ -167,7 +177,8 @@ struct ProfileEditorView: View {
                 #endif
             }
         }
-        .font(.subheadline)
+        .lineLimit(1)
+        .fixedSize()
     }
 
     private func useImage(_ data: Data) async {
