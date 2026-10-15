@@ -584,6 +584,8 @@ final class PlayerViewModel {
             modelContext?.insert(item)
         }
         try? modelContext?.save()
+        // Minutaggio sul profilo (server): ogni ~30 s, subito a pausa/chiusura.
+        ProfileSync.shared.playbackProgressChanged(force: force)
     }
 
     private func scheduleAutoHide() {

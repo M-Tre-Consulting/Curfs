@@ -40,6 +40,11 @@ mobile sempre in primo piano).
   streaming remoto") per il contratto lato server (in breve: nginx con
   `autoindex_format json;` + supporto alle richieste Range, nessun endpoint custom).
 
+- **Profili** (dalla 2.4.0, obbligatori): nome e foto facoltativa, salvati sul server dei video
+  insieme al minutaggio di ogni episodio e film, così iPhone, Mac e TV riprendono dallo stesso
+  punto. I download restano su ciascun dispositivo. Si creano da iPhone/Mac; la TV li sceglie
+  soltanto. Lato server: WebDAV di nginx sulla sola cartella nascosta `.curfs/`
+  ([`tv/server/nginx-curfs-profiles.conf`](tv/server/nginx-curfs-profiles.conf)).
 - **Curfs TV** (cartella [`tv/`](tv/README.md)): versione minimale per le TV Hisense con VIDAA OS,
   web app servita dallo stesso server dei video, da usare col telecomando.
 
@@ -76,6 +81,7 @@ Panoramica rapida, dettagli e decisioni non ovvie in [CLAUDE.md](CLAUDE.md):
 - `Player/` — player custom iPhone (touch) e relativa logica/gesture/orientamento; la logica di
   stato (`PlayerViewModel`) è condivisa anche col player Mac.
 - `Remote/` — sezione Cerca/streaming da server remoto e download offline.
+- `Profile/` — profili e sincronizzazione del minutaggio col server.
 - `Views/` — schermate libreria, card, sezione Cerca (condivise tra i due target).
 - `Utilities/` — helper UI condivisi.
 - `CurfsMac/` — target Mac: entry point, player nativo AVKit (controlli e fullscreen già
@@ -83,7 +89,7 @@ Panoramica rapida, dettagli e decisioni non ovvie in [CLAUDE.md](CLAUDE.md):
 
 ## Non ancora implementato
 
-Layout dedicato iPad, sync iCloud, sottotitoli esterni (.srt accanto al file), icona Mac
+Layout dedicato iPad, sottotitoli esterni (.srt accanto al file), icona Mac
 disegnata a mano (quella attuale è generata per ricomposizione dell'icona iOS). Nella sezione
 Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si ricava dai
 nomi file).

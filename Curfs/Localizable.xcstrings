@@ -1819,40 +1819,6 @@
         }
       }
     },
-    "Curfs non raccoglie dati personali e non li invia a M-Tre Consulting. Non ci sono account, pubblicità, statistiche o tracciamento." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Curfs erhebt keine personenbezogenen Daten und sendet keine an M-Tre Consulting. Es gibt keine Konten, keine Werbung, keine Statistiken und kein Tracking."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Curfs doesn't collect personal data and doesn't send any to M-Tre Consulting. There are no accounts, ads, analytics or tracking."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Curfs no recopila datos personales ni los envía a M-Tre Consulting. No hay cuentas, publicidad, estadísticas ni seguimiento."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Curfs ne collecte aucune donnée personnelle et n'en envoie aucune à M-Tre Consulting. Il n'y a ni compte, ni publicité, ni statistiques, ni suivi."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Curfs non raccoglie dati personali e non li invia a M-Tre Consulting. Non ci sono account, pubblicità, statistiche o tracciamento."
-          }
-        }
-      }
-    },
     "Download avviato" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3418,40 +3384,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La libreria resta sul dispositivo, nella cartella dell'app: i video che importi (Curfs ne fa una copia; su Mac nella cartella Library dentro Documenti), l'avanzamento di visione, le miniature e l'analisi di sigle e titoli di coda. Dai File, Curfs legge solo i file e le cartelle che scegli tu; dalle Foto, solo l'immagine che scegli come copertina."
-          }
-        }
-      }
-    },
-    "La sezione Cerca si collega soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati e le copertine che carichi." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Der Bereich Suchen verbindet sich nur mit dem Server, den du einrichtest (zum Beispiel einem bei dir zu Hause). Adresse, Benutzername und Passwort bleiben in den Einstellungen der App auf dem Gerät. Mit diesem Server werden Ordnerlisten, gestreamte oder geladene Videos und die von dir hochgeladenen Cover ausgetauscht."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Search section only connects to the server you set up (for example one at your home). Its address, username and password stay in the app's settings on the device. That server exchanges folder listings, streamed or downloaded videos and the covers you upload."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La sección Buscar solo se conecta al servidor que configuras tú (por ejemplo, uno en tu casa). La dirección, el usuario y la contraseña se quedan en los ajustes de la app en el dispositivo. Con ese servidor se intercambian las listas de carpetas, los vídeos en streaming o descargados y las portadas que subes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La section Rechercher se connecte uniquement au serveur que vous configurez (par exemple un serveur chez vous). L'adresse, le nom d'utilisateur et le mot de passe restent dans les réglages de l'app sur l'appareil. Avec ce serveur transitent les listes de dossiers, les vidéos en streaming ou téléchargées et les affiches que vous envoyez."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La sezione Cerca si collega soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati e le copertine che carichi."
           }
         }
       }
@@ -5875,6 +5807,1162 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Versione %@"
+          }
+        }
+      }
+    },
+    "Altri profili" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere Profile"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other Profiles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros perfiles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres profils"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri profili"
+          }
+        }
+      }
+    },
+    "Ancora nessun profilo sul server." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Profile auf dem Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No profiles on the server yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no hay perfiles en el servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun profil sur le serveur pour l'instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora nessun profilo sul server."
+          }
+        }
+      }
+    },
+    "Chi guarda?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wer schaut?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who's watching?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quién está viendo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui regarde ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi guarda?"
+          }
+        }
+      }
+    },
+    "Crea" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea"
+          }
+        }
+      }
+    },
+    "Elimina profilo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Profile"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar perfil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le profil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina profilo"
+          }
+        }
+      }
+    },
+    "Eliminare il profilo \"%@\"?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil „%@“ löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete profile “%@”?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar el perfil «%@»?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le profil « %@ » ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare il profilo \"%@\"?"
+          }
+        }
+      }
+    },
+    "Entra" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wechseln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra"
+          }
+        }
+      }
+    },
+    "Entra in un profilo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Profile"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige un perfil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez un profil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra in un profilo"
+          }
+        }
+      }
+    },
+    "Entrando, il minutaggio già presente su questo dispositivo si unisce a quello del profilo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Beitreten wird der Fortschritt auf diesem Gerät mit dem des Profils zusammengeführt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you join, the progress already on this device is merged into the profile."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al entrar, el progreso que ya hay en este dispositivo se une al del perfil."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En entrant, la progression déjà présente sur cet appareil est fusionnée avec celle du profil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrando, il minutaggio già presente su questo dispositivo si unisce a quello del profilo."
+          }
+        }
+      }
+    },
+    "Entrare nel profilo \"%@\"?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Profil „%@“ wechseln?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to profile “%@”?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Entrar en el perfil «%@»?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer au profil « %@ » ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrare nel profilo \"%@\"?"
+          }
+        }
+      }
+    },
+    "File" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateien"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        }
+      }
+    },
+    "Foto" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotos"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto"
+          }
+        }
+      }
+    },
+    "I profili stanno sul tuo server: inserisci prima il suo indirizzo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile liegen auf deinem Server: gib zuerst seine Adresse ein."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profiles live on your server: enter its address first."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los perfiles se guardan en tu servidor: introduce primero su dirección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les profils sont enregistrés sur votre serveur : saisissez d'abord son adresse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I profili stanno sul tuo server: inserisci prima il suo indirizzo."
+          }
+        }
+      }
+    },
+    "Il minutaggio salvato in questo profilo andrà perso." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der in diesem Profil gespeicherte Fortschritt geht verloren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The progress saved in this profile will be lost."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se perderá el progreso guardado en este perfil."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La progression enregistrée dans ce profil sera perdue."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il minutaggio salvato in questo profilo andrà perso."
+          }
+        }
+      }
+    },
+    "Il profilo e il suo minutaggio vengono cancellati dal server, per tutti i dispositivi. La libreria di questo dispositivo resta com'è; se è il profilo in uso, dovrai sceglierne o crearne un altro." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Profil und sein Fortschritt werden vom Server gelöscht, für alle Geräte. Die Mediathek dieses Geräts bleibt, wie sie ist; ist es das aktive Profil, musst du ein anderes wählen oder erstellen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The profile and its progress are deleted from the server, for all devices. This device's library stays as it is; if it's the profile in use, you'll need to choose or create another one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El perfil y su progreso se borran del servidor, para todos los dispositivos. La biblioteca de este dispositivo no cambia; si es el perfil en uso, tendrás que elegir o crear otro."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le profil et sa progression sont supprimés du serveur, pour tous les appareils. La bibliothèque de cet appareil ne change pas ; si c'est le profil utilisé, vous devrez en choisir ou en créer un autre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il profilo e il suo minutaggio vengono cancellati dal server, per tutti i dispositivi. La libreria di questo dispositivo resta com'è; se è il profilo in uso, dovrai sceglierne o crearne un altro."
+          }
+        }
+      }
+    },
+    "Il profilo salva sul tuo server a che punto sei di ogni episodio e film, così iPhone, Mac e TV riprendono dallo stesso punto. I download restano su ciascun dispositivo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Profil speichert auf deinem Server, wo du bei jeder Folge und jedem Film bist, damit iPhone, Mac und TV an derselben Stelle weitermachen. Downloads bleiben auf dem jeweiligen Gerät."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile saves on your server where you are in every episode and movie, so iPhone, Mac and TV pick up from the same point. Downloads stay on each device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El perfil guarda en tu servidor por dónde vas en cada episodio y película, para que iPhone, Mac y TV continúen desde el mismo punto. Las descargas se quedan en cada dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le profil enregistre sur votre serveur où vous en êtes dans chaque épisode et film, pour que l'iPhone, le Mac et la TV reprennent au même endroit. Les téléchargements restent sur chaque appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il profilo salva sul tuo server a che punto sei di ogni episodio e film, così iPhone, Mac e TV riprendono dallo stesso punto. I download restano su ciascun dispositivo."
+          }
+        }
+      }
+    },
+    "Il server non accetta il salvataggio dei profili: va abilitato PUT/DELETE (WebDAV) su nginx per la cartella .curfs." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Server akzeptiert das Speichern von Profilen nicht: Aktiviere PUT/DELETE (WebDAV) in nginx für den Ordner .curfs."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server doesn't accept saving profiles: enable PUT/DELETE (WebDAV) in nginx for the .curfs folder."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El servidor no acepta guardar perfiles: hay que activar PUT/DELETE (WebDAV) en nginx para la carpeta .curfs."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le serveur n'accepte pas l'enregistrement des profils : activez PUT/DELETE (WebDAV) dans nginx pour le dossier .curfs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il server non accetta il salvataggio dei profili: va abilitato PUT/DELETE (WebDAV) su nginx per la cartella .curfs."
+          }
+        }
+      }
+    },
+    "Imposta il server…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server einrichten …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Up Server…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurar servidor…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurer le serveur…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta il server…"
+          }
+        }
+      }
+    },
+    "Modifica profilo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil bearbeiten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Profile"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar perfil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier le profil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifica profilo"
+          }
+        }
+      }
+    },
+    "Nessun altro profilo sul server." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine weiteren Profile auf dem Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No other profiles on the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay otros perfiles en el servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun autre profil sur le serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun altro profilo sul server."
+          }
+        }
+      }
+    },
+    "Nome" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome"
+          }
+        }
+      }
+    },
+    "Nuovo profilo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Profil"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Profile"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo perfil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau profil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo profilo"
+          }
+        }
+      }
+    },
+    "Profili" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profiles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perfiles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profils"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profili"
+          }
+        }
+      }
+    },
+    "Profilo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perfil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilo"
+          }
+        }
+      }
+    },
+    "Profilo attivo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuelles Profil"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current Profile"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perfil activo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil actuel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilo attivo"
+          }
+        }
+      }
+    },
+    "Scegli foto…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto auswählen …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Photo…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir foto…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir une photo…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli foto…"
+          }
+        }
+      }
+    },
+    "Sincronizza ora" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt synchronisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza ora"
+          }
+        }
+      }
+    },
+    "Sincronizzato alle %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisiert um %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synced at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizado a las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisé à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzato alle %@"
+          }
+        }
+      }
+    },
+    "Sincronizzazione…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisiere …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncing…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisation…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzazione…"
+          }
+        }
+      }
+    },
+    "Su questo dispositivo vedrai il minutaggio di \"%@\". Quello di \"%@\" resta salvato sul server." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf diesem Gerät siehst du den Fortschritt von „%@“. Der von „%@“ bleibt auf dem Server gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device will show the progress of “%@”. The progress of “%@” stays saved on the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En este dispositivo verás el progreso de «%@». El de «%@» queda guardado en el servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil affichera la progression de « %@ ». Celle de « %@ » reste enregistrée sur le serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su questo dispositivo vedrai il minutaggio di \"%@\". Quello di \"%@\" resta salvato sul server."
+          }
+        }
+      }
+    },
+    "Togli" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togli"
+          }
+        }
+      }
+    },
+    "Fine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine"
+          }
+        }
+      }
+    },
+    "Curfs non raccoglie dati personali e non li invia a M-Tre Consulting. Non ci sono pubblicità, statistiche o tracciamento, né account presso di noi: i profili stanno sul tuo server." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs erhebt keine personenbezogenen Daten und sendet keine an M-Tre Consulting. Es gibt keine Werbung, keine Statistiken, kein Tracking und keine Konten bei uns: Profile liegen auf deinem Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs doesn't collect personal data and doesn't send any to M-Tre Consulting. There are no ads, analytics or tracking, and no accounts with us: profiles live on your server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs no recopila datos personales ni los envía a M-Tre Consulting. No hay publicidad, estadísticas ni seguimiento, ni cuentas con nosotros: los perfiles están en tu servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs ne collecte aucune donnée personnelle et n'en envoie aucune à M-Tre Consulting. Il n'y a ni publicité, ni statistiques, ni suivi, ni compte chez nous : les profils sont sur votre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs non raccoglie dati personali e non li invia a M-Tre Consulting. Non ci sono pubblicità, statistiche o tracciamento, né account presso di noi: i profili stanno sul tuo server."
+          }
+        }
+      }
+    },
+    "La sezione Cerca e i profili si collegano soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati, le copertine che carichi e i profili: nome, foto facoltativa e a che punto sei di ogni episodio e film." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Bereich Suchen und die Profile verbinden sich nur mit dem Server, den du einrichtest (zum Beispiel einem bei dir zu Hause). Adresse, Benutzername und Passwort bleiben in den Einstellungen der App auf dem Gerät. Mit diesem Server werden Ordnerlisten, gestreamte oder geladene Videos, die von dir hochgeladenen Cover und die Profile ausgetauscht: Name, optionales Foto und wo du bei jeder Folge und jedem Film bist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Search section and profiles only connect to the server you set up (for example one at your home). Its address, username and password stay in the app's settings on the device. That server exchanges folder listings, streamed or downloaded videos, the covers you upload and profiles: name, optional photo and where you are in every episode and movie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sección Buscar y los perfiles solo se conectan al servidor que configuras tú (por ejemplo, uno en tu casa). La dirección, el usuario y la contraseña se quedan en los ajustes de la app en el dispositivo. Con ese servidor se intercambian las listas de carpetas, los vídeos en streaming o descargados, las portadas que subes y los perfiles: nombre, foto opcional y por dónde vas en cada episodio y película."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La section Rechercher et les profils se connectent uniquement au serveur que vous configurez (par exemple un serveur chez vous). L'adresse, le nom d'utilisateur et le mot de passe restent dans les réglages de l'app sur l'appareil. Avec ce serveur transitent les listes de dossiers, les vidéos en streaming ou téléchargées, les affiches que vous envoyez et les profils : nom, photo facultative et où vous en êtes dans chaque épisode et film."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sezione Cerca e i profili si collegano soltanto al server che configuri tu (per esempio uno di casa tua). Indirizzo, nome utente e password restano nelle impostazioni dell'app sul dispositivo. Verso quel server passano gli elenchi delle cartelle, i video in streaming o scaricati, le copertine che carichi e i profili: nome, foto facoltativa e a che punto sei di ogni episodio e film."
           }
         }
       }

@@ -4,6 +4,7 @@
 import { loadCatalog, allEpisodes } from './catalog.js';
 import * as store from './store.js';
 import { posterFor } from './posters.js';
+import { listProfiles, avatarURL } from './profiles.js';
 import { focus, focusFirst, focused, move, setScope } from './focus.js';
 
 const KEY = {
@@ -15,7 +16,7 @@ const app = document.getElementById('app');
 // lastKey: l'ultimo elemento aperto, per ritrovarlo tornando indietro.
 // playingKey: l'ultimo episodio/film aperto nel player (anche se ci si è arrivati
 // passando al successivo), per selezionarlo tornando nella scheda.
-const state = { catalog: null, tab: 'library', editing: false, error: null, lastKey: null, playingKey: null };
+const state = { catalog: null, profiles: null, tab: 'library', editing: false, error: null, lastKey: null, playingKey: null };
 const stack = []; // schermate aperte sopra le schede: { render, onKey?, onClose? }
 
 // ---------- utilità
@@ -67,14 +68,117 @@ async function refreshCatalog() {
     state.catalog = catalog;
     state.error = null;
     store.cacheCatalog(catalog);
+    store.indexCatalog(catalog);
   } catch (e) {
     state.error = 'Il server non risponde. Controlla che la TV sia sulla rete di casa.';
   }
+  if (await startProfiles()) return;
   if (stack.length) return;
   renderTabs();
   // Al primo avvio la selezione era rimasta sulle schede (il catalogo non
   // c'era ancora): ora va sul primo titolo.
   if (firstLoad && state.catalog) focusFirst(app.querySelector('main'));
+}
+
+// ---------- profili (si creano da iPhone/Mac, qui si sceglie soltanto)
+// Obbligatori: senza un profilo si vede solo "Chi guarda?".
+
+/**
+ * Dopo il catalogo: elenco dei profili e minutaggio di quello scelto.
+ * Restituisce true se è aperta la scelta del profilo (niente schede sotto).
+ */
+async function startProfiles() {
+  try {
+    state.profiles = await listProfiles();
+    state.profilesError = null;
+  } catch {
+    state.profilesError = 'Non riesco a leggere i profili dal server.';
+  }
+  const current = store.activeProfile();
+  if (current && state.profiles) {
+    const fresh = state.profiles.find((p) => p.id === current.id);
+    if (!fresh) {
+      store.setProfile(null); // cancellato da iPhone/Mac: se ne sceglie un altro
+    } else {
+      store.refreshProfile(fresh);
+      await store.pull().catch(() => {});
+    }
+  }
+  if (store.activeProfile()) return false;
+  // Senza profilo (e anche server irraggiungibile: si riprova da lì).
+  if (stack[stack.length - 1]?.picker) stack[stack.length - 1].render();
+  else openProfilePicker(true);
+  return true;
+}
+
+function avatar(profile, cls) {
+  const box = h('div', { class: cls }, h('span', {}, initials(profile?.name)));
+  const url = avatarURL(profile);
+  if (url) {
+    const img = h('img', { alt: '', decoding: 'async' });
+    img.onload = () => box.classList.add('loaded');
+    img.src = url;
+    box.append(img);
+  }
+  return box;
+}
+
+function initials(name) {
+  const letters = String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('');
+  return letters ? letters.toUpperCase() : '?';
+}
+
+function profileButton() {
+  const profile = store.activeProfile();
+  if (!profile) return null;
+  return h('button', { class: 'f pill profile-pill', dataset: { key: 'profile' }, onclick: () => openProfilePicker(false) },
+    avatar(profile, 'avatar small'), profile.name);
+}
+
+/** `required`: all'avvio senza profilo, Indietro chiude l'app invece di tornare alle schede. */
+function openProfilePicker(required) {
+  const choose = (profile) => {
+    if (profile.id !== store.activeProfile()?.id) {
+      store.setProfile(profile);
+      state.lastKey = null;
+    }
+    pop();
+    store.pull().catch(() => {}).then(() => { if (!stack.length) renderTabs(); });
+  };
+  const retry = () => { state.profiles = null; state.profilesError = null; render(); refreshCatalog(); };
+  const render = () => {
+    const current = store.activeProfile();
+    const list = state.profiles || [];
+    let body;
+    if (!state.profiles && !state.profilesError) {
+      body = h('div', { class: 'spinner' });
+    } else if (!list.length) {
+      body = h('div', { class: 'profiles-empty' },
+        h('p', {}, state.profilesError || 'Sul server non c’è ancora nessun profilo.'),
+        h('p', {}, 'Crea il tuo dall’app Curfs su iPhone o Mac (in alto nella Libreria), poi riprova.'),
+        h('button', { class: 'f pill primary', dataset: { key: 'retry', autofocus: true }, onclick: retry }, 'Riprova'));
+    } else {
+      body = h('div', { class: 'profile-row' }, list.map((p) => h('button', {
+        class: 'f profile', dataset: { key: 'p-' + p.id, autofocus: current?.id === p.id || null },
+        onclick: () => choose(p),
+      }, avatar(p, 'avatar'), h('div', { class: 'profile-name' }, p.name))));
+    }
+    app.replaceChildren(h('div', { class: 'profiles' },
+      h('h1', {}, 'Chi guarda?'),
+      body,
+      list.length ? h('p', { class: 'hint' }, 'I profili si creano dall’app Curfs su iPhone o Mac. Riprendi da dove eri rimasto anche lì.') : null));
+    focusFirst(app);
+  };
+  push({
+    picker: true,
+    render,
+    onKey: (k) => {
+      if (!isBack(k)) return false;
+      if (required || !store.activeProfile()) window.close();
+      else pop();
+      return true;
+    },
+  });
 }
 
 // ---------- schede principali
@@ -87,6 +191,7 @@ function renderTabs() {
       h('nav', { class: 'tabs' },
         tabButton('library', 'Libreria'),
         tabButton('search', 'Cerca')),
+      profileButton(),
       state.tab === 'library' && libraryIdsWithTitles().length
         ? h('button', { class: `f pill ${state.editing ? 'danger' : ''}`, dataset: { key: 'edit' }, onclick: toggleEdit },
           state.editing ? 'Fine' : 'Modifica')
@@ -406,6 +511,7 @@ function play(title, episode) {
 
   function close() {
     save();
+    store.flush();
     clearInterval(saveTimer);
     clearInterval(countdown);
     clearTimeout(hideTimer);
@@ -418,8 +524,8 @@ function play(title, episode) {
   video.onwaiting = () => spinner.classList.remove('hidden');
   video.onplaying = () => { spinner.classList.add('hidden'); showOSD(); };
   video.ontimeupdate = () => { if (!osd.classList.contains('hidden')) updateOSD(); };
-  video.onpause = () => { showOSD(true); updateOSD(); save(); };
-  video.onended = () => { save(); store.saveProgress(id(), video.duration, video.duration); offerNext(); };
+  video.onpause = () => { showOSD(true); updateOSD(); save(); store.flush(); };
+  video.onended = () => { save(); store.saveProgress(id(), video.duration, video.duration); store.flush(); offerNext(); };
   video.onerror = () => {
     spinner.classList.add('hidden');
     label.textContent = 'Questo video non si riesce a riprodurre sulla TV.';
@@ -494,6 +600,15 @@ document.addEventListener('keydown', (e) => {
 // ---------- avvio
 
 state.catalog = store.cachedCatalog();
+store.indexCatalog(state.catalog);
 if (!store.libraryIds().length) state.tab = 'search';
-renderTabs();
+if (store.activeProfile()) renderTabs();
+else openProfilePicker(true);
 refreshCatalog();
+
+// Tornando sull'app (o riaccendendo la TV) il minutaggio può essere cambiato
+// su iPhone o Mac.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !store.activeProfile()) return;
+  store.pull().catch(() => {}).then(() => { if (!stack.length) renderTabs(); });
+});

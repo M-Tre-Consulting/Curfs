@@ -14,8 +14,13 @@ modello provato). Questa non usa framework né build: i file in `app/` sono già
 - **Stesso server di Curfs** (nginx con elenchi JSON e richieste Range), con un ingresso in più
   solo per la rete di casa e senza password: vedi `server/nginx-curfs-tv.conf`. L'app legge il
   catalogo da `/media/` e lo ricostruisce con le stesse regole di Curfs (`app/js/catalog.js`).
-- **Libreria e progressi** stanno nella TV (localStorage). Niente download: una web app non
-  può salvare video sulla TV, e in casa lo streaming dal server è equivalente.
+- **Profili** (obbligatori): all'avvio "Chi guarda?" con i profili creati da Curfs su iPhone o Mac
+  (nome e foto); la TV non li crea né li modifica, scrive solo il loro minutaggio
+  (`.curfs/profiles/<id>/progress.json`), condiviso con gli altri dispositivi. Si cambia profilo
+  dal tasto in alto. Senza profili sul server, la TV chiede di crearne uno dal telefono.
+- **Libreria** nella TV (localStorage), il minutaggio nel profilo con una copia locale. Un titolo
+  guardato altrove entra in libreria da solo. Niente download: una web app non può salvare video
+  sulla TV, e in casa lo streaming dal server è equivalente.
 - **Locandine**: copertine accanto ai video sul server (`poster.jpg`, `<film>-poster.jpg`, come
   Curfs), altrimenti Wikipedia → IMDb (tramite il proxy `/imdb/` di nginx, facoltativo) → iTunes.
 - **Niente sottotitoli** per ora.
@@ -28,7 +33,9 @@ Nel player: OK pausa/play, ← → ±10 secondi (i salti ravvicinati si sommano)
 ## Installazione
 
 1. **Server**: copia `server/nginx-curfs-tv.conf` tra i siti di nginx sostituendo `LAN_IP`,
-   `LAN_SUBNET`, `APP_ROOT`, `MEDIA_ROOT`; apri la porta 8092 solo per la rete locale.
+   `LAN_SUBNET`, `APP_ROOT`, `MEDIA_ROOT`; apri la porta 8092 solo per la rete locale. Per i
+   profili, nel sito con la password usato da iPhone/Mac aggiungi il blocco di
+   `server/nginx-curfs-profiles.conf` dentro `location /`.
 2. **App**: `CURFS_TV_TARGET=utente@server:/percorso/curfs-tv ./deploy.sh`.
 3. **Riquadro sulla TV**: VIDAA non permette di installare app proprie dal menu. Si può fare con
    [Sidee](https://github.com/gridoe/Sidee), che usa il canale di rete dell'app ufficiale Hisense

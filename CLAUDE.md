@@ -151,6 +151,38 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   usato su iOS per il risveglio da app terminata — concetto che su Mac non si applica allo stesso
   modo (l'app non viene sospesa/terminata dal sistema come su iOS).
 
+## Profili (2.4.0, dal 2026-10-15)
+
+Voluti dall'utente: un profilo (nome + foto facoltativa) che vive **sul server dei video**, non
+sul dispositivo, con il minutaggio di ogni episodio/film, così iPhone, Mac e TV sono "lo stesso
+account". **Obbligatori ovunque** (richiesta esplicita): senza profilo attivo `RootTabView` mostra
+solo `ProfilesView(required: true)` ("Chi guarda?", con "Imposta il server…" se manca), non esiste
+"Esci dal profilo"; la TV mostra solo "Chi guarda?" e senza profili sul server dice di crearne uno
+dal telefono. Creazione/modifica/foto solo da iPhone/Mac; la TV sceglie e mostra le foto.
+- Server: `.curfs/profiles/<id>/{profile.json,avatar.jpg,progress.json}` dentro la cartella dei
+  video (nginx autoindex non elenca i nomi col punto ⇒ fuori dal catalogo, anche per la TV).
+  Scrittura con WebDAV solo lì (`tv/server/nginx-curfs-profiles.conf`, `create_full_put_path`);
+  sull'ingresso TV `:8092` solo PUT di `progress.json` di un profilo esistente (map + `if` →
+  403). Applicato sul Pi il 2026-10-15 (backup `/home/nicop/*.nginx.bak-20261015-111935`).
+- Chiave condivisa per nome (`SyncKey` in Swift = `normalized/episodeKey/movieKey` in
+  `tv/app/js/profiles.js`, verificate identiche): `e:<serie>:<s>:<e>` / `m:<titolo>`, minuscole,
+  senza accenti, solo lettere/cifre, senza "(anno)" finale — locale importato e streaming del Pi
+  combaciano; nomi diversi ("Il Trono di Spade" vs "Game of Thrones") no. La voce porta anche il
+  `path` sul server: un dispositivo che non ha quell'episodio lo aggiunge in libreria in streaming.
+- Unione: per chiave vince `at` (ms) più recente. `ProfileSync.sync()` = GET, applica alla
+  libreria le voci più nuove di `lastPlayedAt`, PUT di quelle locali più nuove. All'avvio, al
+  ritorno in primo piano, ogni 30 s di riproduzione e a pausa/chiusura (`persistProgress`).
+  Gli item creati da voci remote solo per voci più nuove dell'ultima sync
+  (`Curfs.profile.appliedAt.<id>`): un titolo tolto dalla libreria non ricompare; stessa regola
+  sulla TV (e lì non contano le voci che la TV conosce già).
+- Primo profilo su un dispositivo: il minutaggio locale si unisce al profilo. Cambio profilo:
+  prima si salva il vecchio (se fallisce non si cambia), poi il minutaggio locale si azzera e
+  arriva quello del nuovo. La libreria (e i download) restano del dispositivo.
+- Collaudato il 2026-10-15 con un autotest temporaneo su una copia Mac con bundle ID diverso
+  (⚠️ senza `container-migration.plist`: in `~/Library/Application Support` c'è un
+  `default.store` di un'altra app che la migrazione si porterebbe via) e la logica TV con Node
+  contro il Pi. Non verificato a mano sui dispositivi veri.
+
 ## Curfs TV (`tv/`, dal 2026-10-14)
 
 Web app per la TV Hisense VIDAA dell'utente, **non Swift**: HTML/CSS/JS senza framework né build
@@ -604,6 +636,6 @@ non può salvare video sulla TV). Decisioni:
 
 ## Non ancora implementato
 
-- Layout dedicato iPad, sync iCloud. Sottotitoli esterni (.srt accanto al file): oggi solo le tracce dentro al file.
+- Layout dedicato iPad. Sottotitoli esterni (.srt accanto al file): oggi solo le tracce dentro al file.
 - Sezione Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si
   ricava dai nomi file), auto-avanzamento a cavallo di stagione testato solo con cataloghi piccoli.

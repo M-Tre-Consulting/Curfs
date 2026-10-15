@@ -73,6 +73,9 @@ struct LibraryHomeView: View {
                 }
                 #endif
                 ToolbarItem(placement: .primaryAction) {
+                    ProfileToolbarButton()
+                }
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         showImporter = true
                     } label: {

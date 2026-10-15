@@ -70,6 +70,7 @@ enum RemoteProviderError: LocalizedError {
     case badListing
     case server(status: Int)
     case uploadNotSupported
+    case profilesNotSupported
     case unreachable(host: String)
 
     /// Traduce gli errori di rete di URLSession in `unreachable`, così chi
@@ -100,6 +101,8 @@ enum RemoteProviderError: LocalizedError {
             return String(localized: "Il server ha risposto con un errore (HTTP \(status)).")
         case .uploadNotSupported:
             return String(localized: "Il server non accetta il caricamento di copertine: va abilitato PUT/DELETE (WebDAV) su nginx per i file poster.")
+        case .profilesNotSupported:
+            return String(localized: "Il server non accetta il salvataggio dei profili: va abilitato PUT/DELETE (WebDAV) su nginx per la cartella .curfs.")
         case .unreachable(let host):
             if host.hasSuffix(".ts.net") {
                 return String(localized: "Server \(host) non raggiungibile: controlla che Tailscale sia acceso e connesso su questo dispositivo.")

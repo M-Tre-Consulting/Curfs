@@ -12,13 +12,25 @@ import SwiftUI
 import SwiftData
 
 struct RootTabView: View {
+    @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
     @State private var pip = PictureInPictureSession.shared
     #else
     @State private var miniPlayer = MacMiniPlayer.shared
     #endif
 
+    @State private var profiles = ProfileSync.shared
+
     var body: some View {
+        // Senza profilo non si entra: prima "Chi guarda?" (crea o scegli).
+        if profiles.active == nil {
+            ProfilesView(required: true)
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView {
             Tab("Libreria", systemImage: "film.stack") {
                 LibraryHomeView()
@@ -40,7 +52,13 @@ struct RootTabView: View {
             MacPlayerView(resuming: vm)
         }
         #endif
+        // Minutaggio del profilo: all'avvio e ogni volta che si torna
+        // nell'app (magari dopo aver guardato qualcosa su un altro dispositivo).
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { ProfileSync.shared.sync() }
+        }
         .task {
+            ProfileSync.shared.sync()
             // Scalda l'analisi "salta intro" di tutta la libreria locale, così
             // il pulsante c'è alla prima riproduzione (vedi IntroCreditsWarmup).
             await IntroCreditsWarmup.run()

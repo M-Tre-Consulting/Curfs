@@ -6,7 +6,8 @@
 //  ritaglio centrale a 2:3 (le card la mostrano così, un'immagine con altre
 //  proporzioni verrebbe comunque tagliata) e ridimensionamento a 1000x1500
 //  al massimo, in JPEG. CoreGraphics/ImageIO invece di UIImage/NSImage così
-//  vale per entrambi i target (vedi ThumbnailGenerator).
+//  vale per entrambi i target (vedi ThumbnailGenerator). Lo stesso ritaglio,
+//  quadrato e più piccolo, fa la foto dei profili (`avatarJPEG`).
 //
 
 import Foundation
@@ -18,6 +19,15 @@ enum PosterImageProcessing {
     static let maxSize = CGSize(width: 1000, height: 1500)
 
     static func posterJPEG(from data: Data) -> Data? {
+        croppedJPEG(from: data, maxSize: maxSize)
+    }
+
+    /// Foto profilo: quadrata, 512×512 al massimo.
+    static func avatarJPEG(from data: Data) -> Data? {
+        croppedJPEG(from: data, maxSize: CGSize(width: 512, height: 512))
+    }
+
+    private static func croppedJPEG(from data: Data, maxSize: CGSize) -> Data? {
         let options = [kCGImageSourceShouldCache: false] as CFDictionary
         guard let source = CGImageSourceCreateWithData(data as CFData, options) else { return nil }
         // Miniatura "a tutta risoluzione" solo per applicare l'orientamento
