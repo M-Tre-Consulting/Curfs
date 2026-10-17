@@ -191,3 +191,12 @@ main.scroll { padding: 34px 96px 80px; }
 .audio-row.active { color: var(--accent-2); }
 .audio-row.focus { border-color: var(--accent-2); background: var(--card); }
 .audio-hint { font-size: 22px; color: var(--muted); margin-top: 14px; }
+
+/* --- Firma in basso a sinistra (index.html). Prima di #app nel DOM: resta
+   sotto l'interfaccia, non riceve il focus né i clic, e il player la copre. */
+.credit {
+  position: absolute; left: 32px; bottom: 24px; display: flex; align-items: center; gap: 10px;
+  opacity: .7; pointer-events: none; user-select: none;
+}
+.credit img { height: 36px; width: auto; display: block; }
+.credit span { font-size: 21px; font-weight: 700; letter-spacing: .5px; color: #e3d3b8; }
