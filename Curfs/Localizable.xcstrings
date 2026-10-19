@@ -1,6 +1,40 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@, Italia" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italien"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italia"
+          }
+        }
+      }
+    },
     "…oppure scaricala per l'offline" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -694,36 +728,36 @@
         }
       }
     },
-    "Aggiornata il 1° ottobre 2026." : {
+    "Aggiornata il 19 ottobre 2026." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktualisiert am 1. Oktober 2026."
+            "value" : "Aktualisiert am 19. Oktober 2026."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Last updated October 1, 2026."
+            "value" : "Last updated October 19, 2026."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Actualizada el 1 de octubre de 2026."
+            "value" : "Actualizada el 19 de octubre de 2026."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mise à jour le 1er octobre 2026."
+            "value" : "Mise à jour le 19 octobre 2026."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiornata il 1° ottobre 2026."
+            "value" : "Aggiornata il 19 ottobre 2026."
           }
         }
       }

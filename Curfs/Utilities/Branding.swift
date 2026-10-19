@@ -105,7 +105,7 @@ struct LegalView: View {
                 }
 
                 section("Titolare") {
-                    Text(verbatim: "\(MTre.name), Savona, Italia")
+                    Text("\(MTre.name), Italia")
                     ForEach(MTre.owners, id: \.self) { Text(verbatim: $0).foregroundStyle(.secondary) }
                 }
 
@@ -126,7 +126,7 @@ struct LegalView: View {
                     Link(destination: URL(string: "mailto:\(MTre.email)")!) { Text(verbatim: MTre.email) }
                 }
 
-                Text("Aggiornata il 1° ottobre 2026.")
+                Text("Aggiornata il 19 ottobre 2026.")
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
             }
