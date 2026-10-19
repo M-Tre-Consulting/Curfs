@@ -192,6 +192,8 @@ function renderTabs() {
       h('nav', { class: 'tabs' },
         tabButton('library', t('Libreria')),
         tabButton('search', t('Cerca'))),
+      // Firma M-Tre: senza la classe `f`, quindi il telecomando la salta e non si sceglie.
+      h('div', { class: 'credit' }, h('img', { src: 'mtre-logo.png', alt: '' }), h('span', {}, 'M-Tre Consulting')),
       profileButton(),
       state.tab === 'library' && libraryIdsWithTitles().length
         ? h('button', { class: `f pill ${state.editing ? 'danger' : ''}`, dataset: { key: 'edit' }, onclick: toggleEdit },
