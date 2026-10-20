@@ -14,6 +14,11 @@ import SwiftData
 
 @main
 struct CurfsMacApp: App {
+    init() {
+        // New versions from the M-Tre site (DMG copies only: the App Store updates its own).
+        Updates.shared.start()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootTabView()
@@ -31,6 +36,9 @@ struct CurfsMacApp: App {
         .commands {
             CommandGroup(after: .appInfo) {
                 LegalMenuButton()
+                if !Updater.isFromAppStore {
+                    Button("Controlla aggiornamenti…") { Updates.shared.checkFromMenu() }
+                }
             }
         }
 
@@ -43,6 +51,12 @@ struct CurfsMacApp: App {
         .defaultSize(width: 600, height: 720)
         .windowResizability(.contentMinSize)
     }
+}
+
+/// Gli aggiornamenti di Curfs per Mac, da mtre-consulting.it/aggiornamenti/curfs-mac
+/// (Support/Updater.swift).
+enum Updates {
+    static let shared = Updater(slug: "curfs-mac")
 }
 
 /// Voce del menu Curfs che apre la finestra delle informazioni legali.
