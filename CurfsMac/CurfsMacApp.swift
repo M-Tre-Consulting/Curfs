@@ -15,7 +15,7 @@ import SwiftData
 @main
 struct CurfsMacApp: App {
     init() {
-        // New versions from the M-Tre site (DMG copies only: the App Store updates its own).
+        // Says when there's a new version (DMG copies only: the App Store updates its own).
         Updates.shared.start()
     }
 
@@ -53,10 +53,12 @@ struct CurfsMacApp: App {
     }
 }
 
-/// Gli aggiornamenti di Curfs per Mac, da mtre-consulting.it/aggiornamenti/curfs-mac
-/// (Support/Updater.swift).
+/// Gli aggiornamenti di Curfs per Mac: la versione da mtre-consulting.it/aggiornamenti/curfs-mac,
+/// il pulsante verso l'App Store (Support/Updater.swift). `appStore` va messo quando Curfs è sullo store.
+@MainActor
 enum Updates {
-    static let shared = Updater(slug: "curfs-mac")
+    static let shared = Updater(slug: "curfs-mac", appStore: nil,
+                                site: URL(string: "https://mtre-consulting.it/progetti/curfs")!)
 }
 
 /// Voce del menu Curfs che apre la finestra delle informazioni legali.
