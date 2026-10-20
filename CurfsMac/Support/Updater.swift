@@ -160,7 +160,7 @@ final class Updater: ObservableObject {
 
     /// Downloads the new version, then swaps it in and restarts, or in the sandbox opens it.
     func install() {
-        guard newRelease != nil else { return }
+        guard let release = newRelease else { return }
         state = .downloading(0)
         let url = Self.base.appendingPathComponent("aggiornamenti/\(slug)/scarica")
         let name = "\(appName).dmg"
@@ -181,7 +181,7 @@ final class Updater: ObservableObject {
                     return
                 }
                 if Self.isSandboxed {
-                    self.handOver(kept)
+                    self.handOver(kept, release: release)
                     return
                 }
                 self.state = .installing
@@ -209,15 +209,23 @@ final class Updater: ObservableObject {
         showFailure(message)
     }
 
-    /// Sandbox: opens the DMG in the Finder and quits, so the new app can replace this one.
-    private func handOver(_ dmg: URL) {
-        state = .installing
-        NSWorkspace.shared.open(dmg)
+    /// Sandbox: says what to do, then quits and opens the DMG in the Finder. The app must be
+    /// closed before the new one is dragged over it: the Finder replacing a running app
+    /// breaks it.
+    private func handOver(_ dmg: URL, release: Release) {
         let alert = NSAlert()
         alert.messageText = String(localized: "Trascina \(appName) nella cartella Applicazioni")
-        alert.informativeText = String(localized: "Sostituisci quella che c'è già. \(appName) si chiude per lasciarti aggiornare.")
+        alert.informativeText = String(localized: "Si apre il disco dell'aggiornamento e \(appName) si chiude. Trascina la nuova versione in Applicazioni, scegli Sostituisci e riaprila.")
+        alert.addButton(withTitle: String(localized: "Apri l'aggiornamento"))
+        alert.addButton(withTitle: String(localized: "Annulla"))
         NSApp.activate()
-        alert.runModal()
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            try? FileManager.default.removeItem(at: dmg.deletingLastPathComponent())
+            state = .available(release)
+            return
+        }
+        state = .installing
+        NSWorkspace.shared.open(dmg)
         NSApp.terminate(nil)
     }
 

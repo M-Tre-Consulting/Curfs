@@ -7278,40 +7278,6 @@
         }
       }
     },
-    "Sostituisci quella che c'è già. %@ si chiude per lasciarti aggiornare." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ersetze die vorhandene. %@ wird beendet, damit du aktualisieren kannst."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Replace the one already there. %@ quits so you can update."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sustituye la que ya está. %@ se cierra para que puedas actualizar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remplacez celle qui s'y trouve. %@ se ferme pour vous laisser mettre à jour."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sostituisci quella che c'è già. %@ si chiude per lasciarti aggiornare."
-          }
-        }
-      }
-    },
     "Controlla aggiornamenti…" : {
       "localizations" : {
         "de" : {
@@ -7784,6 +7750,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non posso scrivere nella cartella dell'app"
+          }
+        }
+      }
+    },
+    "Si apre il disco dell'aggiornamento e %@ si chiude. Trascina la nuova versione in Applicazioni, scegli Sostituisci e riaprila." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Update-Volume wird geöffnet und %@ beendet. Ziehe die neue Version in „Programme“, wähle „Ersetzen“ und öffne sie wieder."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The update's disk opens and %@ quits. Drag the new version into Applications, choose Replace and open it again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se abre el disco de la actualización y %@ se cierra. Arrastra la nueva versión a Aplicaciones, elige Reemplazar y vuelve a abrirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le disque de la mise à jour s'ouvre et %@ se ferme. Faites glisser la nouvelle version dans Applications, choisissez Remplacer et rouvrez-la."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si apre il disco dell'aggiornamento e %@ si chiude. Trascina la nuova versione in Applicazioni, scegli Sostituisci e riaprila."
+          }
+        }
+      }
+    },
+    "Apri l'aggiornamento" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the update"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir la actualización"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir la mise à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri l'aggiornamento"
           }
         }
       }
