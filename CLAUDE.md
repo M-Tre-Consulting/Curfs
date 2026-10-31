@@ -656,6 +656,11 @@ non può salvare video sulla TV). Decisioni:
   queste ora fa fallire tutto il caricamento. Prima veniva saltato anche quello: con la radice
   raggiungibile e le sottocartelle in errore il catalogo risultava vuoto ("0 elementi" anche nel
   test di connessione) e `replaceOverrides([])` cancellava le copertine personalizzate in memoria.
+- **Pannello download in Cerca** (2.4.5, `DownloadsOverlay`): solo un tasto rotondo con la freccia
+  giù in basso a destra mentre ci sono download attivi; toccato apre un `.popover` di sistema
+  (`presentationCompactAdaptation(.popover)` su iPhone) alto quanto le righe, che scorrono dentro
+  se non ci stanno (`ViewThatFits`). Prima era una lista a tutta larghezza che copriva la pagina:
+  voluto dall'utente così, con l'animazione nativa del popover.
 - **Download e fluidità**: `BackgroundDownloadEngine` avvisa la UI dell'avanzamento al massimo
   ogni 0,25 s (il callback `didWriteData` arriva centinaia di volte al secondo e faceva scattare
   lo scorrimento della scheda serie). Per lo stesso motivo in `SeriesDetailView` i download li

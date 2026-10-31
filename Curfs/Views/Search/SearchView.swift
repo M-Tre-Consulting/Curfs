@@ -51,7 +51,7 @@ struct SearchView: View {
 
                 if downloadManager.hasActiveDownloads {
                     DownloadsOverlay(manager: downloadManager)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(.scale(scale: 0.5, anchor: .bottomTrailing).combined(with: .opacity))
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: downloadManager.hasActiveDownloads)
