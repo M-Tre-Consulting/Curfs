@@ -17,8 +17,8 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
 ## Vincoli
 
 - **Locandine: due versioni** (dal 2026-10-01). Flag di compilazione `EXTRA_POSTERS`, impostato
-  solo nella configurazione **Debug** del progetto: le build personali del proprietario (da Xcode)
-  cercano le locandine con Wikipedia + IMDb + iTunes; in **Release** (archivio per App Store / Mac
+  solo nelle configurazioni **Debug** e **Personale** del progetto: le build personali del
+  proprietario (da Xcode) cercano le locandine con Wikipedia + IMDb + iTunes; in **Release** (archivio per App Store / Mac
   App Store) il codice Wikipedia/IMDb è escluso e resta solo iTunes, perché le condizioni d'uso di
   IMDb vietano l'estrazione di dati e le locandine di Wikipedia sono in fair use. Cache separate per
   le due versioni (`PosterFetcher`). L'informativa in `Branding.swift` segue lo stesso flag e
@@ -29,6 +29,12 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
   file, spazio su disco, uptime ecc. va aggiornato) e `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption =
   NO` in tutti e quattro i blocchi di build dei target (solo HTTPS di sistema, crittografia esente).
 
+- **Configurazione `Personale`** (dal 2026-10-31) = copia di Release + `EXTRA_POSTERS`: è quella
+  del Run di entrambi gli scheme, così da Xcode esce sempre la build ottimizzata con le locandine
+  complete (Mac: universale). Il post-action "Copia in /Applications" dello scheme `CurfsMac`
+  copia solo con `CONFIGURATION = Personale`: la Release del DMG e le Debug non toccano più l'app
+  installata. Le configurazioni stanno in 3 blocchi del `.pbxproj` (progetto + 2 target): se si
+  cambia un'impostazione di Release, va cambiata anche in Personale.
 - iPhone reale del proprietario su **iOS 26.6**. Deployment target `IPHONEOS_DEPLOYMENT_TARGET =
   26.0` — necessario per le API Liquid Glass (`.glassEffect`, `GlassEffectContainer`,
   `.buttonStyle(.glass/.glassProminent)`). Non abbassarlo se si toccano quei file.
