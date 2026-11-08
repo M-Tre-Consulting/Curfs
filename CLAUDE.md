@@ -192,6 +192,12 @@ dal telefono. Creazione/modifica/foto solo da iPhone/Mac; la TV sceglie e mostra
   della prima versione: sul Mac non arrivava nulla dall'iPhone) lo trova `ServerPathResolver` nel
   catalogo di Cerca per nome (+ `ShowNameMatcher`). Una serie già in libreria tiene il suo nome
   locale per le voci nuove ("Game Of Thrones" vs "Game of Thrones").
+- **File tolti dal server** (2026-11-08): a ogni sync (al massimo ogni 2 min)
+  `removeMissingFromServer` elenca le cartelle dei file in streaming in libreria
+  (`ProfileServer.missingFiles`); quelli spariti vanno via con `LibraryMaintenance.delete`, quindi
+  anche dal profilo e dagli altri dispositivi. Nel dubbio (rete, errori ≠ 404) il file resta: un
+  falso "sparito" lo toglierebbe ovunque. Gli scaricati restano. La TV nasconde già da sola i
+  titoli che non sono più nel catalogo.
 - Sync all'avvio, al ritorno in primo piano, quando cambia il numero di item (`ModelContext.didSave`
   + `fetchCount`: i salvataggi del minutaggio non la fanno partire), ogni 30 s di riproduzione e a
   pausa/chiusura (`persistProgress`).
@@ -222,10 +228,18 @@ non può salvare video sulla TV). Decisioni:
   se cambiano le regole di riconoscimento in Swift, allinearlo.
 - Navigazione spaziale in `focus.js` (classe `f`), niente indici: prima la riga/colonna più
   vicina, poi l'elemento più in linea; destra/sinistra solo nella stessa riga. Zone `data-zone`
-  (barra in alto / contenuto): non si passa da una all'altra con la geometria ma con
-  `toHeader`/`toContent` in app.js (su → scheda aperta, giù → dove si era). Entrando in un
-  gruppo con un `.f.active` (schede, stagioni) si va su quello. Bug reale (2026-10-15): giù da
-  "Cerca" restava tra Libreria e Cerca. Provata con Chrome headless pilotato via DevTools
+  (barra a sinistra `nav` / contenuto `main`): non si passa da una all'altra con la geometria ma
+  con `toNav`/`toContent` in app.js (sinistra dal bordo → sezione aperta, destra → dove si era).
+  Entrando in un gruppo con un `.f.active` (stagioni) si va su quello.
+- **Barra a sinistra** (2026-11-08, voluta dall'utente al posto delle schede in alto): Libreria e
+  **Server** (sulla TV la sezione Cerca si chiama così), grandi con icona e numero di titoli,
+  profilo e firma M-Tre in fondo. Griglie a 6 colonne da 200 px.
+- **Stagioni in colonna** (2026-11-08): prima erano schede a capo su più righe e "giù sopra una
+  stagione non aperta la apre" ⇒ con 8 stagioni scendendo dalla 1 si finiva sulla 8 e la si
+  apriva per forza (bug segnalato). Ora colonna stagioni + colonna episodi, ognuna scorre per
+  conto suo (`data-pin` in `focus.js`: la pagina mostra il blocco intero), su/giù restano nella
+  colonna (`onKey` della scheda, non la geometria), passare su una stagione mostra i suoi episodi
+  dopo 140 ms (`arrive`) senza ridisegnare la pagina. Provata con Chrome headless pilotato via DevTools
   (tasti simulati) contro il Pi — ⚠️ non premere OK a caso: fa partire video e scrive il
   minutaggio del profilo (usare un profilo di prova).
 - Lingua audio nel player (↑): `video.audioTracks`, che in Chrome è dietro un flag
@@ -322,6 +336,10 @@ non può salvare video sulla TV). Decisioni:
   (rotazione + "⋯" `PlayerOptionsMenu` con tutto il resto, sottomenu `Picker` `.menu`). Voluto
   dall'utente: il menu solo quando il titolo verrebbe tagliato. Menu velocità/tracce/"⋯" sono view a
   sé che non leggono `currentTime`: ridisegnandosi 4 volte al secondo il menu aperto perdeva il tocco.
+- **Lingua audio ricordata** (2026-11-08): l'ultima scelta (`Curfs.audioLanguage`, "lang:<tag>"
+  o "name:<nome>" per le tracce `und`) si riapplica a ogni video che ce l'ha; su Mac la scelta dal
+  menu di AVPlayerView arriva da `mediaSelectionDidChangeNotification`, registrata solo dopo aver
+  applicato la preferenza (sennò la scelta automatica iniziale la sovrascriverebbe).
 - **Audio/sottotitoli** (`PlayerViewModel.loadMediaSelections`): solo tracce dentro al file
   (`AVMediaSelectionGroup` audible/legible, i sottotitoli "solo forzati" esclusi dalla scelta); le
   voci compaiono solo se c'è qualcosa da scegliere. Su Mac lo dà AVPlayerView. Nel tasto a sé

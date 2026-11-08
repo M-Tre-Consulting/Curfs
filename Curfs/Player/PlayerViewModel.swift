@@ -75,6 +75,10 @@ final class PlayerViewModel {
     private var detectedCreditsRange: ClosedRange<Double>?
 
     private static let playbackRateDefaultsKey = "Curfs.playbackRate"
+    /// Lingua audio scelta l'ultima volta (vedi `audioPreferenceKey`): vale
+    /// per tutti i video, così un episodio in italiano resta in italiano.
+    private static let audioLanguageDefaultsKey = "Curfs.audioLanguage"
+    @ObservationIgnored private var selectionObserver: NSObjectProtocol?
 
     private static let controlsAnimation = Animation.spring(response: 0.42, dampingFraction: 0.82)
     /// Più rapida e senza rimbalzo: usata solo quando i controlli
@@ -212,6 +216,8 @@ final class PlayerViewModel {
         timeObserverToken = nil
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         endObserver = nil
+        if let selectionObserver { NotificationCenter.default.removeObserver(selectionObserver) }
+        selectionObserver = nil
         statusObservation?.invalidate()
         statusObservation = nil
         hideControlsTask?.cancel()
@@ -370,7 +376,9 @@ final class PlayerViewModel {
                     self.subtitleTracks = options.enumerated().map { TrackChoice(id: $0.offset, name: $0.element.displayName) }
                 }
             }
+            self.applyPreferredAudio()
             self.refreshSelectedTracks()
+            self.observeSelectionChanges()
             // Nomi veri al posto di "Lingua sconosciuta" (vedi SubtitleLabeler).
             if !self.subtitleOptions.isEmpty {
                 let names = await SubtitleLabeler.names(for: self.subtitleOptions, asset: asset)
@@ -396,7 +404,51 @@ final class PlayerViewModel {
         guard let audioGroup, audioOptions.indices.contains(index) else { return }
         player.currentItem?.select(audioOptions[index], in: audioGroup)
         selectedAudioTrack = index
+        UserDefaults.standard.set(Self.audioPreferenceKey(audioOptions[index]), forKey: Self.audioLanguageDefaultsKey)
         scheduleAutoHide()
+    }
+
+    /// La lingua audio è una preferenza di chi guarda, non del singolo file:
+    /// AVPlayer di suo riparte sempre dalla traccia predefinita del file.
+    private func applyPreferredAudio() {
+        guard let audioGroup, let item = player.currentItem,
+              let saved = UserDefaults.standard.string(forKey: Self.audioLanguageDefaultsKey) else { return }
+        let keys = audioOptions.map(Self.audioPreferenceKey)
+        let index = keys.firstIndex(of: saved)
+            ?? Self.primaryLanguage(saved).flatMap { wanted in keys.firstIndex { Self.primaryLanguage($0) == wanted } }
+        guard let index, item.currentMediaSelection.selectedMediaOption(in: audioGroup) != audioOptions[index] else { return }
+        item.select(audioOptions[index], in: audioGroup)
+    }
+
+    /// Le scelte fatte fuori da `selectAudioTrack` (su Mac il menu di
+    /// AVPlayerView) vanno ricordate lo stesso. Registrata dopo
+    /// `applyPreferredAudio`, così la scelta automatica iniziale non conta.
+    private func observeSelectionChanges() {
+        guard selectionObserver == nil, audioGroup != nil, let item = player.currentItem else { return }
+        selectionObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.mediaSelectionDidChangeNotification, object: item, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, let audioGroup = self.audioGroup,
+                      let option = self.player.currentItem?.currentMediaSelection.selectedMediaOption(in: audioGroup) else { return }
+                UserDefaults.standard.set(Self.audioPreferenceKey(option), forKey: Self.audioLanguageDefaultsKey)
+                self.refreshSelectedTracks()
+            }
+        }
+    }
+
+    /// "lang:it" se la traccia dichiara la lingua, sennò il suo nome
+    /// (tracce `und`: resta almeno la scelta tra file con gli stessi nomi).
+    private static func audioPreferenceKey(_ option: AVMediaSelectionOption) -> String {
+        if let tag = option.extendedLanguageTag, !tag.isEmpty, tag != "und" { return "lang:" + tag }
+        if let id = option.locale?.identifier, !id.isEmpty, id != "und" { return "lang:" + id }
+        return "name:" + option.displayName
+    }
+
+    /// "lang:it-IT" → "it", per far combaciare "it" e "it-IT".
+    private static func primaryLanguage(_ key: String) -> String? {
+        guard key.hasPrefix("lang:") else { return nil }
+        return key.dropFirst(5).split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map { $0.lowercased() }
     }
 
     func selectSubtitleTrack(_ index: Int?) {

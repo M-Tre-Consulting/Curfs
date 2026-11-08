@@ -31,15 +31,17 @@ const STRINGS = {
     'Les profils se créent dans l’app Curfs sur iPhone ou Mac. Reprenez là où vous vous êtes arrêté, là aussi.',
     'Profile werden in der Curfs-App auf iPhone oder Mac erstellt. Mach auch dort weiter, wo du aufgehört hast.'],
   'Libreria': ['Library', 'Biblioteca', 'Bibliothèque', 'Mediathek'],
-  'Cerca': ['Search', 'Buscar', 'Rechercher', 'Suchen'],
+  'Server': ['Server', 'Servidor', 'Serveur', 'Server'],
+  '1 titolo': ['1 title', '1 título', '1 titre', '1 Titel'],
+  '{n} titoli': ['{n} titles', '{n} títulos', '{n} titres', '{n} Titel'],
   'Fine': ['Done', 'Listo', 'OK', 'Fertig'],
   'Modifica': ['Edit', 'Editar', 'Modifier', 'Bearbeiten'],
   'La libreria è vuota': ['Your library is empty', 'La biblioteca está vacía', 'La bibliothèque est vide', 'Die Mediathek ist leer'],
-  'Vai su Cerca e aggiungi film e serie dal tuo server.': [
-    'Go to Search and add movies and series from your server.',
-    'Ve a Buscar y añade películas y series de tu servidor.',
-    'Allez dans Rechercher et ajoutez des films et des séries depuis votre serveur.',
-    'Geh zu Suchen und füge Filme und Serien von deinem Server hinzu.'],
+  'Vai su Server e aggiungi film e serie.': [
+    'Go to Server and add movies and series.',
+    'Ve a Servidor y añade películas y series.',
+    'Allez dans Serveur et ajoutez des films et des séries.',
+    'Geh zu Server und füge Filme und Serien hinzu.'],
   'Premi OK su un titolo per toglierlo dalla libreria.': [
     'Press OK on a title to remove it from the library.',
     'Pulsa OK en un título para quitarlo de la biblioteca.',

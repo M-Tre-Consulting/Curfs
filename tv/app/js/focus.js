@@ -76,15 +76,21 @@ export function move(direction) {
   return !!best;
 }
 
-/** Porta l'elemento in vista nel suo contenitore scorrevole, senza animazioni (pesanti sulla TV). */
+/**
+ * Porta l'elemento in vista nei contenitori scorrevoli che lo contengono,
+ * senza animazioni (pesanti sulla TV). Dentro un `data-pin` (colonne che
+ * scorrono per conto loro) i contenitori più esterni mostrano il blocco intero.
+ */
 function reveal(el) {
-  let box = el.parentElement;
-  while (box && box !== document.body) {
+  let target = el;
+  for (let box = el.parentElement; box && box !== document.body; box = box.parentElement) {
+    if (box.dataset.pin != null) { target = box; continue; }
     const style = getComputedStyle(box);
-    if (/(auto|scroll)/.test(style.overflowY + style.overflowX)) break;
-    box = box.parentElement;
+    if (/(auto|scroll)/.test(style.overflowY + style.overflowX)) scrollInto(box, target);
   }
-  if (!box || box === document.body) return;
+}
+
+function scrollInto(box, el) {
   const r = el.getBoundingClientRect();
   const c = box.getBoundingClientRect();
   const margin = 70;

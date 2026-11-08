@@ -44,6 +44,7 @@ final class ProfileSync {
     @ObservationIgnored private var libraryObserver: NSObjectProtocol?
     @ObservationIgnored private var lastItemCount = -1
     @ObservationIgnored private var librarySyncTask: Task<Void, Never>?
+    @ObservationIgnored private var lastMissingCheck = Date.distantPast
 
     private static let defaults = UserDefaults.standard
     private static let activeKey = "Curfs.profile.active"
@@ -213,6 +214,7 @@ final class ProfileSync {
         do {
             let context = AppModelContainer.shared.mainContext
             let resolver = ServerPathResolver(base: server.baseURL)
+            await removeMissingFromServer(server: server, context: context)
 
             var library = try await server.library(for: profile.id)
             let libraryNewer = await applyLibrary(library, profileID: profile.id, context: context, resolver: resolver)
@@ -321,6 +323,29 @@ final class ProfileSync {
             newer[key] = removal
         }
         return newer
+    }
+
+    /// Episodi/film in streaming il cui file è stato tolto dal server: via
+    /// dalla libreria qui e, tramite le rimozioni in sospeso, dal profilo
+    /// (quindi anche dagli altri dispositivi e dalla TV). Gli scaricati
+    /// restano: il file è su questo dispositivo. Al massimo ogni 2 minuti,
+    /// così le sincronizzazioni durante la riproduzione non lo rifanno.
+    private func removeMissingFromServer(server: ProfileServer, context: ModelContext) async {
+        guard Date.now.timeIntervalSince(lastMissingCheck) > 120 else { return }
+        lastMissingCheck = .now
+        let streaming = allItems(context).filter(\.isRemote)
+        var pathsByItem: [(MediaItem, String)] = []
+        for item in streaming {
+            if let path = Self.serverPath(of: item, base: server.baseURL) { pathsByItem.append((item, path)) }
+        }
+        guard !pathsByItem.isEmpty else { return }
+        let missing = await server.missingFiles(Array(Set(pathsByItem.map(\.1))))
+        guard !missing.isEmpty else { return }
+        for (item, path) in pathsByItem where missing.contains(path) {
+            LibraryMaintenance.delete(item, modelContext: context)
+        }
+        // Anche Cerca non deve più mostrarli.
+        RemoteContentProviderRegistry.invalidate()
     }
 
     // MARK: Minutaggio

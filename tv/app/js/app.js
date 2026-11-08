@@ -1,4 +1,4 @@
-// Curfs TV: Libreria, Cerca (catalogo del server), scheda serie e player.
+// Curfs TV: Libreria, Server (il catalogo, "Cerca" su iPhone e Mac), scheda serie e player.
 // DOM semplice, niente framework: sulla TV conta che sia leggero.
 
 import { loadCatalog, allEpisodes } from './catalog.js';
@@ -132,8 +132,8 @@ function initials(name) {
 function profileButton() {
   const profile = store.activeProfile();
   if (!profile) return null;
-  return h('button', { class: 'f pill profile-pill', dataset: { key: 'profile' }, onclick: () => openProfilePicker(false) },
-    avatar(profile, 'avatar small'), profile.name);
+  return h('button', { class: 'f profile-pill', dataset: { key: 'profile' }, onclick: () => openProfilePicker(false) },
+    avatar(profile, 'avatar small'), h('span', { class: 'profile-pill-name' }, profile.name));
 }
 
 /** `required`: all'avvio senza profilo, Indietro chiude l'app invece di tornare alle schede. */
@@ -182,36 +182,44 @@ function openProfilePicker(required) {
   });
 }
 
-// ---------- schede principali
+// ---------- schede principali (barra a sinistra: Libreria, Server)
+
+const ICONS = {
+  library: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="4" height="16" rx="1.2"/><rect x="9" y="4" width="4" height="16" rx="1.2"/><path d="M15.2 5.4l3.7-1 4 15-3.7 1z"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><rect x="3" y="3.5" width="18" height="7" rx="2"/><rect x="3" y="13.5" width="18" height="7" rx="2"/><circle cx="7" cy="7" r="1.3" class="dot"/><circle cx="7" cy="17" r="1.3" class="dot"/></svg>',
+};
 
 function renderTabs() {
   const previous = focused()?.dataset.key || state.lastKey;
-  app.replaceChildren(
-    h('header', { class: 'top', dataset: { zone: 'top' } },
+  const libraryCount = libraryIdsWithTitles().length;
+  app.replaceChildren(h('div', { class: 'shell' },
+    h('aside', { class: 'side', dataset: { zone: 'nav' } },
       h('div', { class: 'brand' }, 'Curfs'),
-      h('nav', { class: 'tabs' },
-        tabButton('library', t('Libreria')),
-        tabButton('search', t('Cerca'))),
-      // Firma M-Tre: senza la classe `f`, quindi il telecomando la salta e non si sceglie.
-      h('div', { class: 'credit' }, h('img', { src: 'mtre-logo.png', alt: '' }), h('span', {}, 'M-Tre Consulting')),
-      profileButton(),
-      state.tab === 'library' && libraryIdsWithTitles().length
-        ? h('button', { class: `f pill ${state.editing ? 'danger' : ''}`, dataset: { key: 'edit' }, onclick: toggleEdit },
+      h('nav', { class: 'side-nav' },
+        navButton('library', t('Libreria'), state.catalog ? plural(libraryCount, '1 titolo', '{n} titoli') : ''),
+        navButton('search', t('Server'), state.catalog ? plural(state.catalog.titles.length, '1 titolo', '{n} titoli') : '')),
+      state.tab === 'library' && libraryCount
+        ? h('button', { class: `f pill side-edit ${state.editing ? 'danger' : ''}`, dataset: { key: 'edit' }, onclick: toggleEdit },
           state.editing ? t('Fine') : t('Modifica'))
-        : null),
-    h('main', { class: 'scroll', dataset: { zone: 'main' } }, state.tab === 'library' ? libraryView() : searchView()),
-  );
+        : null,
+      h('div', { class: 'side-bottom' },
+        profileButton(),
+        // Firma M-Tre: senza la classe `f`, quindi il telecomando la salta e non si sceglie.
+        h('div', { class: 'credit' }, h('img', { src: 'mtre-logo.png', alt: '' }), h('span', {}, 'M-Tre Consulting')))),
+    h('main', { class: 'scroll', dataset: { zone: 'main' } }, state.tab === 'library' ? libraryView() : searchView())));
   const again = previous && app.querySelector(`.f[data-key="${CSS.escape(previous)}"]`);
   if (again) focus(again);
   else focusFirst(app.querySelector('main'));
   if (!focused()) focusFirst(app);
 }
 
-function tabButton(tab, label) {
+function navButton(tab, label, sub) {
+  const icon = h('span', { class: 'nav-icon' });
+  icon.innerHTML = ICONS[tab];
   return h('button', {
-    class: `f tab ${state.tab === tab ? 'active' : ''}`, dataset: { key: 'tab-' + tab },
-    onclick: () => { openTab(tab); },
-  }, label);
+    class: `f nav-item ${state.tab === tab ? 'active' : ''}`, dataset: { key: 'tab-' + tab },
+    onclick: () => { openTab(tab); toContent(); },
+  }, icon, h('span', { class: 'nav-text' }, h('span', { class: 'nav-label' }, label), sub && h('span', { class: 'nav-sub' }, sub)));
 }
 
 function openTab(tab) {
@@ -237,7 +245,7 @@ function libraryView() {
   if (!titles.length) {
     return h('div', { class: 'empty' },
       h('h2', {}, t('La libreria è vuota')),
-      h('p', {}, t('Vai su Cerca e aggiungi film e serie dal tuo server.')),
+      h('p', {}, t('Vai su Server e aggiungi film e serie.')),
       state.error && h('p', { class: 'error' }, state.error));
   }
   const recency = (t) => store.lastPlayed(t.kind === 'series' ? allEpisodes(t).map((e) => e.id) : [t.id])?.at || 0;
@@ -249,7 +257,7 @@ function libraryView() {
       h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))));
   }
   const resume = continueTarget();
-  const suggestions = suggestedTitles(7);
+  const suggestions = suggestedTitles(6);
   return h('div', {},
     resume && continueHero(resume),
     h('h2', { class: 'section' }, t('La tua libreria')),
@@ -386,6 +394,27 @@ function openSeries(title) {
     return { ep: episodes[i], label: t(last.done ? 'Rivedi {c}' : 'Riprendi {c}', { c: code(episodes[i].season, episodes[i].number) }) };
   };
 
+  // Stagioni in colonna a sinistra, episodi a destra: su/giù tra le stagioni
+  // mostra subito i loro episodi (senza OK), destra entra negli episodi.
+  let episodesBox = null;
+  let seasonTimer = 0;
+  const episodeRows = (season) => season.episodes.map((e) => {
+    const p = store.progressOf(e.id);
+    return h('button', { class: 'f episode', dataset: { key: e.id }, onclick: () => { screen.lastKey = e.id; play(title, { ...e, season: season.number }); } },
+      h('span', { class: 'ep-code' }, code(season.number, e.number)),
+      h('span', { class: 'ep-title' }, e.title),
+      p?.done ? h('span', { class: 'ep-done' }, '✓')
+        : p?.dur ? h('span', { class: 'ep-bar' }, h('i', { style: `width:${(p.pos / p.dur * 100).toFixed(1)}%` })) : null);
+  });
+  const showSeason = (number) => {
+    clearTimeout(seasonTimer);
+    if (screen.season === number) return;
+    screen.season = number;
+    for (const b of app.querySelectorAll('.season-item')) b.classList.toggle('active', b.dataset.key === 'season-' + number);
+    const season = title.seasons.find((s) => s.number === number);
+    if (season && episodesBox) { episodesBox.replaceChildren(...episodeRows(season)); episodesBox.scrollTop = 0; }
+  };
+
   const render = () => {
     const fromEpisode = screen.lastKey && screen.lastKey !== 'resume';
     const previous = (fromEpisode && state.playingKey) || screen.lastKey || focused()?.dataset.key;
@@ -409,23 +438,53 @@ function openSeries(title) {
               class: 'f pill', dataset: { key: 'add' },
               onclick: () => { added ? store.removeFromLibrary(title) : store.addToLibrary(title.id); render(); },
             }, added ? t('✓  In libreria') : t('+  Aggiungi alla libreria'))))),
-      title.seasons.length > 1 && h('div', { class: 'seasons' }, title.seasons.map((s) => h('button', {
-        class: `f tab ${s.number === season.number ? 'active' : ''}`, dataset: { key: 'season-' + s.number },
-        onclick: () => { screen.season = s.number; render(); },
-      }, t('Stagione {n}', { n: s.number })))),
-      h('div', { class: 'episodes' }, season.episodes.map((e) => {
-        const p = store.progressOf(e.id);
-        return h('button', { class: 'f episode', dataset: { key: e.id }, onclick: () => { screen.lastKey = e.id; play(title, { ...e, season: season.number }); } },
-          h('span', { class: 'ep-code' }, code(season.number, e.number)),
-          h('span', { class: 'ep-title' }, e.title),
-          p?.done ? h('span', { class: 'ep-done' }, '✓')
-            : p?.dur ? h('span', { class: 'ep-bar' }, h('i', { style: `width:${(p.pos / p.dur * 100).toFixed(1)}%` })) : null);
-      }))));
+      h('div', { class: `season-body ${title.seasons.length > 1 ? '' : 'single'}`, dataset: { pin: title.seasons.length > 1 } },
+        title.seasons.length > 1 && h('div', { class: 'season-list' }, title.seasons.map((s) => {
+          const item = h('button', {
+            class: `f season-item ${s.number === season.number ? 'active' : ''}`, dataset: { key: 'season-' + s.number },
+            onclick: () => { showSeason(s.number); toEpisodes(); },
+          },
+          h('span', { class: 'season-name' }, t('Stagione {n}', { n: s.number })),
+          h('span', { class: 'season-count' }, plural(s.episodes.length, '1 episodio', '{n} episodi')));
+          // Arrivandoci con le frecce: episodi di questa stagione dopo un attimo
+          // (scorrendo veloce non si ridisegna a ogni stagione attraversata).
+          item.arrive = () => { clearTimeout(seasonTimer); seasonTimer = setTimeout(() => showSeason(s.number), 140); };
+          return item;
+        })),
+        episodesBox = h('div', { class: 'episodes' }, episodeRows(season)))));
     const again = previous && app.querySelector(`.f[data-key="${CSS.escape(previous)}"]`);
     again ? focus(again) : focusFirst(app);
   };
 
-  push({ render });
+  const activeSeason = () => app.querySelector('.season-item.active');
+  // Negli episodi: l'ultimo guardato di quella stagione, sennò il primo.
+  const toEpisodes = () => {
+    showSeason(Number(focused()?.dataset.key?.slice(7)) || screen.season);
+    const season = title.seasons.find((s) => s.number === screen.season);
+    const last = season && store.lastPlayed(season.episodes.map((e) => e.id));
+    const row = last && episodesBox.querySelector(`.f[data-key="${CSS.escape(last.id)}"]`);
+    row ? focus(row) : focusFirst(episodesBox);
+  };
+
+  push({
+    render,
+    onKey: (k) => {
+      const f = focused();
+      // Su/giù restano nella colonna (stagioni o episodi): solo dalla prima
+      // riga si sale ai pulsanti in alto.
+      const column = f?.classList.contains('season-item') || f?.classList.contains('episode');
+      if (column && (k === KEY.UP || k === KEY.DOWN)) {
+        const next = k === KEY.UP ? f.previousElementSibling : f.nextElementSibling;
+        if (next) { focus(next); next.arrive?.(); } else if (k === KEY.UP) move('up');
+        return true;
+      }
+      if (k === KEY.RIGHT && f?.classList.contains('season-item')) { toEpisodes(); return true; }
+      // Dagli episodi a sinistra: sulla stagione che si sta guardando.
+      if (k === KEY.LEFT && f?.classList.contains('episode') && activeSeason()) { focus(activeSeason()); return true; }
+      return false;
+    },
+    onClose: () => clearTimeout(seasonTimer),
+  });
 }
 
 // ---------- player
@@ -660,14 +719,14 @@ function push(screen) {
 }
 
 function pop() {
-  stack.pop();
+  stack.pop()?.onClose?.();
   const top = stack[stack.length - 1];
   if (top?.render) top.render();
   else renderTabs();
 }
 
-/** Dal contenuto alla barra in alto: sulla scheda in cui si è, non su quella più vicina. */
-function toHeader() {
+/** Dal contenuto alla barra a sinistra: sulla scheda in cui si è, non su quella più vicina. */
+function toNav() {
   const from = focused();
   const main = from?.closest('[data-zone="main"]');
   if (!main) return;
@@ -682,7 +741,7 @@ function toHeader() {
  */
 function toContent() {
   const from = focused();
-  if (!from?.closest('[data-zone="top"]')) return;
+  if (!from?.closest('[data-zone="nav"]')) return;
   const tab = (from.dataset.key || '').startsWith('tab-') ? from.dataset.key.slice(4) : null;
   if (tab && tab !== state.tab) openTab(tab);
   const main = app.querySelector('main');
@@ -701,16 +760,13 @@ document.addEventListener('keydown', (e) => {
   const top = stack[stack.length - 1];
   if (top?.onKey && top.onKey(k)) { e.preventDefault(); return; }
   switch (k) {
-    case KEY.LEFT: move('left'); break;
-    case KEY.RIGHT: move('right'); break;
-    case KEY.UP: if (!move('up')) toHeader(); break;
-    case KEY.DOWN: {
-      // Sopra una stagione non aperta: giù la apre e va ai suoi episodi.
-      const f = focused();
-      if (f?.dataset.key?.startsWith('season-') && !f.classList.contains('active')) f.click();
-      if (!move('down')) toContent();
+    case KEY.LEFT: if (!move('left')) toNav(); break;
+    case KEY.RIGHT: if (!move('right')) toContent(); break;
+    case KEY.UP:
+    case KEY.DOWN:
+      // `arrive`: elementi che reagiscono quando ci si passa sopra (le stagioni).
+      if (move(k === KEY.UP ? 'up' : 'down')) focused()?.arrive?.();
       break;
-    }
     case KEY.OK: focused()?.click(); break;
     default:
       if (!isBack(k)) return;

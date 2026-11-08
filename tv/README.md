@@ -17,7 +17,7 @@ modello provato). Questa non usa framework né build: i file in `app/` sono già
 - **Profili** (obbligatori): all'avvio "Chi guarda?" con i profili creati da Curfs su iPhone o Mac
   (nome e foto); la TV non li crea né li modifica, scrive solo libreria e minutaggio
   (`.curfs/profiles/<id>/library.json` e `progress.json`), condivisi con gli altri dispositivi. Si cambia profilo
-  dal tasto in alto. Senza profili sul server, la TV chiede di crearne uno dal telefono.
+  dal tasto in fondo alla barra a sinistra. Senza profili sul server, la TV chiede di crearne uno dal telefono.
   Libreria e minutaggio salvati sulla TV prima dei profili si cancellano alla prima scelta.
 - Copia locale (localStorage) di libreria e minutaggio per aprire subito. Niente download: una
   web app non può salvare video sulla TV, e in casa lo streaming dal server è equivalente.
@@ -29,9 +29,12 @@ modello provato). Questa non usa framework né build: i file in `app/` sono già
 
 ## Telecomando
 
-Frecce per muoversi, OK per scegliere, Indietro per tornare (dalla Libreria chiude l'app). Giù
-da Libreria/Cerca (o da una stagione) la apre e scende nel contenuto; su dal contenuto torna
-sulla scheda aperta.
+Frecce per muoversi, OK per scegliere, Indietro per tornare (dalla Libreria chiude l'app).
+Libreria e Server (il catalogo, "Cerca" su iPhone e Mac) stanno nella barra a sinistra: destra
+(o OK) apre la sezione ed entra nel contenuto, sinistra dal bordo del contenuto torna sulla
+sezione aperta. Nella scheda di una serie le stagioni sono in colonna a sinistra: su/giù mostra
+subito gli episodi della stagione evidenziata, destra entra negli episodi (sull'ultimo guardato),
+sinistra torna sulla stagione.
 Nel player: OK pausa/play, ← → ±10 secondi (i salti ravvicinati si sommano), ↓ mostra la barra,
 ↑ la lingua audio (tracce dentro il file; se il browser della TV non lo permette, lo dice).
 

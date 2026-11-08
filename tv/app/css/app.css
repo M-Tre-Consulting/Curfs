@@ -27,16 +27,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .scroll::-webkit-scrollbar { display: none; }
 .hidden { opacity: 0 !important; pointer-events: none; }
 
-/* --- Barra in alto */
-.top { display: flex; align-items: center; gap: 48px; padding: 44px 96px 20px; }
-.brand { font-size: 44px; font-weight: 800; letter-spacing: .5px; color: var(--accent-2); }
-.tabs { display: flex; gap: 14px; flex: 1; }
-.tab {
-  font-size: 30px; font-weight: 600; padding: 12px 30px; border-radius: 40px; color: var(--muted);
-  border: 3px solid transparent; transition: transform .12s ease-out;
+/* --- Barra a sinistra: Libreria e Server, grandi e separati */
+.shell { flex: 1; display: flex; min-height: 0; }
+.side {
+  flex: none; width: 420px; display: flex; flex-direction: column; gap: 22px; padding: 56px 34px 40px 56px;
+  background: linear-gradient(180deg, rgba(43, 20, 82, .55), rgba(18, 8, 31, .2));
+  border-right: 2px solid rgba(58, 34, 99, .6);
 }
-.tab.active { color: var(--text); background: var(--card); }
-.tab.focus { border-color: var(--accent-2); color: var(--text); transform: scale(1.06); }
+.brand { font-size: 52px; font-weight: 800; letter-spacing: .5px; color: var(--accent-2); margin: 0 0 28px 8px; }
+.side-nav { display: flex; flex-direction: column; gap: 22px; }
+.nav-item {
+  display: flex; align-items: center; gap: 26px; padding: 28px 30px; border-radius: 30px;
+  background: var(--bg-2); border: 4px solid transparent; color: var(--muted);
+  transition: transform .12s ease-out;
+}
+.nav-item.active { background: linear-gradient(120deg, #4a2391, var(--card)); color: var(--text); }
+.nav-item.focus { border-color: var(--accent-2); color: var(--text); transform: scale(1.04); }
+.nav-icon {
+  flex: none; width: 76px; height: 76px; border-radius: 22px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .07);
+}
+.nav-item.active .nav-icon { background: var(--accent); }
+.nav-icon svg { width: 44px; height: 44px; fill: currentColor; }
+.nav-icon svg .dot { fill: var(--bg-2); }
+.nav-item.active .nav-icon svg .dot { fill: var(--accent); }
+.nav-text { display: flex; flex-direction: column; min-width: 0; }
+.nav-label { font-size: 40px; font-weight: 800; line-height: 1.1; }
+.nav-sub { font-size: 22px; color: var(--muted); margin-top: 6px; }
+.side-edit { align-self: flex-start; margin: 10px 0 0 8px; }
+.side-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 26px; }
 
 .pill {
   font-size: 28px; font-weight: 600; padding: 16px 34px; border-radius: 40px; background: var(--card);
@@ -48,12 +67,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* --- Griglie di card */
 /* Spazio in alto: la card selezionata si ingrandisce e il bordo veniva tagliato. */
-main.scroll { padding: 34px 96px 80px; }
+main.scroll { padding: 56px 72px 80px; }
 .section { font-size: 34px; margin: 0 0 30px; color: var(--muted); font-weight: 600; }
-.grid { display: grid; grid-template-columns: repeat(7, 220px); gap: 46px 30px; justify-content: space-between; margin-bottom: 56px; }
+.grid { display: grid; grid-template-columns: repeat(6, 200px); gap: 46px 30px; justify-content: space-between; margin-bottom: 56px; }
 .hint { font-size: 26px; color: var(--muted); margin: 0 0 20px; }
 
-.card { position: relative; display: block; width: 220px; transition: transform .14s ease-out; }
+.card { position: relative; display: block; width: 200px; transition: transform .14s ease-out; }
 .card .poster { border: 4px solid transparent; }
 .card.focus { transform: scale(1.08); z-index: 1; }
 .card.focus .poster { border-color: var(--accent-2); }
@@ -69,10 +88,10 @@ main.scroll { padding: 34px 96px 80px; }
 }
 .badge { background: var(--accent); }
 .remove { background: var(--danger); }
-.bar { position: absolute; left: 14px; right: 14px; top: 300px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); }
+.bar { position: absolute; left: 14px; right: 14px; top: 272px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); }
 .bar i, .ep-bar i, .osd-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent-2); }
 
-.poster { position: relative; width: 220px; height: 330px; border-radius: 18px; overflow: hidden; background: var(--card); }
+.poster { position: relative; width: 200px; height: 300px; border-radius: 18px; overflow: hidden; background: var(--card); }
 .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .25s; }
 .poster.loaded img { opacity: 1; }
 .poster-fallback {
@@ -115,8 +134,23 @@ main.scroll { padding: 34px 96px 80px; }
 .hero-text h1 { font-size: 64px; margin: 0 0 12px; line-height: 1.1; }
 .meta { font-size: 28px; color: var(--muted); margin: 0 0 36px; }
 .row { display: flex; gap: 24px; flex-wrap: wrap; }
-.seasons { display: flex; gap: 14px; margin: 54px 0 10px; flex-wrap: wrap; }
-.episodes { display: flex; flex-direction: column; gap: 14px; margin-top: 30px; }
+/* Più stagioni: due colonne alte quanto lo schermo, che scorrono ognuna per conto suo. */
+.season-body { display: flex; gap: 32px; align-items: flex-start; margin-top: 56px; height: 940px; }
+.season-body.single { height: auto; }
+.season-list, .season-body:not(.single) .episodes {
+  height: 100%; overflow-y: auto; scrollbar-width: none; padding: 8px 14px; margin: -8px -14px;
+}
+.season-list::-webkit-scrollbar, .episodes::-webkit-scrollbar { display: none; }
+.season-list { flex: none; width: 388px; display: flex; flex-direction: column; gap: 12px; }
+.season-item {
+  display: flex; flex-direction: column; padding: 20px 28px; border-radius: 22px; color: var(--muted);
+  border: 3px solid transparent; transition: transform .12s ease-out;
+}
+.season-item.active { background: var(--card); color: var(--text); }
+.season-item.focus { border-color: var(--accent-2); color: var(--text); transform: scale(1.03); }
+.season-name { font-size: 32px; font-weight: 700; }
+.season-count { font-size: 22px; color: var(--muted); margin-top: 4px; }
+.episodes { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .episode {
   display: flex; align-items: center; gap: 34px; padding: 22px 34px; border-radius: 20px; background: var(--bg-2);
   border: 3px solid transparent; transition: transform .12s ease-out;
@@ -152,8 +186,12 @@ main.scroll { padding: 34px 96px 80px; }
 .next-hint { font-size: 22px; color: var(--muted); }
 
 /* --- Profili */
-.profile-pill { display: flex; align-items: center; gap: 16px; padding: 10px 30px 10px 12px; }
-.profile-pill:not(:has(.avatar)) { padding: 16px 34px; }
+.profile-pill {
+  display: flex; align-items: center; gap: 18px; padding: 12px 26px 12px 12px; border-radius: 50px;
+  background: var(--card); border: 3px solid transparent; transition: transform .12s ease-out; min-width: 0;
+}
+.profile-pill.focus { border-color: #fff; transform: scale(1.04); }
+.profile-pill-name { font-size: 28px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .avatar {
   position: relative; width: 220px; height: 220px; border-radius: 50%; overflow: hidden; flex: none;
   background: linear-gradient(140deg, var(--accent), #4a2391); border: 5px solid transparent;
@@ -161,7 +199,7 @@ main.scroll { padding: 34px 96px 80px; }
 }
 .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .25s; }
 .avatar.loaded img { opacity: 1; }
-.avatar.small { width: 52px; height: 52px; font-size: 22px; border-width: 0; }
+.avatar.small { width: 60px; height: 60px; font-size: 24px; border-width: 0; }
 .avatar.none { background: var(--card); color: var(--muted); }
 .profiles { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 96px; }
 .profiles h1 { font-size: 64px; margin: 0 0 70px; }
@@ -192,7 +230,7 @@ main.scroll { padding: 34px 96px 80px; }
 .audio-row.focus { border-color: var(--accent-2); background: var(--card); }
 .audio-hint { font-size: 22px; color: var(--muted); margin-top: 14px; }
 
-/* --- Firma M-Tre nell'header, prima della foto profilo: non riceve il focus né i clic. */
-.credit { display: flex; align-items: center; gap: 12px; pointer-events: none; user-select: none; }
-.credit img { height: 44px; width: auto; display: block; }
+/* --- Firma M-Tre in fondo alla barra a sinistra: non riceve il focus né i clic. */
+.credit { display: flex; align-items: center; gap: 12px; pointer-events: none; user-select: none; margin-left: 8px; opacity: .85; }
+.credit img { height: 40px; width: auto; display: block; }
 .credit span { font-size: 24px; font-weight: 700; letter-spacing: .5px; color: #e3d3b8; white-space: nowrap; }

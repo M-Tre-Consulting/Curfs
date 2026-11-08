@@ -122,6 +122,48 @@ struct ProfileServer: Sendable {
         try await put(encoder.encode(file), to: folder(id).appending(path: "library.json"), type: "application/json")
     }
 
+    // MARK: - File spariti
+
+    /// Quali di questi file (percorsi sul server, non codificati) non ci sono
+    /// più. Un elenco per cartella; nel dubbio (rete, errori diversi da 404,
+    /// elenco illeggibile) il file si considera ancora presente: toglierlo
+    /// per sbaglio lo toglierebbe dal profilo su tutti i dispositivi.
+    func missingFiles(_ paths: [String]) async -> Set<String> {
+        struct DirEntry: Decodable { let name: String }
+        var byFolder: [String: [String]] = [:]
+        for path in paths {
+            var components = path.split(separator: "/").map(String.init)
+            guard let name = components.popLast() else { continue }
+            byFolder[components.joined(separator: "/"), default: []].append(name)
+        }
+        return await withTaskGroup(of: [String].self) { group in
+            for (folder, names) in byFolder {
+                group.addTask {
+                    var url = baseURL
+                    for component in folder.split(separator: "/") { url.appendPathComponent(String(component)) }
+                    var request = URLRequest(url: URL(string: url.absoluteString + "/") ?? url)
+                    request.setValue("application/json", forHTTPHeaderField: "Accept")
+                    guard let (data, response) = try? await send(request) else { return [] }
+                    let prefix = folder.isEmpty ? "" : folder + "/"
+                    let missing: [String]
+                    if response.statusCode == 404 {
+                        missing = names
+                    } else if response.statusCode == 200,
+                              let entries = try? JSONDecoder().decode([DirEntry].self, from: data) {
+                        let present = Set(entries.map(\.name))
+                        missing = names.filter { !present.contains($0) }
+                    } else {
+                        missing = []
+                    }
+                    return missing.map { prefix + $0 }
+                }
+            }
+            var result = Set<String>()
+            for await missing in group { result.formUnion(missing) }
+            return result
+        }
+    }
+
     // MARK: - HTTP
 
     private func put(_ data: Data, to url: URL, type: String) async throws {
