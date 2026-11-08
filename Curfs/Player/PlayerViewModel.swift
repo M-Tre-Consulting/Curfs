@@ -137,6 +137,10 @@ final class PlayerViewModel {
         // Meglio attendere di avere buffer a sufficienza che partire e
         // singhiozzare (è già il default, lo fissiamo per non perderlo).
         player.automaticallyWaitsToMinimizeStalling = true
+        // La traccia audio la decide chi guarda (vedi applyPreferredAudio):
+        // con la scelta automatica iOS segue la lingua del telefono e rimette
+        // l'inglese sopra l'italiano scelto l'ultima volta.
+        player.appliesMediaSelectionCriteriaAutomatically = false
         // Niente AirPlay "video": i file locali stanno nella sandbox (non
         // raggiungibili dal ricevitore) e gli header di auth dello streaming non
         // verrebbero propagati alla TV — in entrambi i casi il ricevitore resta
@@ -420,10 +424,12 @@ final class PlayerViewModel {
         item.select(audioOptions[index], in: audioGroup)
     }
 
-    /// Le scelte fatte fuori da `selectAudioTrack` (su Mac il menu di
-    /// AVPlayerView) vanno ricordate lo stesso. Registrata dopo
-    /// `applyPreferredAudio`, così la scelta automatica iniziale non conta.
+    /// Su Mac la traccia si sceglie dal menu di AVPlayerView, che non passa
+    /// da `selectAudioTrack`: la scelta va ricordata lo stesso. Su iPhone no:
+    /// lì si salva solo quello che sceglie chi guarda, mai un cambio deciso
+    /// dal sistema.
     private func observeSelectionChanges() {
+        #if os(macOS)
         guard selectionObserver == nil, audioGroup != nil, let item = player.currentItem else { return }
         selectionObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.mediaSelectionDidChangeNotification, object: item, queue: .main
@@ -435,6 +441,7 @@ final class PlayerViewModel {
                 self.refreshSelectedTracks()
             }
         }
+        #endif
     }
 
     /// "lang:it" se la traccia dichiara la lingua, sennò il suo nome

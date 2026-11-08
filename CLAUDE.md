@@ -336,10 +336,21 @@ non può salvare video sulla TV). Decisioni:
   (rotazione + "⋯" `PlayerOptionsMenu` con tutto il resto, sottomenu `Picker` `.menu`). Voluto
   dall'utente: il menu solo quando il titolo verrebbe tagliato. Menu velocità/tracce/"⋯" sono view a
   sé che non leggono `currentTime`: ridisegnandosi 4 volte al secondo il menu aperto perdeva il tocco.
-- **Lingua audio ricordata** (2026-11-08): l'ultima scelta (`Curfs.audioLanguage`, "lang:<tag>"
-  o "name:<nome>" per le tracce `und`) si riapplica a ogni video che ce l'ha; su Mac la scelta dal
-  menu di AVPlayerView arriva da `mediaSelectionDidChangeNotification`, registrata solo dopo aver
-  applicato la preferenza (sennò la scelta automatica iniziale la sovrascriverebbe).
+- **Lingua audio ricordata** (2.4.6-2.4.7): l'ultima scelta (`Curfs.audioLanguage`, "lang:<tag>"
+  o "name:<nome>" per le tracce `und`) si riapplica a ogni video che ce l'ha.
+  `appliesMediaSelectionCriteriaAutomatically = false` sul player: con la scelta automatica iOS
+  segue la lingua del telefono (l'iPhone dell'utente è in inglese) e rimetteva l'inglese. Su
+  iPhone la preferenza si salva **solo** da `selectAudioTrack` (scelta dal menu); su Mac anche da
+  `mediaSelectionDidChangeNotification` (menu di AVPlayerView), solo `#if os(macOS)`: nella 2.4.6
+  l'osservatore c'era anche su iOS e salvava come preferenza l'inglese scelto dal sistema.
+- **Menu tracce che si rompeva scorrendo** (2.4.7): con tante tracce (Walking Dead: 5 sottotitoli,
+  3 audio) il menu va fatto scorrere, e tornava in cima con le voci sovrapposte in dissolvenza.
+  Causa: il body di `PlayerControlsOverlay` leggeva `currentTime` (barra in basso) ⇒ si
+  ridisegnava 4 volte al secondo e ricostruiva il menu aperto. Ora la barra del tempo è
+  `PlayerTimeBar`, view a sé: **nessuna parte del body dell'overlay deve leggere `currentTime`**.
+  Le sezioni del menu tracce hanno per titolo il nome del Picker in linea (niente `labelsHidden`,
+  che lo toglieva). Icone nei titoli delle sezioni: iOS non le mostra (provato, scartato dall'utente
+  anche con l'icona su ogni voce).
 - **Audio/sottotitoli** (`PlayerViewModel.loadMediaSelections`): solo tracce dentro al file
   (`AVMediaSelectionGroup` audible/legible, i sottotitoli "solo forzati" esclusi dalla scelta); le
   voci compaiono solo se c'è qualcosa da scegliere. Su Mac lo dà AVPlayerView. Nel tasto a sé

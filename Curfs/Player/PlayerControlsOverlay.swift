@@ -34,7 +34,7 @@ struct PlayerControlsOverlay: View {
             Spacer(minLength: 0)
             centerControls
             Spacer(minLength: 0)
-            bottomBar
+            PlayerTimeBar(vm: vm)
         }
         .padding(.horizontal, 18)
         .padding(.top, 8)
@@ -162,8 +162,17 @@ struct PlayerControlsOverlay: View {
         .tint(buttonGlassTint)
         .buttonBorderShape(.circle)
     }
+}
 
-    private var bottomBar: some View {
+/// Barra del tempo in una view a sé: è l'unica parte dei controlli che legge
+/// `currentTime` (cambia 4 volte al secondo). Se la leggesse il body di
+/// PlayerControlsOverlay, a ogni tick si ricostruirebbe tutta la barra in alto
+/// e con lei il menu tracce aperto: scorrendolo tornava in cima e le voci si
+/// sovrapponevano in dissolvenza.
+private struct PlayerTimeBar: View {
+    let vm: PlayerViewModel
+
+    var body: some View {
         VStack(spacing: 4) {
             Slider(
                 value: Binding(
@@ -275,7 +284,7 @@ private struct TrackPickers: View {
                 }
             } label: {
                 Label("Sottotitoli", systemImage: "captions.bubble")
-            }, title: "Sottotitoli")
+            })
         }
 
         if vm.audioTracks.count > 1 {
@@ -288,16 +297,17 @@ private struct TrackPickers: View {
                 }
             } label: {
                 Label("Audio", systemImage: "waveform")
-            }, title: "Audio")
+            })
         }
     }
 
     @ViewBuilder
-    private func styled(_ picker: some View, title: LocalizedStringKey) -> some View {
+    private func styled(_ picker: some View) -> some View {
         if inline {
-            Section(title) {
-                picker.pickerStyle(.inline).labelsHidden()
-            }
+            // Senza labelsHidden: in un menu il nome del Picker in linea fa da
+            // titolo della sua sezione ("Sottotitoli", "Audio"); nascosto, le
+            // due liste restavano senza niente sopra e non si distinguevano.
+            picker.pickerStyle(.inline)
         } else {
             picker.pickerStyle(.menu)
         }
