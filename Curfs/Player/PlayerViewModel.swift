@@ -574,17 +574,20 @@ final class PlayerViewModel {
         guard !isScrubbing else { return }
         let seconds = time.seconds
         guard seconds.isFinite else { return }
+        // Solo currentTime cambia a ogni tick (lo legge solo PlayerTimeBar).
+        // Il minutaggio dell'episodio in libreria si scrive al salvataggio
+        // (persistProgress, ogni 5 s): scritto qui, 4 volte al secondo, faceva
+        // ridisegnare le schermate della libreria rimaste sotto il player e
+        // tutto scattava (menu e pannelli che scorrono) mentre il video andava.
+        // Allo stesso modo gli altri valori osservati si assegnano solo se
+        // cambiano: anche un'assegnazione uguale fa ridisegnare chi li legge.
         currentTime = seconds
-        item.playbackPosition = seconds
 
         // Piccolo anticipo sul bordo iniziale: se l'analisi finisce mentre la
         // sigla è già partita, il pulsante compare comunque subito invece di
         // "mancare il treno".
-        if let intro = detectedIntroRange {
-            isInIntro = seconds >= intro.lowerBound - 5 && seconds <= intro.upperBound
-        } else {
-            isInIntro = false
-        }
+        let inIntro = detectedIntroRange.map { seconds >= $0.lowerBound - 5 && seconds <= $0.upperBound } ?? false
+        if inIntro != isInIntro { isInIntro = inIntro }
 
         let inCredits = detectedCreditsRange?.contains(seconds) ?? false
         if inCredits, !isInCredits {
@@ -598,7 +601,7 @@ final class PlayerViewModel {
             // con lo scrubber): l'episodio torna "in corso" a tutti gli effetti.
             item.isFinished = false
         }
-        isInCredits = inCredits
+        if inCredits != isInCredits { isInCredits = inCredits }
 
         // Prima il pannello ricompariva al tick successivo all'"Annulla", e
         // tornando indietro con lo slider restava aperto col countdown attivo.
@@ -625,13 +628,15 @@ final class PlayerViewModel {
         isPlaying = false
         item.isFinished = true
         item.playbackPosition = 0
-        persistProgress(force: true)
+        // Prima di persistProgress: finito, la posizione resta 0 (non la fine).
         didFinish = true
+        persistProgress(force: true)
     }
 
     private func persistProgress(force: Bool) {
-        item.lastPlayedAt = .now
         guard force || Date.now.timeIntervalSince(lastSavedAt) > 5 else { return }
+        if !didFinish { item.playbackPosition = currentTime }
+        item.lastPlayedAt = .now
         lastSavedAt = .now
         // Un item in streaming aperto dalla sezione Cerca non è ancora in un
         // contesto SwiftData: lo inseriamo solo quando c'è qualcosa da

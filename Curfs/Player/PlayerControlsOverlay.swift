@@ -87,7 +87,8 @@ struct PlayerControlsOverlay: View {
                     onNextEpisode: onNextEpisode
                 )
             } else {
-                TracksMenu(vm: vm)
+                TracksMenu(tracks: TrackState(vm), vm: vm)
+                    .equatable()
                 PlaybackSpeedMenu(vm: vm)
             }
         }
@@ -238,17 +239,41 @@ private struct PlaybackSpeedMenu: View {
     }
 }
 
+/// Tracce e scelta attuale, copiate dal view model: il menu tracce dipende
+/// solo da questi valori (vedi TracksMenu).
+private struct TrackState: Equatable {
+    let audio: [PlayerViewModel.TrackChoice]
+    let subtitles: [PlayerViewModel.TrackChoice]
+    let selectedAudio: Int?
+    let selectedSubtitle: Int?
+
+    @MainActor init(_ vm: PlayerViewModel) {
+        audio = vm.audioTracks
+        subtitles = vm.subtitleTracks
+        selectedAudio = vm.selectedAudioTrack
+        selectedSubtitle = vm.selectedSubtitleTrack
+    }
+}
+
 /// Audio e sottotitoli come tasto a sé (barra completa), solo se il file ne
-/// ha da scegliere.
-private struct TracksMenu: View {
+/// ha da scegliere. `Equatable` sui soli valori delle tracce (`.equatable()`
+/// dove si usa) e nessuna lettura del view model nel body: se la barra in
+/// alto si ridisegna, il menu aperto non viene ricostruito (scorrendolo
+/// tornava in cima e le voci sfumavano).
+private struct TracksMenu: View, Equatable {
+    let tracks: TrackState
     let vm: PlayerViewModel
 
+    nonisolated static func == (lhs: TracksMenu, rhs: TracksMenu) -> Bool {
+        lhs.tracks == rhs.tracks
+    }
+
     var body: some View {
-        if vm.audioTracks.count > 1 || !vm.subtitleTracks.isEmpty {
+        if tracks.audio.count > 1 || !tracks.subtitles.isEmpty {
             // Liste piatte, non sottomenu: nei sottomenu non si può trascinare
             // il dito e rilasciare sulla voce (era quello il "tocco rotto").
             Menu {
-                TrackPickers(vm: vm, inline: true)
+                TrackPickers(tracks: tracks, vm: vm, inline: true)
             } label: {
                 Image(systemName: "text.bubble")
                     .font(.system(size: 16, weight: .semibold))
@@ -269,45 +294,51 @@ private struct TracksMenu: View {
 /// Sottotitoli/audio, condivisi tra TracksMenu (liste piatte con
 /// intestazione) e il "⋯" (sottomenu, mostrano anche la scelta attuale).
 private struct TrackPickers: View {
+    let tracks: TrackState
     let vm: PlayerViewModel
     let inline: Bool
 
     var body: some View {
-        if !vm.subtitleTracks.isEmpty {
+        if !tracks.subtitles.isEmpty {
             styled(Picker(selection: Binding(
-                get: { vm.selectedSubtitleTrack },
+                get: { tracks.selectedSubtitle },
                 set: { vm.selectSubtitleTrack($0) }
             )) {
                 Text("Disattivati").tag(Int?.none)
-                ForEach(vm.subtitleTracks) { track in
+                ForEach(tracks.subtitles) { track in
                     Text(verbatim: track.name).tag(Int?.some(track.id))
                 }
             } label: {
                 Label("Sottotitoli", systemImage: "captions.bubble")
-            })
+            }, title: "Sottotitoli", icon: "captions.bubble")
         }
 
-        if vm.audioTracks.count > 1 {
+        if tracks.audio.count > 1 {
             styled(Picker(selection: Binding(
-                get: { vm.selectedAudioTrack ?? 0 },
+                get: { tracks.selectedAudio ?? 0 },
                 set: { vm.selectAudioTrack($0) }
             )) {
-                ForEach(vm.audioTracks) { track in
+                ForEach(tracks.audio) { track in
                     Text(verbatim: track.name).tag(track.id)
                 }
             } label: {
                 Label("Audio", systemImage: "waveform")
-            })
+            }, title: "Audio", icon: "speaker.wave.2")
         }
     }
 
     @ViewBuilder
-    private func styled(_ picker: some View) -> some View {
+    private func styled(_ picker: some View, title: LocalizedStringKey, icon: String) -> some View {
         if inline {
-            // Senza labelsHidden: in un menu il nome del Picker in linea fa da
-            // titolo della sua sezione ("Sottotitoli", "Audio"); nascosto, le
-            // due liste restavano senza niente sopra e non si distinguevano.
-            picker.pickerStyle(.inline)
+            // In cima a ogni lista una riga grigia non cliccabile con icona e
+            // nome: i titoli di sezione dei menu iOS (Section, label del
+            // Picker in linea) sull'iPhone non comparivano proprio. Una Label
+            // semplice, non un Button disattivato: la sua azione (una closure)
+            // risulta sempre diversa e faceva ricostruire il menu aperto.
+            Section {
+                Label(title, systemImage: icon)
+                picker.pickerStyle(.inline).labelsHidden()
+            }
         } else {
             picker.pickerStyle(.menu)
         }
@@ -353,7 +384,7 @@ private struct PlayerOptionsMenu: View {
                 }
                 .pickerStyle(.menu)
 
-                TrackPickers(vm: vm, inline: false)
+                TrackPickers(tracks: TrackState(vm), vm: vm, inline: false)
             }
         } label: {
             Image(systemName: "ellipsis")

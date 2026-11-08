@@ -343,14 +343,22 @@ non può salvare video sulla TV). Decisioni:
   iPhone la preferenza si salva **solo** da `selectAudioTrack` (scelta dal menu); su Mac anche da
   `mediaSelectionDidChangeNotification` (menu di AVPlayerView), solo `#if os(macOS)`: nella 2.4.6
   l'osservatore c'era anche su iOS e salvava come preferenza l'inglese scelto dal sistema.
-- **Menu tracce che si rompeva scorrendo** (2.4.7): con tante tracce (Walking Dead: 5 sottotitoli,
-  3 audio) il menu va fatto scorrere, e tornava in cima con le voci sovrapposte in dissolvenza.
-  Causa: il body di `PlayerControlsOverlay` leggeva `currentTime` (barra in basso) ⇒ si
-  ridisegnava 4 volte al secondo e ricostruiva il menu aperto. Ora la barra del tempo è
-  `PlayerTimeBar`, view a sé: **nessuna parte del body dell'overlay deve leggere `currentTime`**.
-  Le sezioni del menu tracce hanno per titolo il nome del Picker in linea (niente `labelsHidden`,
-  che lo toglieva). Icone nei titoli delle sezioni: iOS non le mostra (provato, scartato dall'utente
-  anche con l'icona su ogni voce).
+- **Player che scattava mentre il video va** (2.4.7-2.4.8, visto scorrendo il menu tracce con
+  tante tracce: tornava in cima, voci sovrapposte in dissolvenza, lag solo in riproduzione).
+  Cause, tutte da non reintrodurre:
+  - `handleTick` (4 volte al secondo) scriveva `item.playbackPosition`/`lastPlayedAt` sul
+    `MediaItem` di SwiftData ⇒ si ridisegnavano le schermate della libreria rimaste sotto il
+    player. Ora il modello si aggiorna solo in `persistProgress` (ogni 5 s, pausa, chiusura); a
+    fine episodio `didFinish` va messo prima di `persistProgress` (sennò la posizione 0 diventa la fine).
+  - `isInIntro`/`isInCredits` riassegnati a ogni tick: con `@Observable` anche un valore uguale
+    fa ridisegnare chi li legge ⇒ si assegnano solo se cambiano.
+  - Il body di `PlayerControlsOverlay` leggeva `currentTime`: ora la barra del tempo è
+    `PlayerTimeBar`, view a sé. **Nessuna parte del body dell'overlay deve leggere `currentTime`.**
+  - `TracksMenu` è `Equatable` su `TrackState` (copia dei valori) e non legge il view model.
+- **Menu tracce**: nativo (`Menu`, l'utente ha bocciato un popover fatto a mano: "non è nativo").
+  In cima a ogni lista una `Label` (non un `Button` disattivato: la closure cambia sempre e fa
+  ricostruire il menu) con icona e nome: i titoli di sezione dei menu (Section, label del Picker
+  in linea) sull'iPhone non comparivano affatto.
 - **Audio/sottotitoli** (`PlayerViewModel.loadMediaSelections`): solo tracce dentro al file
   (`AVMediaSelectionGroup` audible/legible, i sottotitoli "solo forzati" esclusi dalla scelta); le
   voci compaiono solo se c'è qualcosa da scegliere. Su Mac lo dà AVPlayerView. Nel tasto a sé
