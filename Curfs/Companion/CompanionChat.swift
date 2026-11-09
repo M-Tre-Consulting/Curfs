@@ -96,7 +96,9 @@ final class CompanionChat {
     }
 
     /// I tasti di Curfs AI si mostrano solo dove il modello può esserci.
-    static var isOffered: Bool { availability != .unsupported }
+    /// Calcolato una volta: se cambiasse a metà, i tasti comparirebbero e
+    /// sparirebbero dalle barre in alto (vedi LibraryHomeView).
+    static let isOffered: Bool = availability != .unsupported
 
     let target: CompanionTarget
     private(set) var messages: [Message] = []

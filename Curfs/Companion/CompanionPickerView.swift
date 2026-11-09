@@ -197,20 +197,20 @@ struct CompanionPickerView: View {
     }
 }
 
-/// Il tasto Curfs AI delle barre in alto (libreria, scheda serie).
+/// Il tasto Curfs AI delle barre in alto (libreria, scheda serie). Solo
+/// l'icona, come gli altri tasti della barra: con un `Label` (titolo + icona)
+/// macOS continuava a ricalcolare la barra all'apertura e le icone vicine
+/// sparivano, si fondevano e ricaricavano la foto del profilo.
 struct CompanionToolbarButton: View {
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label {
-                Text(verbatim: "Curfs AI")
-            } icon: {
-                Image(systemName: "sparkles")
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(Color.accentColor, Color(red: 0.85, green: 0.35, blue: 0.75))
-            }
+            Image(systemName: "sparkles")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(Color.accentColor, Color(red: 0.85, green: 0.35, blue: 0.75))
         }
+        .accessibilityLabel(Text(verbatim: "Curfs AI"))
         .help(Text(verbatim: "Curfs AI"))
     }
 }

@@ -74,10 +74,17 @@ struct LibraryHomeView: View {
                     .accessibilityLabel("Privacy, licenza e contatti")
                 }
                 #endif
-                if CompanionChat.isOffered, !allItems.isEmpty {
+                // Curfs AI in un gruppo a sé (spaziatore fisso): accanto ad
+                // avatar e + macOS 26 non si decideva su come raggrupparli e
+                // ricostruiva la barra di continuo (icone che sparivano, si
+                // fondevano, foto del profilo ricaricata). `isOffered` è
+                // fisso e il tasto c'è sempre, solo disattivato a libreria vuota.
+                if CompanionChat.isOffered {
                     ToolbarItem(placement: .primaryAction) {
                         CompanionToolbarButton { showCompanionPicker = true }
+                            .disabled(allItems.isEmpty)
                     }
+                    ToolbarSpacer(.fixed, placement: .primaryAction)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     ProfileToolbarButton()

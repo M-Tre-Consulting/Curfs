@@ -245,7 +245,12 @@ una scena), **senza spoiler** salvo richiesta esplicita, chat breve che non si s
   360 pt accanto al video (⌘K), il video continua; il monitor dei tasti A/D di `MacVideoPlayerView`
   lascia passare le lettere se il first responder è un `NSText`. Dalla libreria: tasto Curfs AI →
   scegli serie/episodio/film del profilo; scheda serie: tasto in alto e menu di ogni episodio; film:
-  menu contestuale. Se nel player si va avanti di >20 s, al messaggio dopo si rileggono i dialoghi e
+  menu contestuale. ⚠️ **Barra Mac (2.5.1)**: il tasto ✨ della Libreria/scheda serie sta in un
+  gruppo a sé (`ToolbarSpacer(.fixed)` dopo di lui); messo attaccato ad avatar e + macOS 26 non si
+  decideva su come raggrupparli e all'apertura ricostruiva la barra di continuo (icone che sparivano
+  e si fondevano, avatar che ricaricava la foto). Visto catturando fotogrammi della finestra con
+  `screencapture -l<id>` in sequenza; controprova senza ✨ = barra ferma. `isOffered` è una costante.
+  Se nel player si va avanti di >20 s, al messaggio dopo si rileggono i dialoghi e
   la sessione riparte con le ultime battute della chat.
 - Provato il 2026-11-09 con un collaudo da terminale (codice vero + stub) contro il Pi: GoT S1E2 e
   Doctor Strange 2, risposte giuste e rifiuto degli spoiler. Informativa aggiornata in app e sul sito.

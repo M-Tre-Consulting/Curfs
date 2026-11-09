@@ -169,10 +169,13 @@ struct SeriesDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            if CompanionChat.isOffered, !libraryEpisodes.isEmpty {
+            // Sempre presente e in un gruppo a sé, come in Libreria (vedi LibraryHomeView).
+            if CompanionChat.isOffered {
                 ToolbarItem(placement: .primaryAction) {
                     CompanionToolbarButton { showCompanion = true }
+                        .disabled(libraryEpisodes.isEmpty)
                 }
+                ToolbarSpacer(.fixed, placement: .primaryAction)
             }
             if seasonEntries.contains(where: { $0.item != nil }) {
                 ToolbarItem(placement: .primaryAction) {
