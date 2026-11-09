@@ -212,6 +212,12 @@ struct CompanionChatView: View {
                     Link(destination: source.url) {
                         Text(verbatim: "\(source.name) ↗").underline()
                     }
+                    if let wikipedia = chat.wikipediaSource {
+                        Text(verbatim: "+")
+                        Link(destination: wikipedia) {
+                            Text(verbatim: "Wikipedia ↗").underline()
+                        }
+                    }
                     Text(verbatim: "(CC BY-SA)")
                 } else if !chat.hasInfo {
                     Text("Nessuna scheda trovata online: rispondo con quello che so.")

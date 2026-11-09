@@ -6,7 +6,8 @@
 //  gratuite (niente chiavi né account):
 //  - serie: TVmaze (api.tvmaze.com, dati CC BY-SA), che trova la serie anche
 //    col titolo italiano ("Il Trono di Spade" → Game of Thrones) e dà cast e
-//    trama di ogni episodio;
+//    trama breve di ogni episodio; per gli ultimi episodi visti la trama vera
+//    dalla loro voce di Wikipedia;
 //  - film: la voce di Wikipedia (testo CC BY-SA), trama e cast; si cerca
 //    sulla Wikipedia della lingua dell'app e si passa a quella inglese, dove la
 //    sezione "Plot" c'è quasi sempre.
@@ -269,6 +270,50 @@ actor ContentInfoService {
         if let year, let dated = matching.first(where: { $0.contains(year) }) { return dated }
         if let filmPage = matching.first(where: { $0.lowercased().contains("film") }) { return filmPage }
         return matching.first
+    }
+
+    // MARK: - Episodi (Wikipedia)
+
+    /// La trama vera di un episodio dalla sua voce su Wikipedia inglese
+    /// ("Cherokee Rose (The Walking Dead)", sezione Plot): quella di TVmaze è
+    /// un teaser di due righe ("Shane makes a deadly sacrifice") e il modello
+    /// ci ricamava sopra fatti inventati. Solo per episodi già visti.
+    func episodePlot(show: String, name: String) async -> (plot: String, url: URL?)? {
+        let key = Self.normalized(show) + "|" + Self.normalized(name)
+        if let cached = episodePlots[key] { return cached }
+        guard !name.isEmpty, let hits = await wikiSearch(lang: "en", query: "\(name) \(show) episode") else { return nil }
+        let target = Self.normalized(name), showKey = Self.normalized(show)
+        // Il titolo della voce è il nome dell'episodio, con o senza la serie
+        // tra parentesi ("Winter Is Coming", "Dragonstone (Game of Thrones episode)").
+        let page = hits.first { hit in
+            guard Self.normalized(Self.strippingDisambiguation(hit)) == target else { return false }
+            let note = hit.range(of: #"\(([^)]*)\)\s*$"#, options: .regularExpression).map { Self.normalized(String(hit[$0])) }
+            return note == nil || note!.contains(showKey) || note!.contains("episode")
+        }
+        var result: (String, URL?)?
+        if let page, let info = await wikiPlot(lang: "en", title: page) { result = info }
+        episodePlots[key] = result
+        return result
+    }
+
+    private var episodePlots: [String: (plot: String, url: URL?)?] = [:]
+
+    private func wikiPlot(lang: String, title: String) async -> (String, URL?)? {
+        var components = URLComponents(string: "https://\(lang).wikipedia.org/w/api.php")!
+        components.queryItems = [
+            .init(name: "action", value: "query"), .init(name: "prop", value: "extracts|info"),
+            .init(name: "inprop", value: "url"), .init(name: "explaintext", value: "1"),
+            .init(name: "exsectionformat", value: "wiki"), .init(name: "titles", value: title),
+            .init(name: "redirects", value: "1"), .init(name: "format", value: "json"),
+            .init(name: "formatversion", value: "2"),
+        ]
+        guard let data = await wikiGET(components.url),
+              let page = (try? JSONDecoder().decode(WikiPages.self, from: data))?.query?.pages.first,
+              page.missing != true, let extract = page.extract,
+              let plot = Self.sections(of: extract).first(where: { Self.plotSections.contains($0.heading) })?.body,
+              !plot.isEmpty
+        else { return nil }
+        return (plot.replacingOccurrences(of: "\n\n", with: "\n"), page.fullurl.flatMap(URL.init(string:)))
     }
 
     private func wikiGET(_ url: URL?) async -> Data? {

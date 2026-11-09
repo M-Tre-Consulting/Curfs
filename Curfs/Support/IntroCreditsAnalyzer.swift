@@ -29,7 +29,7 @@ actor IntroCreditsAnalyzer {
 
     /// Bump quando cambia la logica di match qui sotto o il campionamento in
     /// FingerprintExtractor: invalida i risultati già in cache.
-    static let analysisVersion = 9
+    static let analysisVersion = 10
 
     /// "Firma" dei vicini usati per il confronto (id + durata): se cambia il
     /// set di vicini, la cache del risultato non è più valida.
@@ -73,23 +73,10 @@ actor IntroCreditsAnalyzer {
         }
     }
 
-    /// Distanza di Hamming massima (su 64 bit) perché due fotogrammi contino
-    /// come "lo stesso fotogramma". Tenuta stretta (invece che permissiva)
-    /// per non confondere due scene semplicemente simili con un vero
-    /// fotogramma in comune.
-    private let matchThreshold = 8
-    /// Durata minima del tratto combaciante perché conti come sigla/coda:
-    /// abbastanza da escludere match brevi e casuali (es. un singolo stacco
-    /// simile), ma sotto la durata reale di qualunque sigla/coda vera.
-    private let minMatchSeconds: Double = 12
-    /// Massimo sfalsamento temporale cercato tra i due episodi. Ampio: la
-    /// sigla del PRIMO episodio può partire minuti dopo rispetto agli altri
-    /// (cold open lungo), quindi lo sfalsamento da recuperare è grande. Deve
-    /// coprire almeno quanto `maxIntroWindow` in FingerprintExtractor (8 min),
-    /// altrimenti la sigla dell'ep. 1 verrebbe comunque campionata ma non
-    /// più cercata a quella distanza. Il costo della ricerca resta
-    /// trascurabile (poche centinaia di migliaia di confronti di bit).
-    private let maxShift: Double = 480
+    /// Durata minima del tratto in comune perché conti come sigla/coda:
+    /// esclude musiche di sottofondo brevi che tornano, sotto la durata di
+    /// qualunque sigla/coda vera.
+    private let minMatchSeconds: Double = 10
 
     struct Result {
         var introRange: ClosedRange<Double>?
@@ -175,91 +162,57 @@ actor IntroCreditsAnalyzer {
             if Task.isCancelled { break }
             guard let theirs = await extractor.fingerprint(for: sibling) else { continue }
 
-            if let range = matchRange(mine: mine.introSamples, theirs: theirs.introSamples) {
+            if let match = Self.bestMatch(mine.tracks.map(\.introCodes), mine.tracks.map(\.language),
+                                          theirs.tracks.map(\.introCodes), theirs.tracks.map(\.language),
+                                          minSeconds: minMatchSeconds),
+               let range = await VideoMatchVerifier.verify(
+                   mine: item.fileURL, theirs: sibling.fileURL,
+                   pieces: match.pieces.map { piece in (
+                       range: Double(piece.range.lowerBound) / AudioFingerprint.rate...Double(piece.range.upperBound) / AudioFingerprint.rate,
+                       offset: Double(piece.offset) / AudioFingerprint.rate
+                   ) }
+               ) {
                 introCandidates.append(range)
             }
-            if let range = matchRange(mine: mine.creditsSamples, theirs: theirs.creditsSamples) {
-                // I campioni "credits" sono indicizzati come distanza dalla
-                // fine: li riportiamo al tempo assoluto dell'episodio corrente.
-                let duration = mine.duration
-                creditsCandidates.append((duration - range.upperBound)...(duration - range.lowerBound))
+            if let match = Self.bestMatch(mine.tracks.map(\.creditsCodes), mine.tracks.map(\.language),
+                                          theirs.tracks.map(\.creditsCodes), theirs.tracks.map(\.language),
+                                          minSeconds: minMatchSeconds) {
+                // I titoli di coda cambiano da un episodio all'altro (i nomi
+                // scorrono diversi): lì conta solo l'audio.
+                let start = mine.creditsStart + Double(match.range.lowerBound) / AudioFingerprint.rate
+                let end = mine.creditsStart + Double(match.range.upperBound) / AudioFingerprint.rate
+                creditsCandidates.append(start...max(end, mine.duration))
             }
         }
 
         return Result(
-            // Per la sigla il bordo finale è meglio prenderlo lungo: un run più
-            // corto è una SOTTO-rilevazione (la coda non confrontabile —
-            // dissolvenze, cartello col titolo — spezza il tratto prima), non un
-            // falso positivo. Per i titoli di coda resta la mediana.
-            introRange: consensus(of: introCandidates, preferLongerEnd: true),
+            // Mediana anche della fine: il confronto più lungo a volte va oltre
+            // la sigla (due scene buie che si somigliano per caso, visto su
+            // The Walking Dead), gli altri si fermano dove serve.
+            introRange: consensus(of: introCandidates),
             creditsRange: consensus(of: creditsCandidates)
         )
     }
 
-    /// Cerca lo sfalsamento che massimizza il numero di fotogrammi
-    /// combacianti tra le due sequenze, poi trova il tratto continuo più
-    /// lungo di match a quello sfalsamento (tollerando un paio di buchi, per
-    /// non spezzare il tratto su qualche fotogramma di transizione).
-    private func matchRange(mine: [FrameSample], theirs: [FrameSample]) -> ClosedRange<Double>? {
-        guard mine.count > 1, !theirs.isEmpty else { return nil }
-
-        // Passo di campionamento reale, dedotto dai dati: serve a convertire
-        // "numero di campioni" in secondi in modo coerente col campionamento
-        // usato dall'estrattore, qualunque esso sia.
-        let spacing = max(0.5, mine[1].time - mine[0].time)
-
-        var theirsByTime: [Double: UInt64] = [:]
-        for sample in theirs { theirsByTime[sample.time.rounded()] = sample.hash }
-        func theirHash(near time: Double) -> UInt64? { theirsByTime[time.rounded()] }
-
-        var bestShift = 0.0
-        var bestScore = 0
-        var shift = -maxShift
-        while shift <= maxShift {
-            var score = 0
-            for sample in mine {
-                if let theirHash = theirHash(near: sample.time - shift),
-                   FrameHasher.hammingDistance(sample.hash, theirHash) <= matchThreshold {
-                    score += 1
-                }
+    /// Il confronto migliore tra le tracce dei due episodi: prima quelle nella
+    /// stessa lingua, poi tutte le coppie (un doppiaggio da un'altra fonte non
+    /// combacia, la traccia originale sì).
+    nonisolated static func bestMatch(_ mine: [[UInt32]], _ myLanguages: [String],
+                                      _ theirs: [[UInt32]], _ theirLanguages: [String],
+                                      minSeconds: Double) -> AudioFingerprint.Match? {
+        // Stessa lingua prima; se nessuna combacia, tutte le altre coppie
+        // (tracce senza lingua, lingue segnate male).
+        let all = mine.indices.flatMap { i in theirs.indices.map { (i, $0) } }
+        let sameLanguage = all.filter { myLanguages[$0.0] == theirLanguages[$0.1] }
+        var best: AudioFingerprint.Match?
+        for group in [sameLanguage, all.filter { myLanguages[$0.0] != theirLanguages[$0.1] }] {
+            for (i, j) in group {
+                guard let match = AudioFingerprint.longestCommon(mine[i], theirs[j], minSeconds: minSeconds) else { continue }
+                if match.covered > (best?.covered ?? 0) { best = match }
             }
-            if score > bestScore { bestScore = score; bestShift = shift }
-            shift += 1
+            if best != nil { break }
         }
-
-        guard Double(bestScore) * spacing >= minMatchSeconds else { return nil }
-
-        var runs: [[Double]] = []
-        var current: [Double] = []
-        var misses = 0
-        for sample in mine.sorted(by: { $0.time < $1.time }) {
-            let matched: Bool
-            if let theirHash = theirHash(near: sample.time - bestShift) {
-                matched = FrameHasher.hammingDistance(sample.hash, theirHash) <= matchThreshold
-            } else {
-                matched = false
-            }
-            if matched {
-                current.append(sample.time)
-                misses = 0
-            } else {
-                misses += 1
-                if misses > 2 {
-                    if !current.isEmpty { runs.append(current) }
-                    current = []
-                }
-            }
-        }
-        if !current.isEmpty { runs.append(current) }
-
-        guard let run = runs.max(by: { $0.count < $1.count }),
-              let start = run.first, let end = run.last,
-              end - start >= minMatchSeconds else { return nil }
-        // L'ultimo campione combaciante è `end`, ma la sigla finisce da
-        // qualche parte tra lì e il campione successivo: estendiamo di un
-        // passo così il salto atterra appena DENTRO l'episodio, non un attimo
-        // prima della fine della sigla.
-        return start...(end + spacing)
+        return best
     }
 
     /// Con un solo episodio a disposizione non c'è altra scelta che fidarsi

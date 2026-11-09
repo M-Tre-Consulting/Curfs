@@ -19,6 +19,7 @@
 import Foundation
 @preconcurrency import AVFoundation
 import FoundationModels
+import NaturalLanguage
 import Observation
 
 /// Cosa si sta guardando e a che punto: un'istantanea del `MediaItem`, così la
@@ -119,11 +120,17 @@ final class CompanionChat {
     @ObservationIgnored private let asset: AVAsset?
     @ObservationIgnored private let subtitleTrack: Int?
     @ObservationIgnored private var show: ShowInfo?
+    /// Trame da Wikipedia degli ultimi episodi visti, per "S<s>E<e>".
+    @ObservationIgnored private var episodePlots: [String: String] = [:]
+    /// Pagina Wikipedia usata (per citarla).
+    private(set) var wikipediaSource: URL?
     @ObservationIgnored private var movie: MovieInfo?
-    @ObservationIgnored private var dialogue: [DialogueReader.Line] = []
+    @ObservationIgnored private var dialogueTracks: [Int: [DialogueReader.Line]] = [:]
     @ObservationIgnored private var dialoguePosition: Double = -1
     @ObservationIgnored private var session: LanguageModelSession?
     @ObservationIgnored private var preparation: Task<Void, Never>?
+    /// Lingua dell'ultima domanda riconosciuta: per le domande troppo corte per dirlo.
+    @ObservationIgnored private var replyLanguage: String?
 
     init(target: CompanionTarget, asset: AVAsset? = nil, subtitleTrack: Int? = nil) {
         self.target = target
@@ -157,6 +164,12 @@ final class CompanionChat {
                 await refreshDialogue()
                 session = nil
             }
+            // Lingua cambiata: i dialoghi vanno presi dalla traccia in quella
+            // lingua, quindi la sessione riparte.
+            if let language = Self.language(of: question), language != replyLanguage {
+                if replyLanguage != nil || language != CompanionLanguage.englishName { session = nil }
+                replyLanguage = language
+            }
             await answer(question, retryOnOverflow: true)
             isResponding = false
         }
@@ -173,7 +186,7 @@ final class CompanionChat {
         let reply = Message(role: .assistant, text: "")
         messages.append(reply)
         do {
-            for try await partial in current.streamResponse(to: question) {
+            for try await partial in current.streamResponse(to: prompt(for: question)) {
                 update(reply.id) { $0.text = partial.content }
             }
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
@@ -198,6 +211,24 @@ final class CompanionChat {
         }
     }
 
+    /// La lingua va ripetuta a ogni domanda: con le istruzioni in inglese il
+    /// modello piccolo rispondeva in inglese anche a domande in italiano, e una
+    /// volta partito così la chat lo trascinava (visto su The Walking Dead).
+    private func prompt(for question: String) -> String {
+        "\(question)\n\n(Answer in \(answerLanguage). Name the characters you talk about.)"
+    }
+
+    private var answerLanguage: String { replyLanguage ?? CompanionLanguage.englishName }
+
+    /// Nome inglese della lingua della domanda ("Italian"), se è abbastanza chiara.
+    nonisolated static func language(of text: String) -> String? {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageConstraints = [.italian, .english, .spanish, .french, .german, .portuguese]
+        recognizer.processString(text)
+        guard let best = recognizer.languageHypotheses(withMaximum: 1).first, best.value > 0.5 else { return nil }
+        return Locale(identifier: "en").localizedString(forLanguageCode: best.key.rawValue)
+    }
+
     private func update(_ id: UUID, _ change: (inout Message) -> Void) {
         guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
         change(&messages[index])
@@ -219,6 +250,7 @@ final class CompanionChat {
             if let show {
                 let episodeURL = show.episode(season: target.season, number: target.episode)?.url
                 if let url = episodeURL ?? show.url { source = ("TVmaze", url) }
+                await loadEpisodePlots(show)
             }
         } else if target.kind == .movie {
             movie = await ContentInfoService.shared.movie(titled: target.title)
@@ -227,13 +259,32 @@ final class CompanionChat {
         hasInfo = show != nil || movie != nil
     }
 
+    /// Le trame vere degli ultimi 2 episodi visti, in parallelo.
+    private func loadEpisodePlots(_ show: ShowInfo) async {
+        guard let season = target.season, let number = target.episode else { return }
+        let recent = show.episodes(before: season, number).suffix(2)
+        let found = await withTaskGroup(of: (String, String, URL?)?.self) { group in
+            for episode in recent {
+                group.addTask {
+                    guard let plot = await ContentInfoService.shared.episodePlot(show: show.name, name: episode.name) else { return nil }
+                    return ("S\(episode.season)E\(episode.number)", plot.plot, plot.url)
+                }
+            }
+            var result: [(String, String, URL?)] = []
+            for await item in group { if let item { result.append(item) } }
+            return result
+        }
+        for (key, plot, _) in found { episodePlots[key] = plot }
+        wikipediaSource = found.compactMap(\.2).first
+    }
+
     private func refreshDialogue() async {
         guard abs(position - dialoguePosition) > 5 else { return }
         dialoguePosition = position
         let asset = self.asset ?? target.makeAsset()
         let remote = target.isRemote ? (url: target.playbackURL, headers: RemoteSourceStore.current.authHeaders) : nil
-        dialogue = await DialogueReader.lines(in: asset, remote: remote, preferredTrack: subtitleTrack, until: position)
-        hasDialogue = !dialogue.isEmpty
+        dialogueTracks = await DialogueReader.tracks(in: asset, remote: remote, until: position)
+        hasDialogue = !dialogueTracks.isEmpty
     }
 
     private func makeSession() -> LanguageModelSession {
@@ -252,8 +303,10 @@ final class CompanionChat {
         var text = """
         You are Curfs AI, an expert on films and TV series who explains things to a friend while they watch. The viewer asks quick questions about the exact moment they are watching.
         - Always reply in the language the viewer writes in (if unclear, \(CompanionLanguage.englishName)), in a friendly, casual tone. Be brief: 1-3 sentences, unless the viewer asks for a recap. Answer directly, without introductions.
-        - Base your answers on the CONTEXT below and on your own knowledge of the story. Subtitles don't say who is speaking: work it out from the characters and the situation.
-        - If you really don't know, say so briefly. Never invent facts.
+        - Always name the characters: who did what, to whom. Never say "the guy", "someone" or "something" when the CONTEXT tells you who or what it is.
+        - What is happening now comes from the DIALOGUE. A name in capitals before a colon ("RICK: Put the gun down") is who speaks; a sound in parentheses ("(GUNSHOT)") is something heard in the scene. Without those, a name at the start of a line ("Shane, wait") is the person being spoken TO, not the speaker; lines starting with "-" are different people. Work out who says and does what from these clues, the characters and the situation.
+        - The episode descriptions are vague teasers written by others: never repeat their wording as if it were an event, and never mix them with the current scene.
+        - Your own memory of specific episodes is unreliable: rely on the CONTEXT. If the CONTEXT doesn't make something clear (for example who fired), say what you do know and that it isn't clear, instead of guessing. Never invent facts.
 
         """
         if spoilersAllowed {
@@ -291,10 +344,19 @@ final class CompanionChat {
                     let seen = show.episodes(before: season, number).suffix(8)
                     if !seen.isEmpty {
                         lines.append("PREVIOUSLY (episodes already watched):")
-                        lines += seen.map { "S\($0.season)E\($0.number) \"\($0.name)\": \(String($0.summary.prefix(350)))" }
+                        lines += seen.map { episode in
+                            let key = "S\(episode.season)E\(episode.number)"
+                            // La trama di Wikipedia è lunga: la parte finale,
+                            // quella che porta a dove si è adesso.
+                            if let plot = episodePlots[key] {
+                                let text = plot.count > 1500 ? "…" + String(plot.suffix(1500)) : plot
+                                return "\(key) \"\(episode.name)\" (full plot): \(text)"
+                            }
+                            return "\(key) \"\(episode.name)\": \(String(episode.summary.prefix(350)))"
+                        }
                     }
                     if let current = show.episode(season: season, number: number), !current.summary.isEmpty {
-                        lines.append("THIS EPISODE (official short description): " + String(current.summary.prefix(500)))
+                        lines.append("THIS EPISODE (vague teaser of the whole episode: parts of it may not have happened yet): " + String(current.summary.prefix(500)))
                     }
                     if spoilersAllowed {
                         let later = show.episodes.filter { ($0.season, $0.number) > (season, number) }.prefix(6)
@@ -319,6 +381,7 @@ final class CompanionChat {
             }
         }
 
+        let dialogue = DialogueReader.merge(dialogueTracks, language: answerLanguage, preferred: subtitleTrack)
         if !dialogue.isEmpty {
             lines.append("DIALOGUE OF THE LAST MINUTES, up to the current point (subtitles, most recent last):")
             var budget = 2600

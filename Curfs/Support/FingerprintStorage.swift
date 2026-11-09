@@ -14,7 +14,7 @@ nonisolated enum FingerprintStorage {
     /// le impronte già su disco, calcolate col metodo vecchio, vengono
     /// semplicemente ignorate e ricalcolate, invece di restare in cache e
     /// continuare a produrre lo stesso posizionamento sbagliato.
-    private static let cacheVersion = 7
+    private static let cacheVersion = 8
 
     private static func url(for id: UUID) -> URL {
         LibraryStorage.fingerprintsDirectory.appending(path: "\(id.uuidString)-v\(cacheVersion).json")
@@ -28,5 +28,9 @@ nonisolated enum FingerprintStorage {
     static func save(_ fingerprint: EpisodeFingerprint, for id: UUID) {
         guard let data = try? JSONEncoder().encode(fingerprint) else { return }
         try? data.write(to: url(for: id), options: .atomic)
+        // Le impronte delle versioni vecchie (fotogrammi) non servono più.
+        for old in 1..<cacheVersion {
+            try? FileManager.default.removeItem(at: LibraryStorage.fingerprintsDirectory.appending(path: "\(id.uuidString)-v\(old).json"))
+        }
     }
 }

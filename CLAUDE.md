@@ -53,7 +53,7 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
   `ShowSummary` (raggruppamento non persistito degli episodi di una serie, calcolato al volo).
 - `Support/` — import (`ImportEngine`, `ImportViewModel`, `FileNameParser`), storage
   (`LibraryStorage`, `LibraryMaintenance`), miniature (`ThumbnailGenerator`), e il riconoscimento
-  di intro/titoli di coda (`FrameHasher`, `EpisodeFingerprint`, `FingerprintExtractor`,
+  di intro/titoli di coda (`AudioFingerprint`, `VideoMatchVerifier`, `FrameHasher`, `EpisodeFingerprint`, `FingerprintExtractor`,
   `FingerprintStorage`, `IntroCreditsAnalyzer`).
 - `Player/` — `PlayerView` + `PlayerViewModel` (stato/logica), `PlayerControlsOverlay`,
   `PlayerGestureZones`, `OrientationController` + `AppDelegate` (rotazione forzata),
@@ -228,7 +228,18 @@ una scena), **senza spoiler** salvo richiesta esplicita, chat breve che non si s
   download la chat lo dice. Guardrail `.permissiveContentTransformations`: con quelli normali le
   risposte su Il Trono di Spade venivano bloccate ("unsafe content"). Il **tool calling col modello
   piccolo non funziona** (provato: non chiamava mai il tool) ⇒ tutto il contesto va nelle istruzioni,
-  in inglese; risponde nella lingua in cui si scrive (l'iPhone dell'utente è in inglese).
+  in inglese. La lingua della risposta va **ripetuta a ogni domanda** (`prompt(for:)`, lingua
+  riconosciuta con `NLLanguageRecognizer`): la sola regola nelle istruzioni non bastava, con
+  l'iPhone in inglese rispondeva in inglese a domande in italiano (2026-11-09, The Walking Dead).
+  Il modello piccolo non sa chi parla nei sottotitoli e mescolava le trame-teaser di TVmaze con la
+  scena ("Shane ha sparato a un tizio con le orecchie" invece di Andrea → Daryl): le istruzioni ora
+  chiedono nomi espliciti, dicono che un nome a inizio battuta è chi viene chiamato, trattano le
+  descrizioni come teaser e preferiscono "non è chiaro" a un'ipotesi. Limite residuo del modello.
+  Dalla 2.6.0: i dialoghi vengono da **tutte** le tracce di sottotitoli unite (`DialogueReader.merge`):
+  testo dalla traccia nella lingua di chi scrive, nomi di chi parla ("GLENN:") e rumori ("(GUNSHOT)")
+  dalla traccia per non udenti; e per gli ultimi 2 episodi visti la trama vera dalla voce
+  Wikipedia dell'episodio (`ContentInfoService.episodePlot`, sezione Plot, ultimi 1500 caratteri),
+  citata nella riga delle fonti.
 - **Contesto**: serie da **TVmaze** (`singlesearch` con `embed[]=cast&embed[]=episodes`, trova anche
   "Il Trono di Spade"), film da **Wikipedia** (sezione Plot/Cast; si cerca su wiki della lingua
   dell'app, poi it, poi en, e si segue il langlink inglese). Entrambi CC BY-SA, citati con link nella
@@ -424,21 +435,34 @@ non può salvare video sulla TV). Decisioni:
   `OrientationController.currentMask` come unica fonte di verità, letta da `AppDelegate`; più un
   riallineamento di sicurezza in `PlayerView.onChange(of: scenePhase)`. Il passaggio all'episodio
   successivo (`playNext`) non deve resettare l'orientamento: `PlayerViewModel.stop(resetOrientation:)`.
-- **Riconoscimento intro/titoli di coda**: NON basato su timing/percentuali (esplicitamente
-  rifiutato dall'utente come inaffidabile). Confronta fotogrammi reali tra episodi della stessa
-  serie via hash percettivo (dHash) + ricerca dello sfalsamento temporale migliore, poi cerca il
-  tratto continuo in comune. I fotogrammi quasi uniformi (nero/dissolvenze) vengono scartati in
-  `FrameHasher` perché producono falsi positivi tra episodi diversi — causa reale di uno skip
-  mal posizionato in passato. Serve consenso tra almeno 2 episodi confrontati (`IntroCreditsAnalyzer.consensus`)
-  prima di mostrare il pulsante; con overlap poco chiaro tra episodi non mostra nulla piuttosto
-  che indovinare. Dettagli non ovvi:
-  - Finestra iniziale **ampia** (fino a 8 min, `maxIntroWindow`/`maxShift` = 480; era 300/5 min,
-    alzata dopo un pilot reale con cold open di 7:15 che ci cadeva fuori) campionata a
-    1,5 s (`FingerprintExtractor`, API batch `images(for:)`); finestra coda campionata larga
-    (2 s). La finestra ampia è indispensabile per il **primo episodio** di una serie: spesso
-    ha un cold open lungo e la sigla parte minuti dopo che negli altri episodi — con finestra
-    stretta o `maxShift` piccolo l'ep. 1 non veniva mai rilevato. Il bordo del tratto è esteso
-    di un passo così il salto atterra appena *dentro* l'episodio.
+- **Riconoscimento intro/titoli di coda** (riscritto il 2026-11-09, 2.6.0): NON basato su
+  timing/percentuali (esplicitamente rifiutato dall'utente come inaffidabile). **Audio + video**:
+  - ⚠️ Perché non solo fotogrammi (la versione fino alla 2.5.1): un fotogramma ogni 1,5 s per
+    episodio, ma due episodi non vengono mai campionati negli stessi istanti della sigla, e in una
+    sigla montata veloce mezzo secondo è già un'altra inquadratura ⇒ su The Walking Dead S2
+    combaciavano 6-14 fotogrammi su ~40, sigla di 15 s o niente, coda mai. Non reintrodurlo.
+  - `AudioFingerprint`: impronta audio stile Haitsma-Kalker (8 kHz mono, FFT 2048, 33 bande
+    300-2000 Hz, 32 bit ogni 0,1 s) di finestra iniziale (≤ 10 min / 40%) e finale (≤ 5 min / 35%),
+    per **ogni traccia audio** (fino a 3, una passata): in TWD S2E06 il doppiaggio italiano viene da
+    un'altra fonte e la sigla combacia solo con la traccia inglese. `longestCommon` prova **tutti**
+    gli sfalsamenti (conta i codici con ≤ 10 bit diversi; il picco deve staccarsi 1,6× dal fondo),
+    poi i tratti con errore medio su 2 s < 0,38 (a caso 0,5; AC3 0,1-0,25, AAC compresso di GoT
+    ~0,31: con soglia 0,3 si spezzava), con ±0,1 s di tolleranza e **più pezzi a sfalsamenti
+    vicini** (GoT S1E1: sigla rimontata, metà a uno sfalsamento e metà a 1 s di distanza).
+    Gli hash identici al bit sono troppo rari per votare lo sfalsamento: non usarli.
+  - `VideoMatchVerifier`: allo sfalsamento dell'audio confronta i fotogrammi (dHash, ogni 0,5 s,
+    stessi istanti nei due file). Scarta il tratto se i fotogrammi uguali sono < 4 o < 25% (musica
+    che torna in scene diverse); 25% e non 50% perché la mappa della sigla di GoT cambia tra
+    episodi. Inizio = primo fotogramma uguale se entro 10 s dall'inizio della musica; fine = ultimo
+    uguale + i neri dopo, mai prima della fine della musica. I titoli di coda: solo audio (i nomi
+    scorrono diversi).
+  - Consenso tra vicini (`consensus`): mediana dei bordi, **anche della fine** (il confronto più
+    lungo a volte supera la sigla: scene buie dopo la sigla che si somigliano per caso).
+  - Collaudato con un harness da terminale sugli stessi file dell'app contro la verità a occhio
+    (fotogrammi prima/dopo i bordi): TWD S2E3-6 e GoT S1E1-4, sigla giusta in tutti e 8 (pilot GoT
+    7:17 contro 7:16 reale, bordi entro ~1 s). ~9 s di audio per episodio su Mac (3 tracce AC3).
+  - Solo file locali: in streaming non parte (`siblingEpisodes` vuoto, `fingerprint` nil per
+    `isRemote`). Voluto dall'utente: "a me basta averlo perfetto in locale".
   - Due cache su disco: `FingerprintStorage` (impronte per episodio, `cacheVersion` bump-abile) e
     `IntroCreditsStorage` (il *risultato* dell'analisi per episodio, legato a `analysisVersion` +
     durata + firma dei vicini usati). La seconda rende il "salta intro" deterministico e immediato

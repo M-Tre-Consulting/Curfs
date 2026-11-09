@@ -27,18 +27,14 @@ actor RemoteSubtitleReader {
     private var indexes: [URL: [Track]] = [:]
     private static let maxMoovSize: UInt64 = 24 << 20
 
-    func lines(url: URL, headers: [String: String], preferredTrack: Int?, from start: Double, to end: Double) async -> [DialogueReader.Line] {
-        let tracks: [Track]
-        if let cached = indexes[url] {
-            tracks = cached
-        } else {
-            guard let loaded = await loadIndex(url: url, headers: headers) else { return [] }
-            indexes[url] = loaded
-            tracks = loaded
-        }
-        let usable = tracks.indices.filter { tracks[$0].totalSize >= 200 }
-        guard let chosen = (preferredTrack.flatMap { usable.contains($0) ? $0 : nil })
-                ?? usable.max(by: { tracks[$0].totalSize < tracks[$1].totalSize }) else { return [] }
+    /// Le tracce con dentro qualcosa (le vuote da pochi byte no).
+    func usableTracks(url: URL, headers: [String: String]) async -> [Int] {
+        guard let tracks = await index(url: url, headers: headers) else { return [] }
+        return tracks.indices.filter { tracks[$0].totalSize >= 200 }
+    }
+
+    func lines(url: URL, headers: [String: String], track chosen: Int, from start: Double, to end: Double) async -> [DialogueReader.Line] {
+        guard let tracks = await index(url: url, headers: headers), tracks.indices.contains(chosen) else { return [] }
         let track = tracks[chosen]
 
         let wanted = track.times.indices.filter { track.times[$0] >= start && track.times[$0] <= end && track.sizes[$0] > 2 }
@@ -88,6 +84,13 @@ actor RemoteSubtitleReader {
     }
 
     // MARK: - Indice
+
+    private func index(url: URL, headers: [String: String]) async -> [Track]? {
+        if let cached = indexes[url] { return cached }
+        guard let loaded = await loadIndex(url: url, headers: headers) else { return nil }
+        indexes[url] = loaded
+        return loaded
+    }
 
     private func loadIndex(url: URL, headers: [String: String]) async -> [Track]? {
         // Si scorrono le scatole di primo livello (16 byte di intestazione a

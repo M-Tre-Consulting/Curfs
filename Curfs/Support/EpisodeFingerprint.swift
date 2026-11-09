@@ -2,23 +2,29 @@
 //  EpisodeFingerprint.swift
 //  Curfs
 //
-//  "Impronta" di un episodio: hash percettivi campionati nella finestra
-//  iniziale (candidata sigla) e in quella finale (candidata titoli di coda),
-//  usata da IntroCreditsAnalyzer per confrontare episodi tra loro.
+//  "Impronta" di un episodio: impronta audio (vedi AudioFingerprint) della
+//  finestra iniziale (candidata sigla) e di quella finale (candidata titoli
+//  di coda), una per traccia audio, usata da IntroCreditsAnalyzer per
+//  confrontare episodi tra loro.
 //
 
 import Foundation
 
-struct FrameSample: Codable {
-    let time: Double
-    let hash: UInt64
-}
-
 struct EpisodeFingerprint: Codable {
+    struct Track: Codable {
+        /// Lingua della traccia ("ita", "eng"…), per confrontare doppiaggi uguali.
+        let language: String
+        /// Codici dall'inizio del file (`AudioFingerprint.rate` al secondo).
+        let intro: Data
+        /// Codici da `creditsStart`.
+        let credits: Data
+
+        var introCodes: [UInt32] { [UInt32](littleEndianData: intro) }
+        var creditsCodes: [UInt32] { [UInt32](littleEndianData: credits) }
+    }
+
     let duration: Double
-    /// Campioni della finestra iniziale, tempo = secondi dall'inizio.
-    let introSamples: [FrameSample]
-    /// Campioni della finestra finale, tempo = secondi DALLA FINE (duration - t):
-    /// così due episodi di durata diversa restano allineabili sui titoli di coda.
-    let creditsSamples: [FrameSample]
+    /// Secondo da cui parte la finestra finale.
+    let creditsStart: Double
+    let tracks: [Track]
 }
