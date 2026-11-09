@@ -128,7 +128,7 @@ struct LegalView: View {
                     Link(destination: URL(string: "mailto:\(MTre.email)")!) { Text(verbatim: MTre.email) }
                 }
 
-                Text("Aggiornata il 19 ottobre 2026.")
+                Text("Aggiornata il 9 novembre 2026.")
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
             }
