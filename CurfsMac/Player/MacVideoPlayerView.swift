@@ -137,6 +137,9 @@ struct MacVideoPlayerView: NSViewRepresentable {
                 guard event.modifierFlags.intersection([.command, .option, .control]).isEmpty else {
                     return event
                 }
+                // Si sta scrivendo (chat di Curfs AI accanto al video): le
+                // lettere vanno al campo di testo, non diventano salti.
+                if event.window?.firstResponder is NSText { return event }
                 switch event.charactersIgnoringModifiers?.lowercased() {
                 case "a":
                     self.onSkip(-10)

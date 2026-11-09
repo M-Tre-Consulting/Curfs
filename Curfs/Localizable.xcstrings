@@ -1,108 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@, Italia" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, Italien"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, Italy"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, Italia"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, Italie"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, Italia"
-          }
-        }
-      }
-    },
-    "Apri l'App Store" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the App Store"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir el App Store"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrir l'App Store"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apri l'App Store"
-          }
-        }
-      }
-    },
-    "Impossibile controllare gli aggiornamenti" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updates konnten nicht geprüft werden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't check for updates"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se pudieron buscar actualizaciones"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de rechercher les mises à jour"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossibile controllare gli aggiornamenti"
-          }
-        }
-      }
-    },
     "…oppure scaricala per l'offline" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -278,6 +176,74 @@
         }
       }
     },
+    "%@ %@ è disponibile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ ist verfügbar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ is available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ está disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ est disponible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ è disponibile"
+          }
+        }
+      }
+    },
+    "%@ %@ è la versione più recente." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ ist die neueste Version."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ is the latest version."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ es la versión más reciente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ est la version la plus récente."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ è la versione più recente."
+          }
+        }
+      }
+    },
     "%@ rimasti" : {
       "localizations" : {
         "de" : {
@@ -308,6 +274,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ rimasti"
+          }
+        }
+      }
+    },
+    "%@, Italia" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italien"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Italia"
           }
         }
       }
@@ -1276,6 +1276,41 @@
         }
       }
     },
+    "Annulla il download" : {},
+    "Apri l'App Store" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir el App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir l'App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri l'App Store"
+          }
+        }
+      }
+    },
     "Audio" : {
       "localizations" : {
         "de" : {
@@ -1680,6 +1715,75 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continua a guardare"
+          }
+        }
+      }
+    },
+    "Controlla aggiornamenti" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach Updates suchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for updates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar actualizaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher des mises à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla aggiornamenti"
+          }
+        }
+      }
+    },
+    "Controlla aggiornamenti…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach Updates suchen …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for Updates…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar actualizaciones…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher des mises à jour…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla aggiornamenti…"
           }
         }
       }
@@ -3051,6 +3155,74 @@
         }
       }
     },
+    "Hai l'ultima versione" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast die neueste Version"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have the latest version"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tienes la última versión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez la dernière version"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai l'ultima versione"
+          }
+        }
+      }
+    },
+    "Hai la versione %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast Version %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have version %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tienes la versión %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez la version %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai la versione %@."
+          }
+        }
+      }
+    },
     "I profili stanno sul tuo server: inserisci prima il suo indirizzo." : {
       "localizations" : {
         "de" : {
@@ -3557,6 +3729,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Importazione in corso"
+          }
+        }
+      }
+    },
+    "Impossibile controllare gli aggiornamenti" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates konnten nicht geprüft werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't check for updates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron buscar actualizaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de rechercher les mises à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile controllare gli aggiornamenti"
           }
         }
       }
@@ -4889,6 +5095,40 @@
         }
       }
     },
+    "Più tardi" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Später"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più tardi"
+          }
+        }
+      }
+    },
     "Privacy, licenza e contatti" : {
       "localizations" : {
         "de" : {
@@ -5635,6 +5875,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Riproduci in streaming"
+          }
+        }
+      }
+    },
+    "Riprova" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riprova"
           }
         }
       }
@@ -6903,6 +7178,7 @@
         }
       }
     },
+    "Togli dall'elenco" : {},
     "Togli dalla libreria" : {
       "localizations" : {
         "de" : {
@@ -7142,274 +7418,1158 @@
         }
       }
     },
-    "%@ %@ è disponibile" : {
+    "Vuoi gli spoiler?" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ ist verfügbar"
+            "value" : "Willst du Spoiler?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ is available"
+            "value" : "Want spoilers?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ está disponible"
+            "value" : "¿Quieres spoilers?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ est disponible"
+            "value" : "Tu veux des spoilers ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ è disponibile"
+            "value" : "Vuoi gli spoiler?"
           }
         }
       }
     },
-    "Hai la versione %@." : {
+    "Sì, dimmi tutto" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du hast Version %@."
+            "value" : "Ja, erzähl mir alles"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You have version %@."
+            "value" : "Yes, tell me everything"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tienes la versión %@."
+            "value" : "Sí, cuéntamelo todo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous avez la version %@."
+            "value" : "Oui, dis-moi tout"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hai la versione %@."
+            "value" : "Sì, dimmi tutto"
           }
         }
       }
     },
-    "Più tardi" : {
+    "No, meglio di no" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Später"
+            "value" : "Nein, lieber nicht"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Later"
+            "value" : "No, better not"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Más tarde"
+            "value" : "No, mejor no"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plus tard"
+            "value" : "Non, plutôt pas"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Più tardi"
+            "value" : "No, meglio di no"
           }
         }
       }
     },
-    "%@ %@ è la versione più recente." : {
+    "Curfs AI potrà raccontarti anche cosa succede dopo il punto in cui sei." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ ist die neueste Version."
+            "value" : "Curfs AI kann dir dann auch erzählen, was nach deiner aktuellen Stelle passiert."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ is the latest version."
+            "value" : "Curfs AI will be able to tell you what happens after the point you're at, too."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ es la versión más reciente."
+            "value" : "Curfs AI también podrá contarte lo que pasa después del punto en el que estás."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ est la version la plus récente."
+            "value" : "Curfs AI pourra aussi te raconter ce qui se passe après l'endroit où tu en es."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ %@ è la versione più recente."
+            "value" : "Curfs AI potrà raccontarti anche cosa succede dopo il punto in cui sei."
           }
         }
       }
     },
-    "Controlla aggiornamenti…" : {
+    "Spoiler sì" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nach Updates suchen …"
+            "value" : "Spoiler an"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Check for Updates…"
+            "value" : "Spoilers on"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscar actualizaciones…"
+            "value" : "Spoilers sí"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rechercher des mises à jour…"
+            "value" : "Spoilers oui"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controlla aggiornamenti…"
+            "value" : "Spoiler sì"
           }
         }
       }
     },
-    "Riprova" : {
+    "Niente spoiler" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erneut versuchen"
+            "value" : "Keine Spoiler"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Try again"
+            "value" : "No spoilers"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reintentar"
+            "value" : "Sin spoilers"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Réessayer"
+            "value" : "Pas de spoilers"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riprova"
+            "value" : "Niente spoiler"
           }
         }
       }
     },
-    "Hai l'ultima versione" : {
+    "Spoiler" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du hast die neueste Version"
+            "value" : "Spoiler"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You have the latest version"
+            "value" : "Spoilers"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tienes la última versión"
+            "value" : "Spoilers"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous avez la dernière version"
+            "value" : "Spoilers"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hai l'ultima versione"
+            "value" : "Spoiler"
           }
         }
       }
     },
-    "Controlla aggiornamenti" : {
+    "Ciao! Chiedimi quello che vuoi su questo punto del film: chi è un personaggio, cosa ti sei perso, cosa vuol dire una scena. Niente spoiler, promesso." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nach Updates suchen"
+            "value" : "Hallo! Frag mich alles zu dieser Stelle des Films: wer eine Figur ist, was du verpasst hast, was eine Szene bedeutet. Keine Spoiler, versprochen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Check for updates"
+            "value" : "Hi! Ask me anything about this point of the film: who a character is, what you missed, what a scene means. No spoilers, promise."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscar actualizaciones"
+            "value" : "¡Hola! Pregúntame lo que quieras sobre este momento de la película: quién es un personaje, qué te has perdido, qué significa una escena. Sin spoilers, prometido."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rechercher des mises à jour"
+            "value" : "Salut ! Demande-moi ce que tu veux sur ce moment du film : qui est un personnage, ce que tu as manqué, ce que veut dire une scène. Pas de spoilers, promis."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controlla aggiornamenti"
+            "value" : "Ciao! Chiedimi quello che vuoi su questo punto del film: chi è un personaggio, cosa ti sei perso, cosa vuol dire una scena. Niente spoiler, promesso."
+          }
+        }
+      }
+    },
+    "Ciao! Chiedimi quello che vuoi su questo punto dell'episodio: chi è un personaggio, cosa ti sei perso, cosa vuol dire una scena. Niente spoiler, promesso." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hallo! Frag mich alles zu dieser Stelle der Folge: wer eine Figur ist, was du verpasst hast, was eine Szene bedeutet. Keine Spoiler, versprochen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi! Ask me anything about this point of the episode: who a character is, what you missed, what a scene means. No spoilers, promise."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Hola! Pregúntame lo que quieras sobre este momento del episodio: quién es un personaje, qué te has perdido, qué significa una escena. Sin spoilers, prometido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salut ! Demande-moi ce que tu veux sur ce moment de l'épisode : qui est un personnage, ce que tu as manqué, ce que veut dire une scène. Pas de spoilers, promis."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciao! Chiedimi quello che vuoi su questo punto dell'episodio: chi è un personaggio, cosa ti sei perso, cosa vuol dire una scena. Niente spoiler, promesso."
+          }
+        }
+      }
+    },
+    "Mi informo su cosa stai guardando…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich informiere mich, was du gerade schaust…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking up what you're watching…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me informo sobre lo que estás viendo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je me renseigne sur ce que tu regardes…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mi informo su cosa stai guardando…"
+          }
+        }
+      }
+    },
+    "Cosa mi sono perso negli ultimi minuti?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was habe ich in den letzten Minuten verpasst?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What did I miss in the last few minutes?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué me he perdido en los últimos minutos?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu'est-ce que j'ai manqué ces dernières minutes ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa mi sono perso negli ultimi minuti?"
+          }
+        }
+      }
+    },
+    "Chi sono i personaggi in questa scena?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wer sind die Figuren in dieser Szene?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who are the characters in this scene?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quiénes son los personajes de esta escena?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui sont les personnages de cette scène ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi sono i personaggi in questa scena?"
+          }
+        }
+      }
+    },
+    "Ricordami cosa è successo negli episodi prima" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erinnere mich, was in den vorherigen Folgen passiert ist"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me what happened in the previous episodes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recuérdame qué pasó en los episodios anteriores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappelle-moi ce qui s'est passé dans les épisodes précédents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricordami cosa è successo negli episodi prima"
+          }
+        }
+      }
+    },
+    "Riassumimi il film fin qui" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fass mir den Film bis hierhin zusammen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sum up the film so far"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmeme la película hasta ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résume-moi le film jusqu'ici"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassumimi il film fin qui"
+          }
+        }
+      }
+    },
+    "Chiedi qualcosa…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frag etwas…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask something…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta algo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande quelque chose…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi qualcosa…"
+          }
+        }
+      }
+    },
+    "Invia" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia"
+          }
+        }
+      }
+    },
+    "Trama e cast da" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handlung und Besetzung von"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plot and cast from"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trama y reparto de"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intrigue et distribution de"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trama e cast da"
+          }
+        }
+      }
+    },
+    "Nessuna scheda trovata online: rispondo con quello che so." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Online nichts gefunden: Ich antworte mit dem, was ich weiß."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No details found online: I'll answer with what I know."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No he encontrado ficha en línea: respondo con lo que sé."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune fiche trouvée en ligne : je réponds avec ce que je sais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna scheda trovata online: rispondo con quello che so."
+          }
+        }
+      }
+    },
+    "dialoghi dai sottotitoli" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dialoge aus den Untertiteln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dialogue from subtitles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "diálogos de los subtítulos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dialogues des sous-titres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dialoghi dai sottotitoli"
+          }
+        }
+      }
+    },
+    "La chat è diventata troppo lunga: chiudila e riaprila per ricominciare." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Chat ist zu lang geworden: Schließe ihn und öffne ihn neu, um von vorn zu beginnen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The chat got too long: close it and open it again to start over."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El chat se ha vuelto demasiado largo: ciérralo y vuelve a abrirlo para empezar de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La discussion est devenue trop longue : ferme-la et rouvre-la pour recommencer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La chat è diventata troppo lunga: chiudila e riaprila per ricominciare."
+          }
+        }
+      }
+    },
+    "Su questo non posso risponderti." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darauf kann ich dir nicht antworten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't answer that one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo responderte a eso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je ne peux pas te répondre là-dessus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su questo non posso risponderti."
+          }
+        }
+      }
+    },
+    "Non sono riuscito a rispondere. Riprova tra poco." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich konnte nicht antworten. Versuch es gleich noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I couldn't answer. Try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No he podido responder. Inténtalo de nuevo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai pas réussi à répondre. Réessaie dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a rispondere. Riprova tra poco."
+          }
+        }
+      }
+    },
+    "Per usare Curfs AI attiva Apple Intelligence nelle Impostazioni." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um Curfs AI zu nutzen, aktiviere Apple Intelligence in den Einstellungen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To use Curfs AI, turn on Apple Intelligence in Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para usar Curfs AI, activa Apple Intelligence en Ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour utiliser Curfs AI, active Apple Intelligence dans les Réglages."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per usare Curfs AI attiva Apple Intelligence nelle Impostazioni."
+          }
+        }
+      }
+    },
+    "Apple Intelligence sta ancora scaricando il modello: riprova tra un po'." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence lädt das Modell noch: Versuch es später noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence is still downloading its model: try again in a while."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence todavía está descargando el modelo: inténtalo dentro de un rato."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence télécharge encore son modèle : réessaie un peu plus tard."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence sta ancora scaricando il modello: riprova tra un po'."
+          }
+        }
+      }
+    },
+    "Curfs AI ha bisogno di Apple Intelligence, che su questo dispositivo non c'è." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI braucht Apple Intelligence, das auf diesem Gerät nicht verfügbar ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI needs Apple Intelligence, which isn't available on this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI necesita Apple Intelligence, que no está disponible en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI a besoin d'Apple Intelligence, qui n'est pas disponible sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI ha bisogno di Apple Intelligence, che su questo dispositivo non c'è."
+          }
+        }
+      }
+    },
+    "Scegli cosa stai guardando: ti spiego personaggi e scene senza spoiler." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle, was du schaust: Ich erkläre dir Figuren und Szenen ohne Spoiler."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick what you're watching: I'll explain characters and scenes without spoilers."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige lo que estás viendo: te explico personajes y escenas sin spoilers."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis ce que tu regardes : je t'explique personnages et scènes sans spoilers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli cosa stai guardando: ti spiego personaggi e scene senza spoiler."
+          }
+        }
+      }
+    },
+    "Dove eri rimasto" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wo du aufgehört hast"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you left off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donde lo dejaste"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Là où tu t'es arrêté"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dove eri rimasto"
+          }
+        }
+      }
+    },
+    "Dove sei arrivato" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wo du gerade bist"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you're at"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasta donde has llegado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Où tu en es"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dove sei arrivato"
+          }
+        }
+      }
+    },
+    "Visto" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesehen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visto"
+          }
+        }
+      }
+    },
+    "Sei a %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist bei %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vas por %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu en es à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei a %@"
+          }
+        }
+      }
+    },
+    "Non iniziato" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht begonnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not started"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas commencé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non iniziato"
+          }
+        }
+      }
+    },
+    "Chiedi a Curfs AI" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI fragen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask Curfs AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preguntar a Curfs AI"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander à Curfs AI"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi a Curfs AI"
+          }
+        }
+      }
+    },
+    "Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI verwendet das Apple-Intelligence-Modell auf dem Gerät: Fragen und Antworten bleiben auf dem iPhone oder Mac und werden nicht gespeichert. Um zu wissen, worum es in dem geht, was du schaust, sendet Curfs nur den Titel der Serie oder des Films an TVmaze und Wikipedia (Wikimedia Foundation) und liest Handlung und Besetzung; die Dialoge der letzten Minuten liest es aus den Untertiteln des Videos."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI uses the on-device Apple Intelligence model: questions and answers stay on your phone or Mac and are not saved. To know what you're watching is about, Curfs sends only the title of the series or film to TVmaze and Wikipedia (Wikimedia Foundation) and reads its plot and cast; the dialogue of the last few minutes is read from the video's subtitles."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI usa el modelo de Apple Intelligence en el dispositivo: las preguntas y respuestas se quedan en el teléfono o en el Mac y no se guardan. Para saber de qué trata lo que estás viendo, Curfs envía solo el título de la serie o la película a TVmaze y a Wikipedia (Wikimedia Foundation) y lee su trama y reparto; los diálogos de los últimos minutos los lee de los subtítulos del vídeo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI utilise le modèle Apple Intelligence sur l'appareil : questions et réponses restent sur le téléphone ou le Mac et ne sont pas enregistrées. Pour savoir de quoi parle ce que tu regardes, Curfs envoie uniquement le titre de la série ou du film à TVmaze et à Wikipédia (Wikimedia Foundation) et en lit l'intrigue et la distribution ; les dialogues des dernières minutes sont lus dans les sous-titres de la vidéo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video."
+          }
+        }
+      }
+    },
+    "Trame e cast usati da Curfs AI provengono da TVmaze e Wikipedia, con licenza CC BY-SA." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handlungen und Besetzungen für Curfs AI stammen von TVmaze und Wikipedia, unter der Lizenz CC BY-SA."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plots and casts used by Curfs AI come from TVmaze and Wikipedia, under the CC BY-SA license."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las tramas y repartos que usa Curfs AI proceden de TVmaze y Wikipedia, con licencia CC BY-SA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les intrigues et distributions utilisées par Curfs AI proviennent de TVmaze et Wikipédia, sous licence CC BY-SA."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trame e cast usati da Curfs AI provengono da TVmaze e Wikipedia, con licenza CC BY-SA."
           }
         }
       }

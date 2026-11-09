@@ -25,6 +25,10 @@ struct PlayerControlsOverlay: View {
     let vm: PlayerViewModel
     var showsPictureInPicture = false
     var onPictureInPicture: () -> Void = {}
+    /// Curfs AI (solo dove c'è Apple Intelligence): sempre in vista, anche
+    /// nella barra compatta.
+    var showsCompanion = false
+    var onCompanion: () -> Void = {}
     var onClose: () -> Void
     var onNextEpisode: () -> Void
 
@@ -73,6 +77,11 @@ struct PlayerControlsOverlay: View {
                     glassIconButton("forward.end.fill", action: onNextEpisode)
                         .accessibilityLabel("Episodio successivo")
                 }
+            }
+
+            if showsCompanion {
+                glassIconButton("sparkles", action: onCompanion)
+                    .accessibilityLabel(Text(verbatim: "Curfs AI"))
             }
 
             glassIconButton(vm.isLandscape ? "rectangle.portrait.rotate" : "rectangle.landscape.rotate") {

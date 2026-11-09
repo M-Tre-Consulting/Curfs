@@ -65,6 +65,9 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
 - `Views/` — schermate libreria (`LibraryHomeView`, `SeriesDetailView`), card (`ShowCardView`,
   `MovieCardView`, `ContinueWatchingCard`, `EpisodeRowView`) e `Views/Search/` (`SearchView`,
   `SearchResultCard`, `RemoteTitleActions`, `RemoteSourceSettingsView`, `DownloadsOverlay`).
+- `Companion/` — Curfs AI (chat sul contenuto): `CompanionChat` (modello + contesto),
+  `ContentInfoService` (TVmaze/Wikipedia), `DialogueReader` + `RemoteSubtitleReader` (sottotitoli
+  degli ultimi minuti), `CompanionChatView`, `CompanionPickerView`.
 - `Utilities/` — `AppBackground`, `ProgressLineView`, `PressableButtonStyle`, `ThumbnailImageView`,
   `TimeFormatter`, `CardGrid` (colonne delle griglie di card).
 
@@ -214,6 +217,38 @@ dal telefono. Creazione/modifica/foto solo da iPhone/Mac; la TV sceglie e mostra
   (⚠️ senza `container-migration.plist`: in `~/Library/Application Support` c'è un
   `default.store` di un'altra app che la migrazione si porterebbe via) e la logica TV con Node
   contro il Pi.
+
+## Curfs AI (`Companion/`, dal 2026-11-09)
+
+Voluta dall'utente: un "amico" che spiega cosa si sta guardando (personaggi, cosa ti sei perso,
+una scena), **senza spoiler** salvo richiesta esplicita, chat breve che non si salva. iPhone e Mac,
+**non la TV**. Gratis e legale:
+- **Modello**: Apple Intelligence sul dispositivo (`FoundationModels`, contesto 8192 token). Dove non
+  c'è (`deviceNotEligible`) i tasti non compaiono (`CompanionChat.isOffered`); se è solo spenta o in
+  download la chat lo dice. Guardrail `.permissiveContentTransformations`: con quelli normali le
+  risposte su Il Trono di Spade venivano bloccate ("unsafe content"). Il **tool calling col modello
+  piccolo non funziona** (provato: non chiamava mai il tool) ⇒ tutto il contesto va nelle istruzioni,
+  in inglese; risponde nella lingua in cui si scrive (l'iPhone dell'utente è in inglese).
+- **Contesto**: serie da **TVmaze** (`singlesearch` con `embed[]=cast&embed[]=episodes`, trova anche
+  "Il Trono di Spade"), film da **Wikipedia** (sezione Plot/Cast; si cerca su wiki della lingua
+  dell'app, poi it, poi en, e si segue il langlink inglese). Entrambi CC BY-SA, citati con link nella
+  chat: non è il caso delle locandine (fair use), quindi è fuori da `EXTRA_POSTERS`. Più i dialoghi
+  degli ultimi 5 minuti dai sottotitoli tx3g del file.
+- **Anti-spoiler**: per le serie solo le trame degli episodi precedenti (ultimi 8) + la presentazione
+  breve di quello corrente; per i film la trama tagliata in proporzione al minutaggio (−6%). Il tasto
+  "Spoiler" (con conferma) ricrea la sessione e aggiunge il resto.
+- ⚠️ **AVAssetReader rifiuta gli URL remoti** ("non-local URL", -11838): per lo streaming
+  `RemoteSubtitleReader` legge il `moov` con richieste Range, ricava la tabella dei campioni della
+  traccia tx3g e scarica solo quelle battute (~0,1 s dal Pi). Accetta solo risposte 206.
+- UI: iPhone tasto ✨ nella barra del player (anche compatta), pannello in vetro a destra in
+  orizzontale / in basso in verticale, il video va in pausa e riparte alla chiusura. Mac: colonna di
+  360 pt accanto al video (⌘K), il video continua; il monitor dei tasti A/D di `MacVideoPlayerView`
+  lascia passare le lettere se il first responder è un `NSText`. Dalla libreria: tasto Curfs AI →
+  scegli serie/episodio/film del profilo; scheda serie: tasto in alto e menu di ogni episodio; film:
+  menu contestuale. Se nel player si va avanti di >20 s, al messaggio dopo si rileggono i dialoghi e
+  la sessione riparte con le ultime battute della chat.
+- Provato il 2026-11-09 con un collaudo da terminale (codice vero + stub) contro il Pi: GoT S1E2 e
+  Doctor Strange 2, risposte giuste e rifiuto degli spoiler. Informativa aggiornata in app e sul sito.
 
 ## Curfs TV (`tv/`, dal 2026-10-14)
 

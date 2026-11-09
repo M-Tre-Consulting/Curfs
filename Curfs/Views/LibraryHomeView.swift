@@ -20,6 +20,8 @@ struct LibraryHomeView: View {
     @State private var pendingDeleteMovie: MediaItem?
     @State private var pendingDeleteShow: ShowSummary?
     @State private var showLegal = false
+    @State private var showCompanionPicker = false
+    @State private var companionTarget: CompanionTarget?
 
     private var shows: [ShowSummary] { ShowSummary.groups(from: allItems) }
     private var movies: [MediaItem] {
@@ -72,6 +74,11 @@ struct LibraryHomeView: View {
                     .accessibilityLabel("Privacy, licenza e contatti")
                 }
                 #endif
+                if CompanionChat.isOffered, !allItems.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        CompanionToolbarButton { showCompanionPicker = true }
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     ProfileToolbarButton()
                 }
@@ -98,6 +105,15 @@ struct LibraryHomeView: View {
             }
             .sheet(isPresented: $showLegal) {
                 LegalSheet()
+            }
+            .sheet(isPresented: $showCompanionPicker) {
+                CompanionPickerView(items: allItems)
+            }
+            .sheet(item: $companionTarget) { target in
+                CompanionScreen(target: target)
+                    #if os(macOS)
+                    .frame(minWidth: 460, minHeight: 620)
+                    #endif
             }
             .alert("Importazione", isPresented: Binding(
                 get: { importVM.lastError != nil },
@@ -196,6 +212,17 @@ struct LibraryHomeView: View {
                                     // Tap = guarda (in streaming se non è
                                     // scaricato); tenendo premuto si scarica.
                                     .contextMenu {
+                                        if CompanionChat.isOffered {
+                                            Button {
+                                                companionTarget = CompanionTarget(item: movie)
+                                            } label: {
+                                                Label {
+                                                    Text("Chiedi a Curfs AI")
+                                                } icon: {
+                                                    Image(systemName: "sparkles")
+                                                }
+                                            }
+                                        }
                                         if movie.isRemote {
                                             if RemoteDownloadManager.shared.movieDownload(title: movie.title)?.state.isActive == true {
                                                 Label("Download in corso", systemImage: "arrow.down.circle.dotted")

@@ -97,6 +97,7 @@ struct LegalView: View {
                     #else
                     paragraph("Per trovare le locandine, Curfs invia il solo titolo di film e serie alla ricerca di iTunes di Apple e scarica le immagini da lì. Apple riceve il titolo e, come per ogni connessione, l'indirizzo IP; nessun altro dato.")
                     #endif
+                    paragraph("Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video.")
                     paragraph("Puoi chiederci informazioni ed esercitare i tuoi diritti previsti dal GDPR (Regolamento UE 2016/679) scrivendo a \(MTre.email). Poiché non conserviamo i tuoi dati, eliminare l'app cancella tutto (su Mac, elimina anche la cartella Library dentro Documenti). I file sul tuo server restano tuoi e non vengono toccati.")
                     paragraph("Questa informativa è pubblicata anche sul nostro sito:")
                     Link(destination: MTre.privacyPage) {
@@ -119,6 +120,7 @@ struct LegalView: View {
                     #else
                     paragraph("Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes.")
                     #endif
+                    paragraph("Trame e cast usati da Curfs AI provengono da TVmaze e Wikipedia, con licenza CC BY-SA.")
                 }
 
                 section("Contatti") {

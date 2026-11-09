@@ -43,6 +43,8 @@ struct SeriesDetailView: View {
     @State private var pendingDeleteSeason: Int?
     @State private var posterEditor = PosterEditor()
     @State private var introStatus = IntroAnalysisStatus.shared
+    @State private var showCompanion = false
+    @State private var companionTarget: CompanionTarget?
     private let downloads = RemoteDownloadManager.shared
 
     /// Dalla Libreria.
@@ -167,6 +169,11 @@ struct SeriesDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
+            if CompanionChat.isOffered, !libraryEpisodes.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    CompanionToolbarButton { showCompanion = true }
+                }
+            }
             if seasonEntries.contains(where: { $0.item != nil }) {
                 ToolbarItem(placement: .primaryAction) {
                     Button(role: .destructive) {
@@ -187,6 +194,15 @@ struct SeriesDetailView: View {
             }
         }
         .posterEditorPickers(posterEditor)
+        .sheet(isPresented: $showCompanion) {
+            CompanionPickerView(items: libraryEpisodes, showName: showName)
+        }
+        .sheet(item: $companionTarget) { target in
+            CompanionScreen(target: target)
+                #if os(macOS)
+                .frame(minWidth: 460, minHeight: 620)
+                #endif
+        }
         #if os(iOS)
         .fullScreenCover(item: $playback) { request in
             PlayerView(item: request.item, library: request.library)
@@ -597,6 +613,17 @@ struct SeriesDetailView: View {
         .padding(10)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .contextMenu {
+            if CompanionChat.isOffered, let item = entry.item {
+                Button {
+                    companionTarget = CompanionTarget(item: item)
+                } label: {
+                    Label {
+                        Text("Chiedi a Curfs AI")
+                    } icon: {
+                        Image(systemName: "sparkles")
+                    }
+                }
+            }
             if Self.hasDownloadSource(entry) {
                 Button("Scarica per l'offline", systemImage: "arrow.down.circle") { download(entry) }
             }

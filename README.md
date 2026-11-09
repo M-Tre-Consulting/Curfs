@@ -40,6 +40,12 @@ mobile sempre in primo piano).
   streaming remoto") per il contratto lato server (in breve: nginx con
   `autoindex_format json;` + supporto alle richieste Range, nessun endpoint custom).
 
+- **Curfs AI** (dalla 2.5.0, iPhone e Mac con Apple Intelligence): un amico che ti spiega quello
+  che stai guardando, nel punto esatto in cui sei — chi è un personaggio, cosa ti sei perso, cosa
+  vuol dire una scena — **senza spoiler** se non li chiedi tu. Gira tutto sul dispositivo col
+  modello di Apple Intelligence (gratis, offline, le domande non escono dal telefono); sa di cosa
+  parla l'episodio o il film da TVmaze e Wikipedia (CC BY-SA) e dai dialoghi degli ultimi minuti
+  nei sottotitoli del file, anche in streaming. Dal player (✨, su Mac ⌘K) o dalla libreria.
 - **Profili** (dalla 2.4.0, obbligatori): nome e foto facoltativa, salvati sul server dei video
   insieme alla libreria e al minutaggio di ogni episodio e film, così iPhone, Mac e TV hanno la
   stessa libreria e riprendono dallo stesso punto. I download restano su ciascun dispositivo

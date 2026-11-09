@@ -11,6 +11,7 @@
 
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct MacPlayerView: View {
     @Environment(\.modelContext) private var modelContext
@@ -18,6 +19,9 @@ struct MacPlayerView: View {
 
     let library: [MediaItem]
     @State private var vm: PlayerViewModel
+    /// Curfs AI in una colonna a destra: su Mac c'è spazio, il video va avanti.
+    @State private var companion: CompanionChat?
+    @State private var companionOpen = false
 
     init(item: MediaItem, library: [MediaItem]) {
         self.library = library
@@ -31,6 +35,49 @@ struct MacPlayerView: View {
     }
 
     var body: some View {
+        HStack(spacing: 0) {
+            playerArea
+            if companionOpen, let companion {
+                CompanionChatView(chat: companion, onClose: { toggleCompanion() })
+                    .frame(width: 360)
+                    .background(AppBackground())
+                    .transition(.move(edge: .trailing))
+            }
+        }
+        .frame(minWidth: 640, minHeight: 400)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Chiudi") { dismiss() }
+            }
+            if CompanionChat.isOffered {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        toggleCompanion()
+                    } label: {
+                        Label {
+                            Text(verbatim: "Curfs AI")
+                        } icon: {
+                            Image(systemName: "sparkles")
+                        }
+                    }
+                    .help(Text(verbatim: "Curfs AI (⌘K)"))
+                    .keyboardShortcut("k", modifiers: .command)
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    MacMiniPlayer.shared.open(vm)
+                    dismiss()
+                } label: {
+                    Label("Finestra mobile", systemImage: "pip.enter")
+                }
+                .help("Finestra mobile")
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+            }
+        }
+    }
+
+    private var playerArea: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
@@ -59,22 +106,6 @@ struct MacPlayerView: View {
             .scaleEffect(vm.showNextEpisodePrompt ? 1 : 0.9)
             .allowsHitTesting(vm.showNextEpisodePrompt)
         }
-        .frame(minWidth: 640, minHeight: 400)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Chiudi") { dismiss() }
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    MacMiniPlayer.shared.open(vm)
-                    dismiss()
-                } label: {
-                    Label("Finestra mobile", systemImage: "pip.enter")
-                }
-                .help("Finestra mobile")
-                .keyboardShortcut("p", modifiers: [.command, .shift])
-            }
-        }
         .onAppear {
             vm.attach(modelContext: modelContext)
             MacMiniPlayer.shared.playerOpened(vm)
@@ -90,11 +121,31 @@ struct MacPlayerView: View {
         }
     }
 
+    private func toggleCompanion() {
+        if !companionOpen, companion?.target.id != vm.item.id {
+            let chat = CompanionChat(
+                target: CompanionTarget(item: vm.item, position: vm.currentTime),
+                asset: vm.player.currentItem?.asset, subtitleTrack: vm.selectedSubtitleTrack
+            )
+            chat.currentPosition = { [vm] in vm.currentTime }
+            companion = chat
+        }
+        withAnimation(.easeInOut(duration: 0.25)) { companionOpen.toggle() }
+    }
+
     private func playNext(_ next: MediaItem) {
+        // Episodio nuovo, chat nuova (se il pannello è aperto resta aperto).
+        if companionOpen {
+            let chat = CompanionChat(target: CompanionTarget(item: next, position: 0))
+            companion = chat
+        } else {
+            companion = nil
+        }
         vm.stop(resetOrientation: false)
         let newVM = PlayerViewModel(item: next, library: library)
         newVM.attach(modelContext: modelContext)
         vm = newVM
+        companion?.currentPosition = { [newVM] in newVM.currentTime }
         vm.start()
     }
 }
