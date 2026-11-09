@@ -3393,70 +3393,70 @@
         }
       }
     },
-    "Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes." : {
+    "Il riconoscimento di sigle e titoli di coda si basa su un'impronta audio nello stile di Haitsma e Kalker e sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Erkennung von Intro und Abspann basiert auf dem Difference Hash (dHash) von Neal Krawetz. Die Poster gehören ihren jeweiligen Rechteinhabern und stammen von iTunes."
+            "value" : "Die Erkennung von Intro und Abspann basiert auf einem Audio-Fingerabdruck nach Haitsma und Kalker und dem Difference Hash (dHash) von Neal Krawetz. Die Poster gehören ihren jeweiligen Rechteinhabern und stammen von iTunes."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intro and end credits detection is based on Neal Krawetz's difference hash (dHash). Posters belong to their respective owners and come from iTunes."
+            "value" : "Intro and end credits detection is based on a Haitsma–Kalker-style audio fingerprint and Neal Krawetz's difference hash (dHash). Posters belong to their respective owners and come from iTunes."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La detección de intros y créditos finales se basa en el difference hash (dHash) de Neal Krawetz. Los pósteres pertenecen a sus respectivos titulares y proceden de iTunes."
+            "value" : "La detección de intros y créditos finales se basa en una huella de audio al estilo de Haitsma y Kalker y en el difference hash (dHash) de Neal Krawetz. Los pósteres pertenecen a sus respectivos titulares y proceden de iTunes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La détection des génériques de début et de fin repose sur le difference hash (dHash) de Neal Krawetz. Les affiches appartiennent à leurs titulaires respectifs et proviennent d'iTunes."
+            "value" : "La détection des génériques de début et de fin repose sur une empreinte audio dans le style de Haitsma et Kalker et sur le difference hash (dHash) de Neal Krawetz. Les affiches appartiennent à leurs titulaires respectifs et proviennent d'iTunes."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes."
+            "value" : "Il riconoscimento di sigle e titoli di coda si basa su un'impronta audio nello stile di Haitsma e Kalker e sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da iTunes."
           }
         }
       }
     },
-    "Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da Wikipedia, IMDb e iTunes." : {
+    "Il riconoscimento di sigle e titoli di coda si basa su un'impronta audio nello stile di Haitsma e Kalker e sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da Wikipedia, IMDb e iTunes." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Erkennung von Intro und Abspann basiert auf dem Difference Hash (dHash) von Neal Krawetz. Die Poster gehören ihren jeweiligen Rechteinhabern und stammen von Wikipedia, IMDb und iTunes."
+            "value" : "Die Erkennung von Intro und Abspann basiert auf einem Audio-Fingerabdruck nach Haitsma und Kalker und dem Difference Hash (dHash) von Neal Krawetz. Die Poster gehören ihren jeweiligen Rechteinhabern und stammen von Wikipedia, IMDb und iTunes."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intro and end credits detection is based on Neal Krawetz's difference hash (dHash). Posters belong to their respective owners and come from Wikipedia, IMDb and iTunes."
+            "value" : "Intro and end credits detection is based on a Haitsma–Kalker-style audio fingerprint and Neal Krawetz's difference hash (dHash). Posters belong to their respective owners and come from Wikipedia, IMDb and iTunes."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La detección de intros y créditos finales se basa en el difference hash (dHash) de Neal Krawetz. Los pósteres pertenecen a sus respectivos titulares y proceden de Wikipedia, IMDb e iTunes."
+            "value" : "La detección de intros y créditos finales se basa en una huella de audio al estilo de Haitsma y Kalker y en el difference hash (dHash) de Neal Krawetz. Los pósteres pertenecen a sus respectivos titulares y proceden de Wikipedia, IMDb e iTunes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La détection des génériques de début et de fin repose sur le difference hash (dHash) de Neal Krawetz. Les affiches appartiennent à leurs détenteurs respectifs et proviennent de Wikipedia, IMDb et iTunes."
+            "value" : "La détection des génériques de début et de fin repose sur une empreinte audio dans le style de Haitsma et Kalker et sur le difference hash (dHash) de Neal Krawetz. Les affiches appartiennent à leurs détenteurs respectifs et proviennent de Wikipedia, IMDb et iTunes."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il riconoscimento di sigle e titoli di coda si basa sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da Wikipedia, IMDb e iTunes."
+            "value" : "Il riconoscimento di sigle e titoli di coda si basa su un'impronta audio nello stile di Haitsma e Kalker e sul difference hash (dHash) di Neal Krawetz. Le locandine appartengono ai rispettivi titolari e provengono da Wikipedia, IMDb e iTunes."
           }
         }
       }
@@ -8506,36 +8506,36 @@
         }
       }
     },
-    "Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video." : {
+    "Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie (e degli ultimi episodi visti) o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curfs AI verwendet das Apple-Intelligence-Modell auf dem Gerät: Fragen und Antworten bleiben auf dem iPhone oder Mac und werden nicht gespeichert. Um zu wissen, worum es in dem geht, was du schaust, sendet Curfs nur den Titel der Serie oder des Films an TVmaze und Wikipedia (Wikimedia Foundation) und liest Handlung und Besetzung; die Dialoge der letzten Minuten liest es aus den Untertiteln des Videos."
+            "value" : "Curfs AI verwendet das Apple-Intelligence-Modell auf dem Gerät: Fragen und Antworten bleiben auf dem iPhone oder Mac und werden nicht gespeichert. Um zu wissen, worum es in dem geht, was du schaust, sendet Curfs nur den Titel der Serie (und der zuletzt gesehenen Folgen) oder des Films an TVmaze und Wikipedia (Wikimedia Foundation) und liest Handlung und Besetzung; die Dialoge der letzten Minuten liest es aus den Untertiteln des Videos."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curfs AI uses the on-device Apple Intelligence model: questions and answers stay on your phone or Mac and are not saved. To know what you're watching is about, Curfs sends only the title of the series or film to TVmaze and Wikipedia (Wikimedia Foundation) and reads its plot and cast; the dialogue of the last few minutes is read from the video's subtitles."
+            "value" : "Curfs AI uses the on-device Apple Intelligence model: questions and answers stay on your phone or Mac and are not saved. To know what you're watching is about, Curfs sends only the title of the series (and of the last episodes watched) or film to TVmaze and Wikipedia (Wikimedia Foundation) and reads its plot and cast; the dialogue of the last few minutes is read from the video's subtitles."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curfs AI usa el modelo de Apple Intelligence en el dispositivo: las preguntas y respuestas se quedan en el teléfono o en el Mac y no se guardan. Para saber de qué trata lo que estás viendo, Curfs envía solo el título de la serie o la película a TVmaze y a Wikipedia (Wikimedia Foundation) y lee su trama y reparto; los diálogos de los últimos minutos los lee de los subtítulos del vídeo."
+            "value" : "Curfs AI usa el modelo de Apple Intelligence en el dispositivo: las preguntas y respuestas se quedan en el teléfono o en el Mac y no se guardan. Para saber de qué trata lo que estás viendo, Curfs envía solo el título de la serie (y de los últimos episodios vistos) o la película a TVmaze y a Wikipedia (Wikimedia Foundation) y lee su trama y reparto; los diálogos de los últimos minutos los lee de los subtítulos del vídeo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curfs AI utilise le modèle Apple Intelligence sur l'appareil : questions et réponses restent sur le téléphone ou le Mac et ne sont pas enregistrées. Pour savoir de quoi parle ce que tu regardes, Curfs envoie uniquement le titre de la série ou du film à TVmaze et à Wikipédia (Wikimedia Foundation) et en lit l'intrigue et la distribution ; les dialogues des dernières minutes sont lus dans les sous-titres de la vidéo."
+            "value" : "Curfs AI utilise le modèle Apple Intelligence sur l'appareil : questions et réponses restent sur le téléphone ou le Mac et ne sont pas enregistrées. Pour savoir de quoi parle ce que tu regardes, Curfs envoie uniquement le titre de la série (et des derniers épisodes vus) ou du film à TVmaze et à Wikipédia (Wikimedia Foundation) et en lit l'intrigue et la distribution ; les dialogues des dernières minutes sont lus dans les sous-titres de la vidéo."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video."
+            "value" : "Curfs AI usa il modello di Apple Intelligence sul dispositivo: domande e risposte restano sul telefono o sul Mac e non vengono salvate. Per sapere di cosa parla quello che stai guardando, Curfs invia il solo titolo della serie (e degli ultimi episodi visti) o del film a TVmaze e a Wikipedia (Wikimedia Foundation) e ne legge trama e cast; i dialoghi degli ultimi minuti li legge dai sottotitoli del video."
           }
         }
       }
