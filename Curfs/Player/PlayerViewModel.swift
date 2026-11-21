@@ -181,6 +181,7 @@ final class PlayerViewModel {
             analyzeIntroCredits()
             prewarmNextEpisode()
         }
+        loadServerIntroCredits()
 
         let interval = CMTime(seconds: 0.25, preferredTimescale: 600)
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
@@ -248,9 +249,30 @@ final class PlayerViewModel {
                 IntroAnalysisStatus.shared.abandon(episode.id)
                 return
             }
-            self.detectedIntroRange = result.introRange
-            self.detectedCreditsRange = result.creditsRange
+            // L'analisi locale vince su quella del server; se qui non ha
+            // trovato niente resta quella del server (se c'è).
+            self.localIntroResolved = true
+            if result.introRange != nil || result.creditsRange != nil || self.detectedIntroRange == nil {
+                self.detectedIntroRange = result.introRange
+                self.detectedCreditsRange = result.creditsRange
+            }
             IntroAnalysisStatus.shared.finish(episode.id, foundIntro: result.introRange != nil)
+        }
+    }
+
+    /// Sigla/coda calcolate dal server dei video (ServerIntroIndex): l'unica
+    /// fonte in streaming; per i file locali vale solo finché l'analisi qui
+    /// non ha risposto.
+    @ObservationIgnored private var localIntroResolved = false
+    private func loadServerIntroCredits() {
+        guard item.kind == .episode, RemoteSourceStore.current.baseURL != nil else { return }
+        let episode = item
+        Task { [weak self] in
+            guard let ranges = await ServerIntroIndex.shared.ranges(for: episode), let self,
+                  self.item.id == episode.id else { return }
+            if self.localIntroResolved, self.detectedIntroRange != nil || self.detectedCreditsRange != nil { return }
+            self.detectedIntroRange = ranges.intro
+            self.detectedCreditsRange = ranges.credits
         }
     }
 

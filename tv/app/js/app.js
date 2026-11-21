@@ -7,6 +7,7 @@ import { posterFor } from './posters.js';
 import { listProfiles, avatarURL } from './profiles.js';
 import { t, plural, lang } from './i18n.js';
 import { focus, focusFirst, focused, move, setScope } from './focus.js';
+import { openPlayer } from './player.js';
 
 const KEY = {
   LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 8, ESC: 27, BACK_WEBOS: 461, BACK_TIZEN: 10009,
@@ -487,206 +488,13 @@ function openSeries(title) {
   });
 }
 
-// ---------- player
+// ---------- player (player.js)
 
 function play(title, episode) {
-  // Guardare qualcosa lo mette in libreria, come su iPhone: di una serie solo l'episodio.
-  store.addToLibrary(title.id, episode ? episode.id : null);
-  const episodes = title.kind === 'series' ? allEpisodes(title) : [];
-  let current = episode;
-  const video = h('video', { class: 'video', preload: 'auto' });
-  const label = h('div', { class: 'osd-title' });
-  const bar = h('i');
-  const time = h('div', { class: 'osd-time' });
-  const osd = h('div', { class: 'osd' }, label, h('div', { class: 'osd-bar' }, bar), time,
-    h('div', { class: 'osd-hint' }, t('↑ Lingua audio')));
-  const spinner = h('div', { class: 'spinner center' });
-  const nextBox = h('div', { class: 'next hidden' });
-  const audioBox = h('div', { class: 'audio hidden' });
-  const root = h('div', { class: 'player' }, video, spinner, osd, nextBox, audioBox);
-  let audioOpen = false;
-
-  let hideTimer = 0;
-  let saveTimer = 0;
-  let pendingSeek = 0;
-  let seekTimer = 0;
-  let countdown = 0;
-
-  const id = () => (current ? current.id : title.id);
-  const name = () => (current ? `${title.name} · ${code(current.season, current.number)} · ${current.title}` : title.name);
-
-  function showOSD(stay = false) {
-    osd.classList.remove('hidden');
-    clearTimeout(hideTimer);
-    if (!stay && !video.paused) hideTimer = setTimeout(() => osd.classList.add('hidden'), 3500);
-  }
-
-  function updateOSD() {
-    const t = video.currentTime + pendingSeek;
-    bar.style.width = video.duration ? `${Math.min(100, (t / video.duration) * 100)}%` : '0';
-    time.textContent = `${fmt(t)} / ${fmt(video.duration)}${video.paused ? '   ❚❚' : ''}`;
-  }
-
-  function save() {
-    if (video.duration > 0 && video.currentTime > 5) store.saveProgress(id(), video.currentTime, video.duration);
-  }
-
-  function load(ep) {
-    current = ep;
-    state.playingKey = ep ? ep.id : title.id;
-    label.textContent = name();
-    nextBox.classList.add('hidden');
-    clearInterval(countdown);
-    const p = store.progressOf(id());
-    video.src = ep ? ep.url : title.url;
-    video.onloadedmetadata = () => {
-      if (p && !p.done && p.pos > 10 && p.pos < video.duration - 30) video.currentTime = p.pos;
-      applyPreferredAudio();
-      updateOSD();
-    };
-    video.play().catch(() => {});
-    showOSD();
-  }
-
-  // --- Lingua audio: tracce dentro il file (HTMLMediaElement.audioTracks).
-  // Non tutti i browser delle TV lo permettono: in quel caso lo si dice.
-
-  function tracks() {
-    const list = video.audioTracks;
-    return list ? Array.from({ length: list.length }, (_, i) => list[i]) : null;
-  }
-
-  function applyPreferredAudio() {
-    const list = tracks();
-    const preferred = store.preferredAudio();
-    if (!list || list.length < 2 || !preferred) return;
-    const i = list.findIndex((tr) => audioCode(tr.language) === preferred);
-    if (i >= 0) list.forEach((tr, j) => { tr.enabled = j === i; });
-  }
-
-  function openAudio() {
-    const list = tracks();
-    let body;
-    if (!list) body = [h('p', {}, t('Questa TV non permette di scegliere la lingua audio.'))];
-    else if (list.length < 2) body = [h('p', {}, t('Questo video ha una sola lingua audio: {l}.', { l: trackName(list[0], 0) }))];
-    else {
-      body = list.map((tr, i) => h('button', {
-        class: `f audio-row ${tr.enabled ? 'active' : ''}`, dataset: { key: 'a' + i, autofocus: tr.enabled || null },
-        onclick: () => {
-          list.forEach((x, j) => { x.enabled = j === i; });
-          store.setPreferredAudio(audioCode(tr.language));
-          closeAudio();
-        },
-      }, (tr.enabled ? '✓  ' : '') + trackName(tr, i)));
-    }
-    audioBox.replaceChildren(h('div', { class: 'audio-title' }, t('Lingua audio')), ...body,
-      h('div', { class: 'audio-hint' }, list && list.length > 1 ? t('OK per scegliere · Indietro per chiudere') : t('Indietro per chiudere')));
-    audioBox.classList.remove('hidden');
-    audioOpen = true;
-    setScope(audioBox);
-    focusFirst(audioBox);
-    showOSD(true);
-  }
-
-  function closeAudio() {
-    audioOpen = false;
-    audioBox.classList.add('hidden');
-    setScope(null);
-    showOSD();
-  }
-
-  function nextEpisode() {
-    if (!current) return null;
-    const i = episodes.findIndex((e) => e.id === current.id);
-    return i >= 0 ? episodes[i + 1] || null : null;
-  }
-
-  function offerNext() {
-    const next = nextEpisode();
-    if (!next) { close(); return; }
-    let left = 8;
-    const paint = () => {
-      nextBox.replaceChildren(
-        h('div', { class: 'next-label' }, t('Prossimo episodio')),
-        h('div', { class: 'next-title' }, `${code(next.season, next.number)} · ${next.title}`),
-        h('div', { class: 'next-hint' }, t('Parte tra {n} s · OK per guardarlo ora · Indietro per uscire', { n: left })));
-    };
-    paint();
-    nextBox.classList.remove('hidden');
-    countdown = setInterval(() => { left -= 1; if (left <= 0) load(next); else paint(); }, 1000);
-  }
-
-  function seekBy(delta) {
-    pendingSeek += delta;
-    showOSD();
-    updateOSD();
-    clearTimeout(seekTimer);
-    // I salti ravvicinati si sommano e si applicano una volta sola: ogni
-    // salto sulla TV costa una nuova richiesta al server.
-    seekTimer = setTimeout(() => {
-      const target = Math.max(0, Math.min((video.duration || 0) - 2, video.currentTime + pendingSeek));
-      pendingSeek = 0;
-      video.currentTime = target;
-    }, 450);
-  }
-
-  function close() {
-    if (audioOpen) closeAudio();
-    save();
-    store.flush();
-    clearInterval(saveTimer);
-    clearInterval(countdown);
-    clearTimeout(hideTimer);
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-    pop();
-  }
-
-  video.onwaiting = () => spinner.classList.remove('hidden');
-  video.onplaying = () => { spinner.classList.add('hidden'); showOSD(); };
-  video.ontimeupdate = () => { if (!osd.classList.contains('hidden')) updateOSD(); };
-  video.onpause = () => { showOSD(true); updateOSD(); save(); store.flush(); };
-  video.onended = () => { save(); store.saveProgress(id(), video.duration, video.duration); store.flush(); offerNext(); };
-  video.onerror = () => {
-    spinner.classList.add('hidden');
-    label.textContent = t('Questo video non si riesce a riprodurre sulla TV.');
-    showOSD(true);
-  };
-  saveTimer = setInterval(save, 5000);
-
-  push({
-    render: () => { app.replaceChildren(root); },
-    onKey: (k) => {
-      if (audioOpen) {
-        if (k === KEY.UP) move('up');
-        else if (k === KEY.DOWN) move('down');
-        else if (k === KEY.OK) { const f = focused(); if (f && audioBox.contains(f)) f.click(); else closeAudio(); }
-        else if (isBack(k)) closeAudio();
-        return true;
-      }
-      if (!nextBox.classList.contains('hidden')) {
-        if (k === KEY.OK) { const n = nextEpisode(); if (n) load(n); return true; }
-        if (isBack(k)) { close(); return true; }
-        return true;
-      }
-      switch (k) {
-        case KEY.OK: case KEY.PLAY_PAUSE:
-          video.paused ? video.play() : video.pause(); return true;
-        case KEY.PLAY: video.play(); return true;
-        case KEY.PAUSE: video.pause(); return true;
-        case KEY.LEFT: case KEY.RW: seekBy(-10); return true;
-        case KEY.RIGHT: case KEY.FF: seekBy(10); return true;
-        case KEY.UP: openAudio(); return true;
-        case KEY.DOWN: showOSD(); updateOSD(); return true;
-        case KEY.STOP: close(); return true;
-        default:
-          if (isBack(k)) { close(); return true; }
-          return false;
-      }
-    },
+  openPlayer(title, episode, {
+    h, fmt, code, push, pop, isBack, state, audioCode, trackName,
+    episodes: title.kind === 'series' ? allEpisodes(title) : [],
   });
-  load(episode);
 }
 
 // ---------- lingue delle tracce audio

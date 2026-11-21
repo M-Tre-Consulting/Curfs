@@ -125,6 +125,13 @@ actor IntroCreditsAnalyzer {
             ),
             for: item.id
         )
+        // Un risultato nuovo va anche al server dei video (se è lo stesso file):
+        // la TV e lo streaming lo usano subito, il server non deve rifarlo.
+        let shared = ServerIntroIndex.LocalResult(
+            fileURL: item.fileURL, kind: item.kind.rawValue, title: item.title, show: item.showName,
+            season: item.seasonNumber, episode: item.episodeNumber,
+            intro: result.introRange, credits: result.creditsRange)
+        Task { @MainActor in await ServerIntroIndex.shared.share(shared) }
         return result
     }
 

@@ -35,8 +35,34 @@ Libreria e Server (il catalogo, "Cerca" su iPhone e Mac) stanno nella barra a si
 sezione aperta. Nella scheda di una serie le stagioni sono in colonna a sinistra: su/giù mostra
 subito gli episodi della stagione evidenziata, destra entra negli episodi (sull'ultimo guardato),
 sinistra torna sulla stagione.
-Nel player: OK pausa/play, ← → ±10 secondi (i salti ravvicinati si sommano), ↓ mostra la barra,
-↑ la lingua audio (tracce dentro il file; se il browser della TV non lo permette, lo dice).
+Nel player (`app/js/player.js`):
+- **← →** avanti/indietro: i tocchi ravvicinati si sommano, **tenendo premuto accelera** (10 s,
+  poi 30, 60, 2 min a passo). Il salto parte quando ti fermi; intanto la barra e il riquadro al
+  centro mostrano dove arrivi (OK salta subito, Indietro annulla). Avanti/indietro veloce del
+  telecomando: stessa cosa a passi da 30 s. **Tasti numerici**: 1-9 = 10%-90%, 0 = dall'inizio.
+- **OK** pausa/play; **↓/↑** apre la fila dei comandi: pausa, episodio precedente, **prossimo
+  episodio**, dall'inizio, elenco episodi, lingua audio, opzioni (velocità, sigla saltata da sola).
+  Anche CH+/CH− (o i tasti traccia successiva/precedente) cambiano episodio.
+- **Salta intro**: quando parte la sigla compare il tasto, OK la salta. Ai titoli di coda (o negli
+  ultimi 20 s) la cartolina del prossimo episodio con 10 s di conto alla rovescia: OK subito,
+  Indietro per restare sui titoli. In alto l'ora e quando finisce l'episodio.
+- **Indietro** chiude, nell'ordine: il salto in corso, il pannello aperto, la fila dei comandi, il player.
+
+## Sigla e titoli di coda (sul server)
+
+La TV non può analizzare i video, il server sì: `server/curfs-intro.py` è lo stesso
+riconoscimento di Curfs su iPhone/Mac (impronta audio + conferma coi fotogrammi), in Python con
+ffmpeg e numpy (`apt install python3-numpy`, ≥ 2.0). Scrive `.curfs/intro.json` nella cartella
+dei video, che la TV (e iPhone/Mac per lo streaming) leggono. Impronte in cache in
+`~/.cache/curfs-intro`: si ricalcola solo ciò che è nuovo o cambiato. Su un Raspberry Pi 4 ci
+vogliono 2-5 minuti a episodio la prima volta, per questo gira di notte:
+
+    15 5 * * *   flock -n /tmp/curfs-intro.lock nice -n 19 ionice -c3 python3 curfs-intro.py CARTELLA_VIDEO
+    */10 * * * * flock -n /tmp/curfs-intro.lock nice -n 19 python3 curfs-intro.py CARTELLA_VIDEO --merge-only
+
+iPhone e Mac mandano al server l'analisi degli episodi scaricati (`.curfs/intro-devices/`, solo
+se il file ha la stessa dimensione di quello sul server): il server la usa al posto della sua e la
+TV la vede entro 10 minuti (`--merge-only`). Sul dispositivo l'analisi locale vince sempre.
 
 ## Installazione
 

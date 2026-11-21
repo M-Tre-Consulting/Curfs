@@ -293,12 +293,19 @@ non può salvare video sulla TV). Decisioni:
   dopo 140 ms (`arrive`) senza ridisegnare la pagina. Provata con Chrome headless pilotato via DevTools
   (tasti simulati) contro il Pi — ⚠️ non premere OK a caso: fa partire video e scrive il
   minutaggio del profilo (usare un profilo di prova).
-- Lingua audio nel player (↑): `video.audioTracks`, che in Chrome è dietro un flag
+- Lingua audio nel player (tasto Audio nella fila dei comandi): `video.audioTracks`, che in Chrome è dietro un flag
   (`AudioVideoTracks`): se manca lo dice. A ottobre 2026 tutti i video sul Pi hanno una sola
   traccia (ita). Lingua scelta ricordata (`curfs.audioLang`).
 - TV lenta (MT9602): niente blur/ombre grandi, solo transform/opacity, scroll senza animazione.
 - nginx: ingresso separato `:8092` solo LAN e **senza password** (il `<video>` della TV non gestisce
   la basic auth), `/media/` = cartella video, `/imdb/` = proxy per le locandine IMDb (niente CORS).
+- **Player** (`app/js/player.js`, riscritto il 2026-11-21: "così è ingestibile"): ← → con salti
+  che si sommano e accelerano tenendo premuto (10/30/60/120 s), applicati una volta quando ci si
+  ferma; 0-9 = 0-90%; ↓/↑ fila di comandi (pausa, precedente, prossimo episodio, dall'inizio,
+  episodi, audio, opzioni con velocità e sigla automatica); "Salta intro" e prossimo episodio ai
+  titoli di coda da `/media/.curfs/intro.json` (vedi sigla sul server sopra). Barra con sigla/coda
+  colorate, ora e "fine alle". Provato con Chrome headless + un proxy locale che inoltra `/media/`
+  al Pi e **blocca i PUT** (così il minutaggio dei profili non si tocca).
 - `tv/server/faststart.sh`: sposta il `moov` all'inizio (ffmpeg `-c copy`); senza, sulla TV ~7 s
   per partire. Sul Pi gira anche di notte da cron.
 
@@ -461,8 +468,19 @@ non può salvare video sulla TV). Decisioni:
   - Collaudato con un harness da terminale sugli stessi file dell'app contro la verità a occhio
     (fotogrammi prima/dopo i bordi): TWD S2E3-6 e GoT S1E1-4, sigla giusta in tutti e 8 (pilot GoT
     7:17 contro 7:16 reale, bordi entro ~1 s). ~9 s di audio per episodio su Mac (3 tracce AC3).
-  - Solo file locali: in streaming non parte (`siblingEpisodes` vuoto, `fingerprint` nil per
-    `isRemote`). Voluto dall'utente: "a me basta averlo perfetto in locale".
+  - Sul dispositivo solo file locali (`siblingEpisodes` vuoto, `fingerprint` nil per `isRemote`).
+  - **Sigla calcolata dal server** (2026-11-21, idea dell'utente: "il server lo fa di notte con
+    calma, il locale non viene sovrastato e rimanda al server, un po' come p2p"):
+    `tv/server/curfs-intro.py` è il port in Python/ffmpeg/numpy dello stesso algoritmo (stesse
+    soglie: se cambiano qui, allinearlo e alzare `VERSION`). Gira sul Pi alle 5:15 su tutta la
+    cartella video e scrive `SC/.curfs/intro.json` (chiave = percorso relativo). Lo leggono la TV
+    e `ServerIntroIndex` (`Remote/`): in streaming è l'unica fonte; per i file locali vale solo
+    finché l'analisi locale non risponde o se questa non ha trovato niente (`localIntroResolved`
+    in `PlayerViewModel`). Ogni analisi locale nuova (`IntroCreditsAnalyzer.analyze`) va al server
+    in `.curfs/intro-devices/<sha256>.json` solo se il file del server ha la stessa dimensione
+    (HEAD; un import da altra fonte ha tempi diversi); il Pi la prende ogni 10 min (`--merge-only`)
+    al posto della sua analisi. I titoli di coda di GoT non combaciano mai (musica finale diversa
+    per episodio): lì niente coda, è normale.
   - Due cache su disco: `FingerprintStorage` (impronte per episodio, `cacheVersion` bump-abile) e
     `IntroCreditsStorage` (il *risultato* dell'analisi per episodio, legato a `analysisVersion` +
     durata + firma dei vicini usati). La seconda rende il "salta intro" deterministico e immediato
