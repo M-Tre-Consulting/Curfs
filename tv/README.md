@@ -57,7 +57,7 @@ dei video, che la TV (e iPhone/Mac per lo streaming) leggono. Impronte in cache 
 `~/.cache/curfs-intro`: si ricalcola solo ciò che è nuovo o cambiato. Su un Raspberry Pi 4 ci
 vogliono 2-5 minuti a episodio la prima volta, per questo gira di notte:
 
-    15 5 * * *   flock -n /tmp/curfs-intro.lock nice -n 19 ionice -c3 python3 curfs-intro.py CARTELLA_VIDEO
+    0 0 * * *    flock -n /tmp/curfs-intro.lock sh -c 'bash faststart.sh CARTELLA_VIDEO; nice -n 19 ionice -c3 python3 curfs-intro.py CARTELLA_VIDEO'
     */10 * * * * flock -n /tmp/curfs-intro.lock nice -n 19 python3 curfs-intro.py CARTELLA_VIDEO --merge-only
 
 iPhone e Mac mandano al server l'analisi degli episodi scaricati (`.curfs/intro-devices/`, solo

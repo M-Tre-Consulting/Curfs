@@ -472,8 +472,8 @@ non può salvare video sulla TV). Decisioni:
   - **Sigla calcolata dal server** (2026-11-21, idea dell'utente: "il server lo fa di notte con
     calma, il locale non viene sovrastato e rimanda al server, un po' come p2p"):
     `tv/server/curfs-intro.py` è il port in Python/ffmpeg/numpy dello stesso algoritmo (stesse
-    soglie: se cambiano qui, allinearlo e alzare `VERSION`). Gira sul Pi alle 5:15 su tutta la
-    cartella video e scrive `SC/.curfs/intro.json` (chiave = percorso relativo). Lo leggono la TV
+    soglie: se cambiano qui, allinearlo e alzare `VERSION`). Gira sul Pi a mezzanotte (dopo un faststart, così
+    analizza i file definitivi) su tutta la cartella video e scrive `SC/.curfs/intro.json` (chiave = percorso relativo). Lo leggono la TV
     e `ServerIntroIndex` (`Remote/`): in streaming è l'unica fonte; per i file locali vale solo
     finché l'analisi locale non risponde o se questa non ha trovato niente (`localIntroResolved`
     in `PlayerViewModel`). Ogni analisi locale nuova (`IntroCreditsAnalyzer.analyze`) va al server
