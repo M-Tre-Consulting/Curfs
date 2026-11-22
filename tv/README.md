@@ -55,14 +55,24 @@ riconoscimento di Curfs su iPhone/Mac (impronta audio + conferma coi fotogrammi)
 ffmpeg e numpy (`apt install python3-numpy`, ≥ 2.0). Scrive `.curfs/intro.json` nella cartella
 dei video, che la TV (e iPhone/Mac per lo streaming) leggono. Impronte in cache in
 `~/.cache/curfs-intro`: si ricalcola solo ciò che è nuovo o cambiato. Su un Raspberry Pi 4 ci
-vogliono 2-5 minuti a episodio la prima volta, per questo gira di notte:
+vogliono 2-5 minuti a episodio la prima volta, per questo gira di notte. Un solo cron, ogni minuto:
 
-    0 0 * * *    flock -n /tmp/curfs-intro.lock sh -c 'bash faststart.sh CARTELLA_VIDEO; nice -n 19 ionice -c3 python3 curfs-intro.py CARTELLA_VIDEO'
-    */10 * * * * flock -n /tmp/curfs-intro.lock nice -n 19 python3 curfs-intro.py CARTELLA_VIDEO --merge-only
+    * * * * * nice -n 19 ionice -c3 python3 curfs-intro.py CARTELLA_VIDEO --tick
+
+`--tick` (lock in `/tmp/curfs-intro.lock`, se c'è già un'analisi esce subito):
+- all'orario scelto nell'app (iPhone/Mac, *Fonte remota › Sigla sul server*; file
+  `.curfs/intro-settings.json` `{"time": "HH:MM", "nightly": true}`, ora del server, di partenza
+  mezzanotte) lancia `curfs-faststart.sh` (accanto allo script, `--faststart` per cambiarlo) e
+  l'analisi di tutto ciò che è nuovo o cambiato; se a quell'ora era occupato recupera entro 6 ore;
+- "Analizza ora" dall'app (`.curfs/intro-requests/<id>.json`, `{"paths": [...], "force": bool}` o
+  `{"all": true}`): parte entro un minuto, e se c'è già un'analisi in corso le richieste passano in
+  testa alla sua coda;
+- ogni 10 minuti i risultati dei dispositivi (come `--merge-only`);
+- scrive `.curfs/intro-status.json` (in corso, coda, ultima notturna) che l'app mostra.
 
 iPhone e Mac mandano al server l'analisi degli episodi scaricati (`.curfs/intro-devices/`, solo
 se il file ha la stessa dimensione di quello sul server): il server la usa al posto della sua e la
-TV la vede entro 10 minuti (`--merge-only`). Sul dispositivo l'analisi locale vince sempre.
+TV la vede entro 10 minuti. Sul dispositivo l'analisi locale vince sempre.
 
 ## Installazione
 

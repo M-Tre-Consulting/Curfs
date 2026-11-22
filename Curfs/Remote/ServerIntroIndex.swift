@@ -17,6 +17,12 @@
 //  Sul dispositivo l'analisi locale vince sempre: il risultato del server si
 //  usa solo finché quella non c'è o se non ha trovato niente.
 //
+//  Dall'app si comanda anche l'analisi del server (stesso WebDAV di .curfs/,
+//  letto ogni minuto da `curfs-intro.py --tick`):
+//  - `.curfs/intro-settings.json`: orario dell'analisi notturna (ora del server) e on/off;
+//  - `.curfs/intro-requests/<id>.json`: "analizza ora" questi episodi (o tutto);
+//  - `.curfs/intro-status.json` (scritto dal server): cosa sta analizzando e cosa c'è in coda.
+//
 
 import Foundation
 import CryptoKit
@@ -44,13 +50,43 @@ final class ServerIntroIndex {
         let credits: ClosedRange<Double>?
     }
 
-    private struct Entry: Decodable { let intro: [Double]?; let credits: [Double]? }
+    /// Stato di un episodio sul server.
+    enum EpisodeState: Equatable, Sendable {
+        case missing      // mai analizzato (o cambiato da allora)
+        case requested    // chiesto da qui, il server non l'ha ancora preso
+        case queued       // in coda sul server
+        case analyzing    // il server lo sta analizzando adesso
+        case noIntro      // analizzato, nessuna sigla trovata
+        case withIntro    // analizzato, sigla trovata
+    }
+
+    struct Status: Decodable, Sendable {
+        var time: String
+        var nightly: Bool
+        var running: Bool
+        var current: String?
+        var queue: [String]
+        var lastNightly: Double?
+        /// Quando il server ha preso l'ultima richiesta "analizza ora".
+        var lastRequest: Double?
+        var updated: Double?
+    }
+
+    struct Settings: Codable, Sendable, Equatable {
+        var time: String
+        var nightly: Bool
+    }
+
+    private struct Entry: Decodable { let intro: [Double]?; let credits: [Double]?; let sig: String? }
     private struct IndexFile: Decodable { let items: [String: Entry] }
 
     private var entries: [String: Entry]?
     private var loadedAt = Date.distantPast
     private var loading: Task<[String: Entry], Never>?
     private static let sharedKey = "Curfs.introShared"
+    /// Richieste mandate da qui: percorso → quando.
+    private var requested: [String: Date] = [:]
+    private var lastStatus: Status?
 
     private init() {}
 
@@ -76,6 +112,106 @@ final class ServerIntroIndex {
         }
         guard let path else { return nil }
         return await ranges(forPath: path)
+    }
+
+    /// Stato sul server di questi episodi (percorsi relativi). `fresh` rilegge
+    /// subito indice e stato invece di usare la copia di pochi minuti fa.
+    func states(forPaths paths: [String], fresh: Bool = false) async -> [String: EpisodeState] {
+        if fresh { loadedAt = .distantPast }
+        let all = await index()
+        let status = await status()
+        var result: [String: EpisodeState] = [:]
+        for path in paths {
+            if status?.current == path, status?.running == true {
+                result[path] = .analyzing
+            } else if status?.queue.contains(path) == true {
+                result[path] = .queued
+            } else if let at = requested[path], !Self.handled(at, by: status) {
+                result[path] = .requested
+            } else if let entry = all[path] {
+                requested[path] = nil
+                result[path] = (entry.intro == nil && entry.credits == nil) ? .noIntro : .withIntro
+            } else {
+                result[path] = .missing
+            }
+        }
+        return result
+    }
+
+    /// Il server ha già preso la richiesta (e non è in coda né in analisi,
+    /// controllato prima). Lo stato si riscrive solo quando cambia, ma
+    /// `lastRequest` cambia a ogni richiesta presa. 2 s di margine per gli
+    /// orologi; dopo 15 minuti senza risposta (server spento, cron fermo) si
+    /// lascia perdere.
+    private static func handled(_ at: Date, by status: Status?) -> Bool {
+        if Date.now.timeIntervalSince(at) > 900 { return true }
+        guard let taken = status?.lastRequest else { return false }
+        return taken >= at.timeIntervalSince1970 - 2
+    }
+
+    /// Stato dell'analisi sul server (orario, cosa sta facendo).
+    func status() async -> Status? {
+        guard let (session, base) = Self.session() else { return nil }
+        let url = base.appending(path: ".curfs").appending(path: "intro-status.json")
+        guard let (data, response) = try? await session.data(from: url),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let status = try? JSONDecoder().decode(Status.self, from: data)
+        else { return lastStatus }
+        lastStatus = status
+        return status
+    }
+
+    /// Chiede al server di analizzare subito questi episodi (`force`: anche se
+    /// li ha già fatti). Lo prende entro un minuto.
+    func requestAnalysis(paths: [String], force: Bool) async throws {
+        guard !paths.isEmpty else { return }
+        try await putRequest(["v": 1, "paths": paths, "force": force, "at": Int(Date.now.timeIntervalSince1970)])
+        let now = Date.now
+        for path in paths { requested[path] = now }
+    }
+
+    /// Tutto ciò che è nuovo o cambiato, subito invece che stanotte.
+    func requestFullAnalysis() async throws {
+        try await putRequest(["v": 1, "all": true, "at": Int(Date.now.timeIntervalSince1970)])
+    }
+
+    private func putRequest(_ body: [String: Any]) async throws {
+        guard let (session, base) = Self.session() else { throw URLError(.badURL) }
+        let name = UUID().uuidString.lowercased()
+        var put = URLRequest(url: base.appending(path: ".curfs").appending(path: "intro-requests").appending(path: "\(name).json"))
+        put.httpMethod = "PUT"
+        put.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let data = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+        let (_, response) = try await session.upload(for: put, from: data)
+        guard let status = (response as? HTTPURLResponse)?.statusCode, (200...299).contains(status) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    /// Orario dell'analisi notturna (ora del server, "HH:MM") e se è accesa.
+    func settings() async -> Settings? {
+        guard let (session, base) = Self.session() else { return nil }
+        let url = base.appending(path: ".curfs").appending(path: "intro-settings.json")
+        if let (data, response) = try? await session.data(from: url),
+           (response as? HTTPURLResponse)?.statusCode == 200,
+           let settings = try? JSONDecoder().decode(Settings.self, from: data) {
+            return settings
+        }
+        // Mai impostato dall'app: quello che usa il server (mezzanotte).
+        if let status = await status() { return Settings(time: status.time, nightly: status.nightly) }
+        return nil
+    }
+
+    func save(_ settings: Settings) async throws {
+        guard let (session, base) = Self.session() else { throw URLError(.badURL) }
+        var put = URLRequest(url: base.appending(path: ".curfs").appending(path: "intro-settings.json"))
+        put.httpMethod = "PUT"
+        put.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let data = try JSONEncoder().encode(settings)
+        let (_, response) = try await session.upload(for: put, from: data)
+        guard let status = (response as? HTTPURLResponse)?.statusCode, (200...299).contains(status) else {
+            throw URLError(.badServerResponse)
+        }
     }
 
     private func index() async -> [String: Entry] {

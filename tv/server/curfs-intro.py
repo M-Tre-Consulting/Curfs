@@ -26,8 +26,11 @@ file del server) in <cartella video>/.curfs/intro-devices/*.json:
   {"v": 1, "path": "Serie/S1/S1E01.mp4", "size": 123, "intro": [a, b], "credits": [a, b]}
 valgono al posto dell'analisi qui se la dimensione del file coincide.
 
-Uso: curfs-intro.py CARTELLA_VIDEO [--force] [--merge-only] [--only "Serie/S1/S1E01.mp4"]
+Uso: curfs-intro.py CARTELLA_VIDEO [--force] [--merge-only] [--only "Serie/S1/S1E01.mp4"] [--tick]
   --merge-only: solo i risultati dei dispositivi, niente analisi (veloce, va bene ogni pochi minuti).
+  --tick: da cron ogni minuto. Analisi notturna all'ora scelta nell'app (.curfs/intro-settings.json,
+          prima il faststart), richieste "analizza ora" dell'app (.curfs/intro-requests/), ogni
+          10 minuti i risultati dei dispositivi; stato in .curfs/intro-status.json.
 Serve python3-numpy (≥ 2.0 per bitwise_count) e ffmpeg.
 """
 
@@ -41,7 +44,16 @@ import sys
 import tempfile
 import time
 
-import numpy as np
+# numpy si carica solo quando c'è davvero da analizzare (load_numpy): il tick
+# gira ogni minuto e quasi sempre non fa niente, così resta leggero.
+np = None
+
+
+def load_numpy():
+    global np
+    if np is None:
+        import numpy
+        np = numpy
 
 VERSION = 1          # alzare quando cambia la logica: invalida i risultati
 FP_VERSION = 1       # alzare quando cambia l'impronta: invalida la cache
@@ -192,14 +204,24 @@ def decode_frames(path, start, end):
 
 # ---------------------------------------------------------------- impronta audio
 
-WINDOW = (0.5 * (1 - np.cos(2 * np.pi * np.arange(N) / N))).astype(np.float32)
 EDGES = [int(300 * (2000 / 300) ** (i / BANDS) / SR * N) for i in range(BANDS + 1)]
-LOWER = np.array(EDGES[:-1])
-UPPER = np.array([max(EDGES[i + 1], EDGES[i] + 1) for i in range(BANDS)])
-BIT_VALUES = (np.uint64(1) << np.arange(BANDS - 1, dtype=np.uint64))
+_TABLES = None
+
+
+def tables():
+    """Finestra di Hann, bordi delle bande e pesi dei bit (servono numpy)."""
+    global _TABLES
+    if _TABLES is None:
+        load_numpy()
+        _TABLES = ((0.5 * (1 - np.cos(2 * np.pi * np.arange(N) / N))).astype(np.float32),
+                   np.array(EDGES[:-1]),
+                   np.array([max(EDGES[i + 1], EDGES[i] + 1) for i in range(BANDS)]),
+                   np.uint64(1) << np.arange(BANDS - 1, dtype=np.uint64))
+    return _TABLES
 
 
 def codes(samples):
+    WINDOW, LOWER, UPPER, BIT_VALUES = tables()
     if len(samples) < N:
         return np.zeros(0, dtype=np.uint32)
     frames = np.lib.stride_tricks.sliding_window_view(samples, N)[::HOP]
@@ -538,15 +560,132 @@ def device_results(root):
     return result
 
 
-def main():
-    ap = argparse.ArgumentParser(description='Sigla e titoli di coda per Curfs TV')
-    ap.add_argument('root')
-    ap.add_argument('--force', action='store_true', help='ricalcola tutto (le impronte restano in cache)')
-    ap.add_argument('--only', action='append', help='solo questi episodi (percorso relativo)')
-    ap.add_argument('--merge-only', action='store_true', help='solo i risultati dei dispositivi')
-    args = ap.parse_args()
-    root = os.path.abspath(args.root)
+# ---------------------------------------------------------------- impostazioni, richieste, stato
+#
+# Scritti dall'app (iPhone/Mac) con il WebDAV già aperto su .curfs/:
+#   .curfs/intro-settings.json        {"time": "HH:MM", "nightly": true}
+#   .curfs/intro-requests/<id>.json   {"paths": ["Serie/S1/S1E01.mp4"], "force": false}
+#                                     oppure {"all": true}: tutto ciò che è nuovo o cambiato, subito
+# Scritto da qui, letto dall'app:
+#   .curfs/intro-status.json          {"time", "nightly", "running", "current", "queue", "lastNightly"}
 
+DEFAULT_TIME = '00:00'
+CATCH_UP = 6 * 3600   # se all'ora giusta era occupato, recupera entro 6 ore
+LOCK_PATH = '/tmp/curfs-intro.lock'
+
+
+def read_settings(root):
+    s = {'time': DEFAULT_TIME, 'nightly': True}
+    try:
+        with open(os.path.join(root, '.curfs', 'intro-settings.json')) as f:
+            d = json.load(f)
+        t = str(d.get('time', DEFAULT_TIME))
+        h, m = t.split(':')
+        if 0 <= int(h) < 24 and 0 <= int(m) < 60:
+            s['time'] = f'{int(h):02d}:{int(m):02d}'
+        if isinstance(d.get('nightly'), bool):
+            s['nightly'] = d['nightly']
+    except (OSError, ValueError, AttributeError, TypeError):
+        pass
+    return s
+
+
+def pull_requests(root, keep=False):
+    """Richieste dell'app: (percorsi, percorsi da rifare anche se già fatti,
+    tutta la libreria). Le toglie, a meno di keep."""
+    global _last_request
+    folder = os.path.join(root, '.curfs', 'intro-requests')
+    paths, forced, everything = [], set(), False
+    try:
+        names = sorted(os.listdir(folder))
+    except OSError:
+        return paths, forced, everything
+    for name in names:
+        if not name.endswith('.json'):
+            continue
+        full = os.path.join(folder, name)
+        try:
+            with open(full) as f:
+                d = json.load(f)
+            if d.get('all') is True:
+                everything = True
+            for rel in d.get('paths', []):
+                if isinstance(rel, str) and rel not in paths:
+                    paths.append(rel)
+                    if d.get('force') is True:
+                        forced.add(rel)
+        except (OSError, ValueError, AttributeError):
+            pass
+        if not keep:
+            try:
+                os.remove(full)
+            except OSError:
+                pass
+            _last_request = int(time.time())
+    return paths, forced, everything
+
+
+def tick_state_path():
+    return os.path.join(CACHE, 'tick.json')
+
+
+def load_tick_state():
+    try:
+        with open(tick_state_path()) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def save_tick_state(state):
+    os.makedirs(CACHE, exist_ok=True)
+    with open(tick_state_path(), 'w') as f:
+        json.dump(state, f)
+
+
+_last_request = None   # quando questo processo ha preso l'ultima richiesta dell'app
+
+
+def write_status(root, settings, running, current=None, queue=(), last_nightly=None):
+    """Riscrive lo stato solo se è cambiato (il tick gira ogni minuto: niente
+    scritture inutili sul disco). `lastRequest` cambia a ogni richiesta presa,
+    così l'app sa che il server l'ha vista anche se non c'era niente da fare."""
+    path = os.path.join(root, '.curfs', 'intro-status.json')
+    try:
+        with open(path) as f:
+            old = json.load(f)
+    except (OSError, ValueError):
+        old = {}
+    status = {'v': 1, 'time': settings['time'], 'nightly': settings['nightly'],
+              'running': running, 'current': current, 'queue': list(queue)[:200],
+              'lastNightly': last_nightly,
+              'lastRequest': _last_request if _last_request is not None else old.get('lastRequest')}
+    if all(old.get(k) == v for k, v in status.items()):
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + '.tmp'
+    with open(tmp, 'w') as f:
+        json.dump(dict(status, updated=int(time.time())), f, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
+def last_occurrence(hhmm, now):
+    """L'ultimo istante <= now in cui è stato HH:MM (oggi o ieri)."""
+    h, m = map(int, hhmm.split(':'))
+    t = time.localtime(now)
+    today = time.mktime((t.tm_year, t.tm_mon, t.tm_mday, h, m, 0, 0, 0, -1))
+    if today > now:
+        t = time.localtime(now - 86400)
+        today = time.mktime((t.tm_year, t.tm_mon, t.tm_mday, h, m, 0, 0, 0, -1))
+    return today
+
+
+# ---------------------------------------------------------------- analisi
+
+def run(root, mode='full', only=None, force=False, settings=None, last_nightly=None):
+    """mode: 'full' (tutto ciò che è nuovo o cambiato + richieste),
+    'requests' (solo le richieste dell'app), 'merge' (solo i risultati dei dispositivi)."""
+    settings = settings or read_settings(root)
     out_path = os.path.join(root, '.curfs', 'intro.json')
     try:
         with open(out_path) as f:
@@ -558,22 +697,24 @@ def main():
     items = data['items']
 
     series = find_episodes(root)
-    alive = set()
+    known = {}        # rel -> (ep, sibs, sig)
     todo = []
     for show, episodes in sorted(series.items()):
         for ep in sorted(episodes, key=lambda e: (e['season'], e['episode'])):
-            alive.add(ep['rel'])
             sibs = siblings_of(ep, episodes)
             sig = signature(root, [ep['rel']] + [s['rel'] for s in sibs])
-            if args.only and ep['rel'] not in args.only:
+            known[ep['rel']] = (ep, sibs, sig)
+            if mode != 'full' or (only and ep['rel'] not in only):
                 continue
-            if not args.force and items.get(ep['rel'], {}).get('sig') == sig:
+            if not force and items.get(ep['rel'], {}).get('sig') == sig:
                 continue
             todo.append((ep, sibs, sig))
 
-    removed = [k for k in items if k not in alive]
+    removed = [k for k in items if k not in known]
     for k in removed:
         del items[k]
+
+    forced = set(known) if force and mode == 'full' else set()
 
     def save():
         data['updated'] = int(time.time())
@@ -583,38 +724,72 @@ def main():
             json.dump(data, f, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
         os.replace(tmp, out_path)
 
+    def done(rel, sig):
+        return rel not in forced and items.get(rel, {}).get('sig') == sig
+
     def take_from_devices():
         """Risultati dei dispositivi per gli episodi ancora da fare: niente analisi qui."""
         taken = 0
         devices = device_results(root)
         for ep, sibs, sig in todo:
             hit = devices.get(ep['rel'])
-            if not hit or (items.get(ep['rel'], {}).get('sig') == sig and items[ep['rel']].get('at') == hit[1]):
+            if not hit or ep['rel'] in forced or (items.get(ep['rel'], {}).get('sig') == sig and items[ep['rel']].get('at') == hit[1]):
                 continue
             items[ep['rel']] = dict(hit[0], sig=sig, src='device', at=hit[1])
             taken += 1
         return taken
 
+    def take_requests():
+        """Le richieste dell'app passano in testa."""
+        if mode == 'merge':
+            return 0
+        paths, force_paths, _ = pull_requests(root)
+        added = 0
+        front = []
+        for rel in paths:
+            if rel not in known:
+                continue
+            ep, sibs, sig = known[rel]
+            if rel in force_paths:
+                forced.add(rel)
+            elif items.get(rel, {}).get('sig') == sig:
+                continue   # già fatto, niente da rifare
+            todo[:] = [x for x in todo if x[0]['rel'] != rel]
+            front.append((ep, sibs, sig))
+            added += 1
+        todo[:0] = front
+        if added:
+            log(f'{added} episodi chiesti dall\'app')
+        return added
+
+    take_requests()
     changed = take_from_devices()
-    todo = [x for x in todo if items.get(x[0]['rel'], {}).get('sig') != x[2]]
+    todo[:] = [x for x in todo if not done(x[0]['rel'], x[2])]
     if changed or removed:
         save()
         if changed:
             log(f'{changed} episodi dai dispositivi')
-    if not todo or args.merge_only:
+    if mode == 'merge' or not todo:
         return
+    load_numpy()
     log(f'{len(todo)} episodi da analizzare')
-    for n, (ep, sibs, sig) in enumerate(todo, 1):
+    n = 0
+    while todo:
+        take_requests()
         # Nel frattempo un dispositivo può averlo già analizzato.
         if take_from_devices():
             save()
-        if items.get(ep['rel'], {}).get('sig') == sig:
+        ep, sibs, sig = todo.pop(0)
+        if done(ep['rel'], sig):
             continue
+        n += 1
+        write_status(root, settings, True, ep['rel'], [x[0]['rel'] for x in todo], last_nightly)
         started = time.time()
         try:
             intro, credits = analyze(root, ep, sibs)
         except (subprocess.CalledProcessError, OSError, ValueError) as e:
-            log(f'[{n}/{len(todo)}] {ep["rel"]}: errore {e}')
+            log(f'[{n}] {ep["rel"]}: errore {e}')
+            forced.discard(ep['rel'])
             continue
         entry = {'sig': sig}
         if intro:
@@ -622,9 +797,67 @@ def main():
         if credits:
             entry['credits'] = [round(credits[0], 1), round(credits[1], 1)]
         items[ep['rel']] = entry
+        forced.discard(ep['rel'])
         save()  # un episodio alla volta: la TV vede subito quelli pronti
-        log(f'[{n}/{len(todo)}] {ep["rel"]}: sigla {entry.get("intro")} coda {entry.get("credits")}'
+        log(f'[{n}, {len(todo)} in coda] {ep["rel"]}: sigla {entry.get("intro")} coda {entry.get("credits")}'
             f' ({time.time() - started:.0f} s)')
+
+
+def tick(root, faststart):
+    """Da cron ogni minuto: analisi notturna all'ora scelta nell'app, richieste
+    "analizza ora", e ogni 10 minuti i risultati dei dispositivi."""
+    import fcntl
+    lock = open(LOCK_PATH, 'w')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return  # c'è già un'analisi: le richieste le prende lei
+    settings = read_settings(root)
+    now = time.time()
+    state = load_tick_state()
+    if state is None:
+        state = {'lastNightly': now}
+        save_tick_state(state)
+    last = state.get('lastNightly')
+    scheduled = last_occurrence(settings['time'], now)
+    due = settings['nightly'] and (last or 0) < scheduled and now - scheduled < CATCH_UP
+    try:
+        if due:
+            state['lastNightly'] = now
+            save_tick_state(state)
+            write_status(root, settings, True, None, [], now)
+            log(f'analisi notturna delle {settings["time"]}')
+            if faststart and os.path.exists(faststart):
+                with open(os.path.expanduser('~/curfs-faststart.log'), 'a') as out:
+                    subprocess.run(['bash', faststart, root], stdout=out, stderr=out)
+            run(root, 'full', settings=settings, last_nightly=now)
+        else:
+            paths, _, everything = pull_requests(root, keep=True)
+            if everything:
+                log('analisi di tutta la libreria chiesta dall\'app')
+                run(root, 'full', settings=settings, last_nightly=last)
+            elif paths:
+                run(root, 'requests', settings=settings, last_nightly=last)
+            elif time.localtime(now).tm_min % 10 == 0:
+                run(root, 'merge', settings=settings, last_nightly=last)
+    finally:
+        write_status(root, settings, False, None, [], state.get('lastNightly'))
+
+
+def main():
+    ap = argparse.ArgumentParser(description='Sigla e titoli di coda per Curfs TV')
+    ap.add_argument('root')
+    ap.add_argument('--force', action='store_true', help='ricalcola tutto (le impronte restano in cache)')
+    ap.add_argument('--only', action='append', help='solo questi episodi (percorso relativo)')
+    ap.add_argument('--merge-only', action='store_true', help='solo i risultati dei dispositivi')
+    ap.add_argument('--tick', action='store_true', help='da cron ogni minuto: orario e richieste dall\'app')
+    ap.add_argument('--faststart', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'curfs-faststart.sh'),
+                    help='script faststart da lanciare prima dell\'analisi notturna (--tick)')
+    args = ap.parse_args()
+    root = os.path.abspath(args.root)
+    if args.tick:
+        return tick(root, args.faststart)
+    run(root, 'merge' if args.merge_only else 'full', only=args.only, force=args.force)
 
 
 if __name__ == '__main__':

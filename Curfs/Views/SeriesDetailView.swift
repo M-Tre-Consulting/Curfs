@@ -43,6 +43,10 @@ struct SeriesDetailView: View {
     @State private var pendingDeleteSeason: Int?
     @State private var posterEditor = PosterEditor()
     @State private var introStatus = IntroAnalysisStatus.shared
+    /// Sigla calcolata dal server, per percorso del file sul server.
+    @State private var serverIntro: [String: ServerIntroIndex.EpisodeState] = [:]
+    @State private var serverIntroRefresh = 0
+    @State private var serverIntroFailed = false
     @State private var showCompanion = false
     @State private var companionTarget: CompanionTarget?
     private let downloads = RemoteDownloadManager.shared
@@ -218,6 +222,9 @@ struct SeriesDetailView: View {
         .task { await loadCatalog() }
         .task(id: "\(showName)-\(currentSeason)-\(seasonEntries.count)") {
             prioritizeIntroDetection()
+        }
+        .task(id: "\(showName)-\(currentSeason)-\(seasonServerPaths.count)-\(serverIntroRefresh)") {
+            await refreshServerIntro()
         }
         .confirmationDialog(
             deleteTitle(for: pendingDelete),
@@ -500,37 +507,19 @@ struct SeriesDetailView: View {
         )
     }
 
-    /// Stato del "salta sigla" per gli episodi scaricati della stagione
-    /// (l'analisi confronta fotogrammi: non si fa in streaming).
+    /// Stato del "salta sigla": riga del dispositivo (episodi scaricati: l'analisi
+    /// confronta i file, non si fa in streaming) e riga del server (tutti gli
+    /// episodi che stanno sul server, con "Analizza ora").
     @ViewBuilder
     private var introAnalysisIndicator: some View {
         let ids = seasonEntries.compactMap(\.local).map(\.id)
-        if entries.filter({ $0.local != nil }).count > 1, !ids.isEmpty {
-            let s = introStatus.summary(for: ids)
-            HStack(spacing: 7) {
-                if s.ready < s.total {
-                    ProgressView().controlSize(.mini)
-                    Text("Analisi sigla… \(s.ready)/\(s.total)")
-                } else if s.withIntro > 0 {
-                    Image(systemName: "forward.end.fill")
-                        .foregroundStyle(Color.accentColor)
-                    Text(s.withIntro == s.total ? String(localized: "Salta intro pronto") : String(localized: "Salta intro pronto per \(s.withIntro)/\(s.total)"))
-                } else {
-                    Image(systemName: "info.circle")
-                    Text("Nessuna sigla riconosciuta per questa stagione")
-                }
-
-                Spacer()
-
-                // Cancella la cache di sigla/coda SOLO degli episodi di
-                // questa stagione e li rianalizza per primi.
-                Button {
-                    Task { await IntroAnalysisQueue.shared.recompute(ids) }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Ricalcola sigla/coda")
+        let showLocal = entries.filter({ $0.local != nil }).count > 1 && !ids.isEmpty
+        let showServer = !seasonServerPaths.isEmpty && !serverIntro.isEmpty
+        if showLocal || showServer {
+            VStack(alignment: .leading, spacing: 9) {
+                if showLocal { localIntroRow(ids) }
+                if showLocal && showServer { Divider().opacity(0.4) }
+                if showServer { serverIntroRow }
             }
             .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
@@ -542,6 +531,129 @@ struct SeriesDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func localIntroRow(_ ids: [UUID]) -> some View {
+        let s = introStatus.summary(for: ids)
+        return HStack(spacing: 7) {
+            #if os(macOS)
+            Image(systemName: "laptopcomputer").frame(width: 18)
+            #else
+            Image(systemName: "iphone").frame(width: 18)
+            #endif
+            if s.ready < s.total {
+                ProgressView().controlSize(.mini)
+                Text("Analisi sigla… \(s.ready)/\(s.total)")
+            } else if s.withIntro > 0 {
+                Image(systemName: "forward.end.fill")
+                    .foregroundStyle(Color.accentColor)
+                Text(s.withIntro == s.total ? String(localized: "Salta intro pronto") : String(localized: "Salta intro pronto per \(s.withIntro)/\(s.total)"))
+            } else {
+                Image(systemName: "info.circle")
+                Text("Nessuna sigla riconosciuta per questa stagione")
+            }
+
+            Spacer()
+
+            // Cancella la cache di sigla/coda SOLO degli episodi di
+            // questa stagione e li rianalizza per primi.
+            Button {
+                Task { await IntroAnalysisQueue.shared.recompute(ids) }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Ricalcola sigla/coda")
+        }
+    }
+
+    private var serverIntroRow: some View {
+        let states = seasonServerPaths.compactMap { serverIntro[$0] }
+        let total = states.count
+        let analyzed = states.filter { $0 == .noIntro || $0 == .withIntro }.count
+        let withIntro = states.filter { $0 == .withIntro }.count
+        let analyzing = states.contains(.analyzing)
+        let busy = states.contains { $0 == .requested || $0 == .queued || $0 == .analyzing }
+        let missing = seasonServerPaths.filter { serverIntro[$0] == .missing }
+        return HStack(spacing: 7) {
+            Image(systemName: "server.rack").frame(width: 18)
+            if busy {
+                ProgressView().controlSize(.mini)
+                Text(analyzing ? String(localized: "Server: analisi in corso… \(analyzed)/\(total)") : String(localized: "Server: in coda… \(analyzed)/\(total)"))
+            } else if serverIntroFailed {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                Text("Server non raggiungibile")
+            } else if analyzed < total {
+                Image(systemName: "circle.dashed")
+                Text("Server: \(analyzed)/\(total) analizzati")
+            } else if withIntro > 0 {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accentColor)
+                Text(withIntro == total ? String(localized: "Server: salta intro pronto") : String(localized: "Server: salta intro pronto per \(withIntro)/\(total)"))
+            } else {
+                Image(systemName: "info.circle")
+                Text("Server: nessuna sigla riconosciuta")
+            }
+
+            Spacer()
+
+            if !busy {
+                if !missing.isEmpty {
+                    Button("Analizza ora") { requestServerIntro(missing, force: false) }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                } else {
+                    // Rifà tutta la stagione sul server, anche se l'aveva già fatta.
+                    Button {
+                        requestServerIntro(seasonServerPaths, force: true)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Rianalizza sul server")
+                }
+            }
+        }
+    }
+
+    /// Percorsi sul server degli episodi della stagione (dal catalogo, o
+    /// dall'URL delle voci in streaming se il catalogo non è caricato).
+    private var seasonServerPaths: [String] {
+        let base = RemoteSourceStore.current.baseURL
+        return seasonEntries.compactMap { entry in
+            if let id = entry.remote?.id, id.hasPrefix("e|") { return String(id.dropFirst(2)) }
+            if let stream = entry.stream { return ProfileSync.serverPath(of: stream, base: base) }
+            return nil
+        }
+    }
+
+    /// Legge lo stato dal server; finché qualcosa è in coda o in analisi
+    /// ricontrolla ogni 15 s.
+    private func refreshServerIntro() async {
+        let paths = seasonServerPaths
+        guard !paths.isEmpty else { serverIntro = [:]; return }
+        var fresh = serverIntroRefresh > 0
+        while !Task.isCancelled {
+            let states = await ServerIntroIndex.shared.states(forPaths: paths, fresh: fresh)
+            guard !Task.isCancelled else { return }
+            serverIntro = states
+            let busy = states.values.contains { $0 == .requested || $0 == .queued || $0 == .analyzing }
+            guard busy else { return }
+            try? await Task.sleep(for: .seconds(15))
+            fresh = true
+        }
+    }
+
+    private func requestServerIntro(_ paths: [String], force: Bool) {
+        Task { @MainActor in
+            do {
+                try await ServerIntroIndex.shared.requestAnalysis(paths: paths, force: force)
+                serverIntroFailed = false
+            } catch {
+                serverIntroFailed = true
+            }
+            serverIntroRefresh += 1
         }
     }
 

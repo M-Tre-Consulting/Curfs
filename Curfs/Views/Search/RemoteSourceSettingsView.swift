@@ -23,6 +23,14 @@ struct RemoteSourceSettingsView: View {
     @State private var backfillState: TestState = .idle
     @State private var showLegal = false
 
+    /// Analisi della sigla sul server: orario e stato (vedi ServerIntroIndex).
+    @State private var introSettings: ServerIntroIndex.Settings?
+    @State private var introSettingsLoaded: ServerIntroIndex.Settings?
+    @State private var introServerStatus: ServerIntroIndex.Status?
+    @State private var introLoadFailed = false
+    @State private var introSaveFailed = false
+    @State private var introRunState: TestState = .idle
+
     private enum TestState: Equatable {
         case idle
         case testing
@@ -84,6 +92,10 @@ struct RemoteSourceSettingsView: View {
                     .disabled(draft.baseURL == nil || testState == .testing)
                 }
 
+                if RemoteSourceStore.current.baseURL != nil {
+                    serverIntroSection
+                }
+
                 Section {
                     Button {
                         runBackfill()
@@ -137,6 +149,123 @@ struct RemoteSourceSettingsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Sigla sul server
+
+    @ViewBuilder
+    private var serverIntroSection: some View {
+        Section {
+            if let settings = introSettings {
+                Toggle("Analisi notturna", isOn: Binding(
+                    get: { settings.nightly },
+                    set: { introSettings?.nightly = $0 }))
+                DatePicker("Orario", selection: Binding(
+                    get: { Self.date(from: settings.time) },
+                    set: { introSettings?.time = Self.time(from: $0) }),
+                    displayedComponents: .hourAndMinute)
+                    .disabled(!settings.nightly)
+                if introSaveFailed {
+                    Label("Non sono riuscito a salvare sul server", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.caption)
+                }
+            } else if introLoadFailed {
+                Label("Server non raggiungibile", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+            } else {
+                ProgressView()
+            }
+
+            if let status = introServerStatus {
+                if status.running {
+                    Label(status.current.map { String(localized: "In corso: \(($0 as NSString).lastPathComponent)") } ?? String(localized: "In corso"),
+                          systemImage: "waveform")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if let last = status.lastNightly {
+                    Text("Ultima analisi: \(Date(timeIntervalSince1970: last).formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button {
+                runServerIntroNow()
+            } label: {
+                HStack {
+                    Text("Analizza ora le novità")
+                    Spacer()
+                    switch introRunState {
+                    case .testing: ProgressView()
+                    case .ok: Label("Inviato", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(Color.accentColor).font(.caption)
+                    case .failed(let message): Label(message, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange).font(.caption).lineLimit(2)
+                    case .idle: EmptyView()
+                    }
+                }
+            }
+            .disabled(introRunState == .testing || introServerStatus?.running == true)
+        } header: {
+            Text("Sigla sul server")
+        } footer: {
+            Text("Il server cerca sigla e titoli di coda degli episodi nuovi o cambiati una volta al giorno, all'orario scelto (ora del server), e li condivide con tutti i dispositivi e la TV. Dalla scheda di una serie puoi farlo partire subito per una stagione.")
+        }
+        .task { await loadServerIntro() }
+        .task(id: introSettings) {
+            // Salva da solo, poco dopo l'ultima modifica (la rotella dell'orario
+            // cambia valore di continuo mentre gira).
+            guard let settings = introSettings, settings != introSettingsLoaded else { return }
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            do {
+                try await ServerIntroIndex.shared.save(settings)
+                introSettingsLoaded = settings
+                introSaveFailed = false
+            } catch {
+                introSaveFailed = true
+            }
+        }
+    }
+
+    private func loadServerIntro() async {
+        async let settings = ServerIntroIndex.shared.settings()
+        async let status = ServerIntroIndex.shared.status()
+        let (s, st) = await (settings, status)
+        introServerStatus = st
+        if let s {
+            introSettingsLoaded = s
+            introSettings = s
+        } else {
+            introLoadFailed = true
+        }
+    }
+
+    private func runServerIntroNow() {
+        introRunState = .testing
+        Task {
+            do {
+                try await ServerIntroIndex.shared.requestFullAnalysis()
+                introRunState = .ok(0)
+            } catch {
+                introRunState = .failed(String(localized: "Server non raggiungibile"))
+            }
+        }
+    }
+
+    private static func date(from time: String) -> Date {
+        let parts = time.split(separator: ":").compactMap { Int($0) }
+        var c = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        c.hour = parts.first ?? 0
+        c.minute = parts.count > 1 ? parts[1] : 0
+        return Calendar.current.date(from: c) ?? .now
+    }
+
+    private static func time(from date: Date) -> String {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)
     }
 
     private var legalPage: some View {

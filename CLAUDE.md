@@ -479,7 +479,15 @@ non può salvare video sulla TV). Decisioni:
     in `PlayerViewModel`). Ogni analisi locale nuova (`IntroCreditsAnalyzer.analyze`) va al server
     in `.curfs/intro-devices/<sha256>.json` solo se il file del server ha la stessa dimensione
     (HEAD; un import da altra fonte ha tempi diversi); il Pi la prende ogni 10 min (`--merge-only`)
-    al posto della sua analisi. I titoli di coda di GoT non combaciano mai (musica finale diversa
+    al posto della sua analisi. **Orario e "Analizza ora" dall'app** (2026-11-22, voluti
+    dall'utente): un solo cron ogni minuto `curfs-intro.py --tick` (vedi `tv/README.md`) legge
+    `.curfs/intro-settings.json` (orario/on-off, da *Fonte remota › Sigla sul server*,
+    `RemoteSourceSettingsView`) e `.curfs/intro-requests/` (scritti dall'app col WebDAV già aperto
+    su `.curfs/`, niente servizi nuovi), e scrive `.curfs/intro-status.json`. In `SeriesDetailView`
+    il riquadro della sigla ha due righe: il dispositivo e il server (stato per episodio da
+    `ServerIntroIndex.states`, "Analizza ora" per i mancanti, ⟲ per rifare la stagione con `force`;
+    ricontrolla ogni 15 s finché qualcosa è in coda). Percorsi sul server degli episodi = id del
+    catalogo (`e|<percorso>`) o URL della voce in streaming. I titoli di coda di GoT non combaciano mai (musica finale diversa
     per episodio): lì niente coda, è normale.
   - Due cache su disco: `FingerprintStorage` (impronte per episodio, `cacheVersion` bump-abile) e
     `IntroCreditsStorage` (il *risultato* dell'analisi per episodio, legato a `analysisVersion` +
