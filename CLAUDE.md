@@ -62,9 +62,11 @@ all'account Apple Developer della società, non prima: vedi `brand/DISTRIBUZIONE
   registry), `HTTPTreeProvider` (implementazione per server HTTP statico con elenchi JSON),
   `RemoteSourceConfig`/`RemoteSourceStore` (config persistita), `RemoteDownloadManager` (download
   offline).
-- `Views/` — schermate libreria (`LibraryHomeView`, `SeriesDetailView`), card (`ShowCardView`,
-  `MovieCardView`, `ContinueWatchingCard`, `EpisodeRowView`) e `Views/Search/` (`SearchView`,
-  `SearchResultCard`, `RemoteTitleActions`, `RemoteSourceSettingsView`, `DownloadsOverlay`).
+- `Views/` — home con i Contenuti recenti (`LibraryHomeView`, `RecentTitleCard`), `SeriesDetailView`,
+  card (`ShowCardView`, `MovieCardView`, `ContinueWatchingCard`, `EpisodeRowView`), `Views/Library/`
+  (`ServerLibraryDrawer`: il cassetto della Libreria) e `Views/Search/` (`ServerLibraryView` = la
+  Libreria del server, ex `SearchView`; `SearchResultCard`, `RemoteTitleActions`,
+  `RemoteSourceSettingsView`, `DownloadsOverlay`).
 - `Companion/` — Curfs AI (chat sul contenuto): `CompanionChat` (modello + contesto),
   `ContentInfoService` (TVmaze/Wikipedia), `DialogueReader` + `RemoteSubtitleReader` (sottotitoli
   degli ultimi minuti), `CompanionChatView`, `CompanionPickerView`.
@@ -160,6 +162,73 @@ dell'utente (non firmata per distribuzione, vedi sotto), build via
   non ha l'aggancio equivalente di `AppDelegate.application(_:handleEventsForBackgroundURLSession:)`
   usato su iOS per il risveglio da app terminata — concetto che su Mac non si applica allo stesso
   modo (l'app non viene sospesa/terminata dal sistema come su iOS).
+
+## Home e Libreria (dal 2026-11-28)
+
+Voluto dall'utente: la scheda **Cerca non esiste più** e la home non ha più le griglie Serie TV /
+Film. Solo iPhone e Mac (la TV resta com'è).
+- **Home = Contenuti recenti** (`LibraryHomeView`, `RecentTitle.build` in `Models/WatchHistory.swift`):
+  serie/film guardati (per `lastPlayedAt`) o scaricati/importati (così si ritrovano offline), con
+  simbolino scaricato / in parte / streaming (`DownloadStateBadge`). Le voci in streaming solo
+  "aggiunte" e mai aperte non ci sono. Serie → la stessa `SeriesDetailView` di prima; film → parte.
+  In alto: ✨, profilo, **ingranaggio delle impostazioni del server** (era in Cerca), +.
+  Con una sola scheda la tab bar si nasconde; la scheda si chiama "Recenti".
+- **Regola**: un episodio/film in streaming il cui file non c'è più sul server e che non è
+  scaricato **non compare** (recenti e scheda serie). `Support/ServerAvailability` (stesso
+  `ProfileServer.missingFiles`, nel dubbio presente) filtra subito; `removeMissingFromServer` poi
+  lo toglie dal profilo. In `SeriesDetailView`, a catalogo letto, una voce solo-streaming assente dal
+  catalogo sparisce. `ProfileSync.serverPath` ora ricava il percorso anche da voci salvate con un
+  altro indirizzo dello stesso server (prima restavano per sempre, mai controllate).
+- **Riprendi** (`ResumeLogic`, usato da `ShowSummary.nextToWatch`, `SeriesDetailView.nextToWatch`,
+  recenti): l'ultimo episodio **toccato** (finito o no); se finito, il successivo in ordine. Come la
+  TV (`continueTarget`/`resumeTarget`). Prima era "l'ultimo lasciato a metà": sul profilo di Susi
+  (TV arrivata a S7E2, S1-S6 tolte dal Pi) l'iPhone riproponeva un episodio vecchio della S6.
+- **Libreria del server = cassetto** (`Views/Library/ServerLibraryDrawer.swift`): pila di dispositivi
+  (TV, cassa, tablet, portatile, telefono) in una linguetta di vetro sul bordo destro della home;
+  tirata a sinistra (o toccata, o ⌘L) dalla pila si apre un **portale circolare** con un bordo di
+  luce viola (maschera `Circle` centrata sulla pila, raggio che segue il dito con un'easing): dentro
+  `ServerLibraryView` emerge dal nulla (scala 1,18→1, sfocatura 22→0, saturazione), i dispositivi
+  cavalcano il bordo del portale a ventaglio e si dissolvono, la home si sfoca e arretra. Segue il
+  dito, soglia 35% o scatto. **Fluidità**: niente `blur`/`saturation` su home o pagina (ridisegno
+  a schermo intero a ogni fotogramma = lag visto sull'iPhone); `PortalPage` e `DevicePile` sono
+  `Animatable` (sennò al rilascio SwiftUI interpola dritto alla fine e la coreografia si perde);
+  il rilascio usa una curva quasi lineare con durata minima (`settleAnimation`, ~1 s da chiuso a
+  aperto) perché la forma del movimento sta in `PortalMath`; `ServerLibraryView` non ha parametri
+  (con delle closure si ricalcolava a ogni fotogramma). **4 fps a portale grande** (seconda metà):
+  `.mask` sulla pagina col vetro + `blendMode(.plusLighter)` sul bordo (ricomposizione di tutto lo
+  schermo) + bagliore interno con gradiente a tutto schermo. Ora `clipShape(PortalShape)`, anelli
+  senza fusione in un `drawingGroup`, e su iPhone la pagina si monta invisibile 1,5 s dopo la home
+  (catalogo e locandine già caricati quando la si tira). Non reintrodurre mask/blend/blur lì.
+  Lo sfocato (voluto dall'utente) c'è, ma con **materiali di sistema** a raggio fisso di cui si anima
+  solo l'opacità: `.ultraThinMaterial` sulla home che arretra, `.regularMaterial` sopra la pagina che
+  svanisce mentre si mette a fuoco — ⚠️ bocciato ("nebbia bianca"): ora una sola fascia di
+  `.ultraThinMaterial` appena dentro la cornice, sfumata da una maschera radiale (tre fasce di
+  opacità diverse = "a scalini", bocciate), e cornice di "vetro" disegnata con anelli (corpo chiaro,
+  riflesso che gira, filo scuro, filo colorato): `glassEffect` su una corona gigante non si vedeva.
+  Titolo della pagina: "Libreria - Server" (5 lingue).
+  ⚠️ **"App bloccata durante l'animazione"** (2026-11-28): non era un blocco del codice (rapporto di
+  un SIGABRT mandato con `devicectl device process signal`: thread principale libero) ma il gesto
+  annullato da iOS senza `onEnded` — la zona della pila smetteva di essere toccabile oltre il 2% e
+  quella del bordo sinistro spariva a metà trascinamento ⇒ portale fermo a metà, nulla toccabile.
+  Ora le zone restano attive finché `dragStart != nil` e un `@GestureState fingerDown` completa il
+  portale se il gesto viene annullato. Tecnica utile: un'app "congelata" senza rapporto si fa
+  fotografare con SIGABRT (`devicectl ... process signal --signal SIGABRT`), poi `copy from
+  --domain-type systemCrashLogs`. lldb da terminale sul dispositivo (`device process attach`) è inaffidabile. Avvio: la linguetta si gonfia, "scoppia"
+  in un globo di luce sulla pila e i dispositivi fanno un piccolo salto fuori prima di partire.
+  ⚠️ La prima versione (pagina che entrava da destra ruotando come una
+  porta) è stata bocciata: "si apre come una pagina qualsiasi di un sito" — non tornarci. Titolo
+  della home "Libreria" con la sezione "Contenuti recenti"; il tasto "Tutta la libreria" in fondo e
+  "Apri la libreria" nello stato vuoto solo su Mac (su iPhone si apre solo tirando). Chiusura: tasto in alto (Esc), o trascinando dal bordo sinistro (solo
+  alla radice). `ServerLibraryDrawerHost` avvolge la TabView in `RootTabView` (sta sopra anche alla
+  tab bar); la pagina ha la sua `NavigationStack(path:)` e resta montata dopo la prima apertura.
+  La pila si vede solo sulla radice della home (`handleVisible` da `onAppear`/`onDisappear`).
+  Mac: `.ignoresSafeArea()` del cassetto solo su iOS (su Mac il contenuto finiva sotto la barra
+  della finestra, titolo sparito); verificato sull'app vera il 2026-11-28 (barra pulita: ✨,
+  profilo, ingranaggio, +). Su Mac la pagina della Libreria si monta solo alla prima apertura.
+- **Riga episodio** (`SeriesEpisodeRow`): barra sempre visibile (vuota / a metà / piena viola
+  `EpisodeProgressBar` con la tacca ✓, contorno della miniatura dello stesso viola se visto) e
+  miniatura sempre vera: per gli episodi solo sul server `RemoteThumbnailView` (fotogramma dal file
+  remoto, cache `thumbnails/remote-<sha>.jpg`, 2 alla volta).
 
 ## Profili (2.4.0, dal 2026-10-15)
 

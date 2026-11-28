@@ -1,20 +1,29 @@
 //
-//  SearchView.swift
+//  ServerLibraryView.swift
 //  Curfs
 //
-//  Tab "Cerca": all'apertura mostra già tutto il catalogo della fonte remota
+//  La Libreria: tutto quello che c'è sul server (era la scheda "Cerca", tolta
+//  il 2026-11-28 su richiesta dell'utente: la home ora mostra i Contenuti
+//  recenti e questa si tira fuori dal bordo destro, vedi ServerLibraryDrawer).
+//  All'apertura mostra già tutto il catalogo della fonte remota
 //  configurata (il server del Raspberry Pi via Tailscale); scrivendo nella
 //  barra si filtra per nome. Un film parte subito in streaming; tenendolo
 //  premuto si scarica, si aggiunge ai Film o se ne cambia la copertina. Una
 //  serie apre `SeriesDetailView`, la stessa scheda della Libreria.
-//  Finché non è stato inserito un indirizzo valido nelle impostazioni (icona
-//  ingranaggio) ogni richiesta fallisce in modo esplicito.
+//  Finché non è stato inserito un indirizzo valido nelle impostazioni
+//  (ingranaggio in alto nella home) ogni richiesta fallisce in modo esplicito.
 //
 
 import SwiftUI
 import SwiftData
 
-struct SearchView: View {
+struct ServerLibraryView: View {
+    // Niente parametri (prima c'erano due closure): così durante
+    // l'animazione del portale, che si ridisegna a ogni fotogramma, questa
+    // vista non si ricalcola. Chiusura e "sono alla radice" vanno diretti
+    // al cassetto.
+    private var drawer: ServerLibraryDrawer { .shared }
+
     @Environment(\.modelContext) private var modelContext
     @Query private var libraryItems: [MediaItem]
 
@@ -30,6 +39,7 @@ struct SearchView: View {
     @State private var downloadManager = RemoteDownloadManager.shared
     @State private var showSettings = false
     @State private var didInitialLoad = false
+    @State private var path: [RemoteTitle] = []
 
     private var provider: RemoteContentProvider { RemoteContentProviderRegistry.shared }
 
@@ -44,7 +54,7 @@ struct SearchView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ZStack(alignment: .bottom) {
                 AppBackground()
                 content
@@ -63,7 +73,7 @@ struct SearchView: View {
                     }
                 }
             }
-            .navigationTitle("Cerca")
+            .navigationTitle("Libreria - Server")
             .cleanWindowToolbar()
             #if os(iOS)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Filtra per titolo")
@@ -71,15 +81,20 @@ struct SearchView: View {
             .searchable(text: $query, prompt: "Filtra per titolo")
             #endif
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 17))
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { drawer.close() } label: {
+                        Image(systemName: "chevron.forward")
+                            .font(.system(size: 16, weight: .semibold))
                     }
+                    .keyboardShortcut(.cancelAction)
+                    .accessibilityLabel("Chiudi la libreria")
+                    .help("Chiudi la libreria")
                 }
             }
+            .navigationDestination(for: RemoteTitle.self) { title in
+                SeriesDetailView(remoteTitle: title, showName: libraryShowName(for: title))
+            }
+            .onChange(of: path.isEmpty) { _, atRoot in drawer.pageAtRoot = atRoot }
             .task {
                 guard !didInitialLoad else { return }
                 didInitialLoad = true
@@ -157,9 +172,7 @@ struct SearchView: View {
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(results) { title in
                         if title.kind == .series {
-                            NavigationLink {
-                                SeriesDetailView(remoteTitle: title, showName: libraryShowName(for: title))
-                            } label: {
+                            NavigationLink(value: title) {
                                 SearchResultCard(title: title)
                             }
                             .buttonStyle(PressableButtonStyle())
@@ -245,7 +258,7 @@ struct SearchView: View {
                 .foregroundStyle(.secondary)
             Text("Nessuna fonte impostata")
                 .font(.title3.weight(.semibold))
-            Text("Imposta l'indirizzo del tuo server con l'ingranaggio qui in alto per vedere e guardare in streaming i tuoi contenuti.")
+            Text("Imposta l'indirizzo del tuo server per vedere e guardare in streaming i tuoi contenuti.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -320,7 +333,7 @@ struct SearchView: View {
 }
 
 #Preview {
-    SearchView()
+    ServerLibraryView()
         .modelContainer(for: MediaItem.self, inMemory: true)
         .preferredColorScheme(.dark)
 }

@@ -34,16 +34,11 @@ struct ShowSummary: Identifiable {
     /// `MediaItem.isRemoteOrigin`.
     var hasRemoteOrigin: Bool { episodes.contains(where: \.isRemoteOrigin) }
 
-    /// Il prossimo episodio da guardare: se c'è un episodio lasciato a metà,
-    /// riprende quello (il più recente per data di ultima riproduzione, non
-    /// il primo in ordine — altrimenti se si è già avanti con la visione,
-    /// "Riprendi" punterebbe erroneamente a un episodio precedente mai
-    /// finito). Senza episodi in corso, va al primo mai iniziato in ordine,
-    /// oppure all'ultimo se sono già tutti finiti.
+    /// Il prossimo episodio da guardare: l'ultimo toccato (per data di
+    /// ultima riproduzione, finito o no); se è finito, quello dopo in ordine.
+    /// Stessa regola della TV, vedi `ResumeLogic`.
     var nextToWatch: MediaItem? {
-        let inProgress = episodes.filter { $0.hasProgress }
-            .max { ($0.lastPlayedAt ?? .distantPast) < ($1.lastPlayedAt ?? .distantPast) }
-        return inProgress ?? sortedEpisodes.first { !$0.isFinished } ?? sortedEpisodes.last
+        ResumeLogic.target(in: sortedEpisodes, lastPlayed: \.lastPlayedAt, isFinished: \.isFinished)?.item
     }
 
     var posterItem: MediaItem? { nextToWatch ?? sortedEpisodes.first }

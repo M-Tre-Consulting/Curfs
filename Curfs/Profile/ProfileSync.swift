@@ -341,9 +341,12 @@ final class ProfileSync {
         guard !pathsByItem.isEmpty else { return }
         let missing = await server.missingFiles(Array(Set(pathsByItem.map(\.1))))
         guard !missing.isEmpty else { return }
+        var goneURLs: [String] = []
         for (item, path) in pathsByItem where missing.contains(path) {
+            if let remote = item.remoteURLString { goneURLs.append(remote) }
             LibraryMaintenance.delete(item, modelContext: context)
         }
+        ServerAvailability.shared.noteMissing(goneURLs)
         // Anche Cerca non deve più mostrarli.
         RemoteContentProviderRegistry.invalidate()
     }
@@ -419,8 +422,20 @@ final class ProfileSync {
     static func serverPath(of item: MediaItem, base: URL?) -> String? {
         guard let remote = item.remoteURLString, let base else { return nil }
         let prefix = base.absoluteString + "/"
-        guard remote.hasPrefix(prefix) else { return nil }
-        return String(remote.dropFirst(prefix.count)).removingPercentEncoding
+        if remote.hasPrefix(prefix) {
+            return String(remote.dropFirst(prefix.count)).removingPercentEncoding
+        }
+        // Voce salvata con un altro indirizzo dello stesso server (cambiato
+        // nelle impostazioni, IP invece del nome...): prima non si ricavava
+        // nessun percorso e la voce non veniva mai controllata né tolta,
+        // restando in libreria anche dopo che il file era sparito. Si
+        // confronta solo il percorso dell'URL rispetto a quello della base.
+        guard let url = URL(string: remote) else { return nil }
+        let basePath = base.path(percentEncoded: false)
+        let path = url.path(percentEncoded: false)
+        let basePrefix = basePath.hasSuffix("/") ? basePath : basePath + "/"
+        guard path.hasPrefix(basePrefix), path.count > basePrefix.count else { return nil }
+        return String(path.dropFirst(basePrefix.count))
     }
 
     /// Cambio di profilo: libreria in streaming e minutaggio erano del

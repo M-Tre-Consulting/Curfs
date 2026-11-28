@@ -2,10 +2,10 @@
 //  RootTabView.swift
 //  Curfs
 //
-//  Tab bar di primo livello: Libreria (Home) e Cerca (Search). Su iOS 26 la
-//  TabView con l'API Tab(...) usa già di default la tab bar in Liquid Glass
-//  nativa: non serve nessun modifier aggiuntivo per l'aspetto, la transizione
-//  tra le due sezioni è già quella di sistema.
+//  Primo livello: la home con i Contenuti recenti. La scheda Cerca non c'è
+//  più (2026-11-28): la Libreria del server si tira fuori dal bordo destro
+//  della home (`ServerLibraryDrawerHost`, sopra a tutto, anche alla barra
+//  delle schede). Con una sola scheda la barra in basso si nasconde.
 //
 
 import SwiftUI
@@ -31,13 +31,26 @@ struct RootTabView: View {
     }
 
     private var tabs: some View {
-        TabView {
-            Tab("Libreria", systemImage: "film.stack") {
-                LibraryHomeView()
+        ServerLibraryDrawerHost {
+            tabView
+        }
+        // Esc / ⌘L su Mac, tasti da tastiera su iPad: apri e chiudi la Libreria.
+        .background {
+            Button("Libreria") {
+                let drawer = ServerLibraryDrawer.shared
+                drawer.isOpen ? drawer.close() : drawer.open()
             }
+            .keyboardShortcut("l", modifiers: .command)
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+        }
+    }
 
-            Tab("Cerca", systemImage: "magnifyingglass") {
-                SearchView()
+    private var tabView: some View {
+        TabView {
+            Tab("Recenti", systemImage: "clock.arrow.circlepath") {
+                LibraryHomeView()
             }
         }
         #if os(iOS)

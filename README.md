@@ -20,7 +20,9 @@ mobile sempre in primo piano).
 
 - **Import da Files**: riconoscimento automatico di film/serie/stagioni/episodi dai nomi di
   cartelle e file, senza bisogno di rinominare nulla a mano.
-- **Libreria** con avanzamento visto, "Continua a guardare", "Riprendi" per serie.
+- **Contenuti recenti** in home: quello che hai guardato o scaricato, con un simbolo che dice se è
+  sul dispositivo o in streaming, "Continua a guardare" e "Riprendi" per serie (l'ultimo episodio
+  visto, o il successivo se è finito). Ciò che non c'è più sul server e non è scaricato sparisce.
 - **Player custom** su AVPlayer/AVKit nativo (nessuna dipendenza esterna): copre mp4/mov/m4v
   (H.264/HEVC/AAC); mkv/avi vengono importati ma potrebbero non riprodursi. Velocità, scelta di
   audio e sottotitoli contenuti nel file (con la lingua riconosciuta dal testo quando il file non
@@ -30,12 +32,13 @@ mobile sempre in primo piano).
 - **Salta intro / titoli di coda**: riconoscimento basato sul confronto reale dei fotogrammi tra
   episodi della stessa serie (hash percettivo), non su timing/percentuali — funziona anche con
   cold open di lunghezza variabile tra un episodio e l'altro.
-- **Sezione Cerca**: si collega a un server HTTP personale (nel progetto originale un Raspberry
+- **Libreria - Server**: si tira fuori dalla pila di dispositivi sul bordo destro della home
+  (si apre come un portale dalla pila). Si collega a un server HTTP personale (nel progetto originale un Raspberry
   Pi raggiunto via Tailscale) che espone una cartella di video con elenchi di directory in JSON.
   Permette di sfogliare, aggiungere alla libreria in streaming o scaricare offline, con locandine
   ufficiali (da iTunes, nessuna configurazione richiesta) al posto del placeholder a icona — la
   copertina resta anche dopo aver scaricato un titolo. **Nessuna fonte è preconfigurata**: ognuno
-  inserisce l'URL del proprio server da Impostazioni → Cerca.
+  inserisce l'URL del proprio server dall'ingranaggio in alto nella home.
   Vedi [CLAUDE.md](CLAUDE.md#decisionigotcha-non-ovvi-dal-codice) (sezione "Sezione Cerca /
   streaming remoto") per il contratto lato server (in breve: nginx con
   `autoindex_format json;` + supporto alle richieste Range, nessun endpoint custom).
@@ -87,9 +90,9 @@ Panoramica rapida, dettagli e decisioni non ovvie in [CLAUDE.md](CLAUDE.md):
 - `Support/` — import, storage, miniature, riconoscimento intro/titoli di coda.
 - `Player/` — player custom iPhone (touch) e relativa logica/gesture/orientamento; la logica di
   stato (`PlayerViewModel`) è condivisa anche col player Mac.
-- `Remote/` — sezione Cerca/streaming da server remoto e download offline.
+- `Remote/` — Libreria del server, streaming e download offline.
 - `Profile/` — profili e sincronizzazione del minutaggio col server.
-- `Views/` — schermate libreria, card, sezione Cerca (condivise tra i due target).
+- `Views/` — home (Contenuti recenti), Libreria del server col suo cassetto, schede e card (condivise tra i due target).
 - `Utilities/` — helper UI condivisi.
 - `CurfsMac/` — target Mac: entry point, player nativo AVKit (controlli e fullscreen già
   pronti) e finestra mobile. Riusa Models/Support/Remote/Views/Utilities as-is.
@@ -97,8 +100,8 @@ Panoramica rapida, dettagli e decisioni non ovvie in [CLAUDE.md](CLAUDE.md):
 ## Non ancora implementato
 
 Layout dedicato iPad, sottotitoli esterni (.srt accanto al file), icona Mac
-disegnata a mano (quella attuale è generata per ricomposizione dell'icona iOS). Nella sezione
-Cerca: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si ricava dai
+disegnata a mano (quella attuale è generata per ricomposizione dell'icona iOS). Nella Libreria
+del server: altri metadati oltre alla locandina (anno, descrizione — ora solo quello che si ricava dai
 nomi file).
 
 ## Licenza

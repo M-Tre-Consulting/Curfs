@@ -50,6 +50,7 @@ struct SeriesDetailView: View {
     @State private var showCompanion = false
     @State private var companionTarget: CompanionTarget?
     private let downloads = RemoteDownloadManager.shared
+    @State private var availability = ServerAvailability.shared
 
     /// Dalla Libreria.
     init(showName: String) {
@@ -108,7 +109,10 @@ struct SeriesDetailView: View {
                                  title: RemoteTitleActions.episodeTitle(ep), remote: ep, remoteURL: streamURLs[k])
             }
         }
-        for item in libraryEpisodes {
+        // Un episodio in streaming il cui file non c'è più sul server (e non
+        // è scaricato) non deve comparire: regola dell'utente, 2026-11-28.
+        let catalogLoaded = !seasons.isEmpty && catalogError == nil
+        for item in libraryEpisodes where availability.isAvailable(item) {
             let season = item.seasonNumber ?? 1
             let k = item.episodeNumber.map { Self.key(season, $0) } ?? item.id.uuidString
             var entry = byKey[k] ?? Entry(id: k, season: season, number: item.episodeNumber, title: item.title)
@@ -121,6 +125,11 @@ struct SeriesDetailView: View {
                 entry.title = item.title
             }
             byKey[k] = entry
+        }
+        if catalogLoaded {
+            // Catalogo letto: una voce solo in streaming che non c'è nel
+            // catalogo è un file tolto dal server.
+            byKey = byKey.filter { $0.value.local != nil || $0.value.remote != nil }
         }
         return byKey.values.sorted {
             ($0.season, $0.number ?? .max, $0.title) < ($1.season, $1.number ?? .max, $1.title)
@@ -136,13 +145,13 @@ struct SeriesDetailView: View {
 
     private var seasonEntries: [Entry] { entries.filter { $0.season == currentSeason } }
 
-    /// Come `ShowSummary.nextToWatch`: l'ultimo episodio lasciato a metà,
-    /// altrimenti il primo non finito, altrimenti l'ultimo.
+    /// Come la TV e `ShowSummary.nextToWatch` (vedi `ResumeLogic`): l'ultimo
+    /// episodio toccato, o quello dopo se è finito. Qui gli episodi sono
+    /// anche quelli del catalogo, quindi "il prossimo" c'è anche se non è
+    /// ancora in libreria (es. visto S7E1 sulla TV → Guarda S7E2).
     private var nextToWatch: Entry? {
-        let all = entries
-        let inProgress = all.filter { $0.item?.hasProgress == true }
-            .max { ($0.item?.lastPlayedAt ?? .distantPast) < ($1.item?.lastPlayedAt ?? .distantPast) }
-        return inProgress ?? all.first { $0.item?.isFinished != true } ?? all.last
+        ResumeLogic.target(in: entries, lastPlayed: { $0.item?.lastPlayedAt },
+                           isFinished: { $0.item?.isFinished == true })?.item
     }
 
     private var hasRemoteOrigin: Bool { remoteTitle != nil || libraryEpisodes.contains(where: \.isRemoteOrigin) }
@@ -220,6 +229,7 @@ struct SeriesDetailView: View {
         }
         #endif
         .task { await loadCatalog() }
+        .task { await availability.refresh(libraryEpisodes) }
         .task(id: "\(showName)-\(currentSeason)-\(seasonEntries.count)") {
             prioritizeIntroDetection()
         }
@@ -886,25 +896,22 @@ struct SeriesDetailView: View {
 private struct SeriesEpisodeRow: View {
     let entry: SeriesDetailView.Entry
 
+    private var isFinished: Bool { entry.item?.isFinished == true }
+
     var body: some View {
         HStack(spacing: 12) {
-            VStack(spacing: 4) {
+            VStack(spacing: 5) {
                 thumbnail
                     .frame(width: 124, height: 70)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(.white.opacity(0.08), lineWidth: 1))
-                    .overlay(alignment: .topTrailing) {
-                        if entry.item?.isFinished == true {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 15))
-                                .foregroundStyle(.white, Color.accentColor)
-                                .padding(5)
-                        }
-                    }
-                if let item = entry.item, item.hasProgress {
-                    ProgressLineView(fraction: item.progressFraction)
-                        .frame(width: 124)
-                }
+                    // Finito: il contorno prende lo stesso viola della barra
+                    // sotto, così le due cose si fondono invece di stonare.
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(isFinished ? EpisodeProgressBar.finishedColor : .white.opacity(0.08), lineWidth: 1))
+                // La barra c'è sempre: vuota se da vedere, in parte se a metà,
+                // piena viola con la tacca ✓ se finito.
+                EpisodeProgressBar(fraction: entry.item?.progressFraction ?? 0, isFinished: isFinished)
+                    .frame(width: 124)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -931,19 +938,51 @@ private struct SeriesEpisodeRow: View {
         .contentShape(Rectangle())
     }
 
+    /// Sempre una miniatura vera: della voce in libreria se c'è, altrimenti
+    /// del file sul server (prima per gli episodi solo sul server c'era
+    /// un riquadro grigio col ▶).
     @ViewBuilder
     private var thumbnail: some View {
         if let item = entry.item {
             ThumbnailImageView(item: item, systemFallback: "tv")
                 .aspectRatio(16.0/9.0, contentMode: .fill)
+        } else if let url = entry.remoteURL {
+            RemoteThumbnailView(url: url, systemFallback: "tv")
         } else {
             ZStack {
                 LinearGradient(colors: [Color(white: 0.18), Color(white: 0.1)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                Image(systemName: "play.fill")
+                Image(systemName: "tv")
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+/// Barra di visione sotto la miniatura di un episodio.
+struct EpisodeProgressBar: View {
+    var fraction: Double
+    var isFinished: Bool
+
+    static let finishedColor = Color.accentColor.opacity(0.6)
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if isFinished {
+                Capsule().fill(Self.finishedColor)
+                    .frame(height: 3)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 7, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .frame(width: 12, height: 12)
+                    .background(Self.finishedColor, in: Circle())
+                    .accessibilityLabel("Visto")
+            } else {
+                ProgressLineView(fraction: fraction, height: 3)
+            }
+        }
+        .frame(height: 12)
+        .animation(.easeOut(duration: 0.25), value: isFinished)
     }
 }
 

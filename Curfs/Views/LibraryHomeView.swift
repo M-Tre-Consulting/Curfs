@@ -2,8 +2,13 @@
 //  LibraryHomeView.swift
 //  Curfs
 //
-//  Home della libreria: continua a guardare, serie TV, film. Da qui si
-//  importano nuovi video tramite il picker di Files.
+//  Home: Continua a guardare e i Contenuti recenti (2026-11-28, al posto
+//  delle griglie Serie TV / Film): quello che si è guardato di recente o si
+//  ha sul dispositivo, con il simbolino scaricato/streaming. Una serie apre
+//  la stessa scheda della Libreria del server, un film parte subito. La
+//  Libreria intera si tira fuori dalla pila di dispositivi sul bordo destro
+//  (ServerLibraryDrawer). In alto: profilo, impostazioni del server, import.
+//  Ciò che non c'è più sul server e non è scaricato non compare.
 //
 
 import SwiftUI
@@ -22,23 +27,23 @@ struct LibraryHomeView: View {
     @State private var showLegal = false
     @State private var showCompanionPicker = false
     @State private var companionTarget: CompanionTarget?
+    @State private var showSettings = false
+    @State private var availability = ServerAvailability.shared
+    @State private var drawer = ServerLibraryDrawer.shared
+    @State private var downloadManager = RemoteDownloadManager.shared
+    @State private var profiles = ProfileSync.shared
 
-    private var shows: [ShowSummary] { ShowSummary.groups(from: allItems) }
-    private var movies: [MediaItem] {
-        let all = allItems.filter { $0.kind == .movie }
-        // Se un film è sia scaricato sia aggiunto come voce streaming, mostra
-        // solo quello locale.
-        let localTitles = Set(all.filter { !$0.isRemote }.map { $0.title.lowercased() })
-        return all.filter { !$0.isRemote || !localTitles.contains($0.title.lowercased()) }
+    private var recents: [RecentTitle] {
+        RecentTitle.build(from: allItems, isAvailable: availability.isAvailable)
     }
-    /// Solo l'ultimo video in corso, non tutti quelli lasciati a metà: ha
-    /// senso continuare solo da dove si era rimasti l'ultima volta.
-    private var continueWatchingItem: MediaItem? {
-        // A pari data vince la copia scaricata: dopo un download eredita i
-        // progressi della voce streaming (vedi RemoteDownloadManager).
-        allItems
-            .filter { $0.hasProgress }
-            .max { ($0.lastPlayedAt ?? .distantPast, $0.isRemote ? 0 : 1) < ($1.lastPlayedAt ?? .distantPast, $1.isRemote ? 0 : 1) }
+
+    /// Solo l'ultimo contenuto, e solo se è a metà: ha senso continuare da
+    /// dove si era rimasti l'ultima volta. Se l'ultimo episodio è finito il
+    /// prossimo lo trova la scheda della serie (conosce il catalogo).
+    private func continueWatchingItem(in recents: [RecentTitle]) -> MediaItem? {
+        guard let first = recents.first, let resume = first.resume, !resume.isNext,
+              resume.item.hasProgress else { return nil }
+        return resume.item
     }
 
     var body: some View {
@@ -46,10 +51,16 @@ struct LibraryHomeView: View {
             ZStack {
                 AppBackground()
 
-                if allItems.isEmpty {
+                let recents = recents
+                if recents.isEmpty {
                     emptyState
                 } else {
-                    content
+                    content(recents)
+                }
+
+                if downloadManager.hasActiveDownloads {
+                    DownloadsOverlay(manager: downloadManager)
+                        .transition(.scale(scale: 0.5, anchor: .bottomTrailing).combined(with: .opacity))
                 }
 
                 if importVM.isImporting {
@@ -61,8 +72,29 @@ struct LibraryHomeView: View {
                     .animation(.easeInOut(duration: 0.25), value: importVM.isImporting)
                 }
             }
+            .animation(.easeInOut(duration: 0.25), value: downloadManager.hasActiveDownloads)
             .navigationTitle("Libreria")
             .cleanWindowToolbar()
+            #if os(iOS) && !EXTRA_POSTERS
+            // Una sola scheda: niente barra in basso.
+            .toolbar(.hidden, for: .tabBar)
+            #endif
+            // La pila della Libreria solo qui, sulla radice della home.
+            .onAppear { drawer.handleVisible = true }
+            // La Libreria si prepara in anticipo (invisibile): catalogo e
+            // locandine caricati prima che la si tiri, sennò arrivavano a
+            // metà animazione e la facevano scattare.
+            #if os(iOS)
+            .task {
+                try? await Task.sleep(for: .seconds(1.5))
+                drawer.mount()
+            }
+            #endif
+            .onDisappear { drawer.handleVisible = false }
+            .task(id: allItems.count) { await availability.refresh(allItems) }
+            .onChange(of: profiles.lastSync) { _, _ in
+                Task { await availability.refresh(allItems, force: true) }
+            }
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
@@ -89,6 +121,16 @@ struct LibraryHomeView: View {
                 ToolbarItem(placement: .primaryAction) {
                     ProfileToolbarButton()
                 }
+                // Impostazioni del server (prima l'ingranaggio stava in Cerca).
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Impostazioni del server")
+                    .help("Impostazioni del server")
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showImporter = true
@@ -112,6 +154,9 @@ struct LibraryHomeView: View {
             }
             .sheet(isPresented: $showLegal) {
                 LegalSheet()
+            }
+            .sheet(isPresented: $showSettings) {
+                RemoteSourceSettingsView()
             }
             .sheet(isPresented: $showCompanionPicker) {
                 CompanionPickerView(items: allItems)
@@ -155,11 +200,11 @@ struct LibraryHomeView: View {
                 Text("Il file video verrà rimosso definitivamente dall'app.")
             }
             .confirmationDialog(
-                "Eliminare \"\(pendingDeleteShow?.name ?? "")\" e tutti i suoi episodi?",
+                "Togliere \"\(pendingDeleteShow?.name ?? "")\" dai recenti?",
                 isPresented: Binding(get: { pendingDeleteShow != nil }, set: { if !$0 { pendingDeleteShow = nil } }),
                 titleVisibility: .visible
             ) {
-                Button("Elimina tutto", role: .destructive) {
+                Button("Togli", role: .destructive) {
                     if let show = pendingDeleteShow {
                         LibraryMaintenance.deleteShow(show, modelContext: modelContext)
                     }
@@ -167,17 +212,17 @@ struct LibraryHomeView: View {
                 }
                 Button("Annulla", role: .cancel) { pendingDeleteShow = nil }
             } message: {
-                Text("Tutti gli episodi importati per questa serie verranno rimossi definitivamente.")
+                Text("Gli episodi scaricati vengono cancellati dall'app; la serie resta nella libreria del server.")
             }
         }
     }
 
-    private var content: some View {
+    private func content(_ recents: [RecentTitle]) -> some View {
         GeometryReader { geo in
             let columns = CardGrid.columns(forWidth: geo.size.width - 32)
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    if let item = continueWatchingItem {
+                    if let item = continueWatchingItem(in: recents) {
                         section("Continua a guardare") {
                             Button { playingItem = item } label: {
                                 ContinueWatchingCard(item: item)
@@ -186,76 +231,98 @@ struct LibraryHomeView: View {
                         }
                     }
 
-                    if !shows.isEmpty {
-                        section("Serie TV") {
-                            LazyVGrid(columns: columns, spacing: 20) {
-                                ForEach(shows) { show in
-                                    NavigationLink {
-                                        SeriesDetailView(showName: show.name)
-                                    } label: {
-                                        ShowCardView(show: show)
-                                    }
-                                    .buttonStyle(PressableButtonStyle())
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            pendingDeleteShow = show
-                                        } label: {
-                                            Label("Elimina serie", systemImage: "trash")
-                                        }
-                                    }
-                                }
+                    section("Contenuti recenti") {
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            ForEach(recents) { title in
+                                recentCard(title)
                             }
                         }
                     }
 
-                    if !movies.isEmpty {
-                        section("Film") {
-                            LazyVGrid(columns: columns, spacing: 20) {
-                                ForEach(movies) { movie in
-                                    Button { playingItem = movie } label: {
-                                        MovieCardView(item: movie)
-                                    }
-                                    .buttonStyle(PressableButtonStyle())
-                                    // Tap = guarda (in streaming se non è
-                                    // scaricato); tenendo premuto si scarica.
-                                    .contextMenu {
-                                        if CompanionChat.isOffered {
-                                            Button {
-                                                companionTarget = CompanionTarget(item: movie)
-                                            } label: {
-                                                Label {
-                                                    Text("Chiedi a Curfs AI")
-                                                } icon: {
-                                                    Image(systemName: "sparkles")
-                                                }
-                                            }
-                                        }
-                                        if movie.isRemote {
-                                            if RemoteDownloadManager.shared.movieDownload(title: movie.title)?.state.isActive == true {
-                                                Label("Download in corso", systemImage: "arrow.down.circle.dotted")
-                                            } else {
-                                                Button("Scarica per l'offline", systemImage: "arrow.down.circle") {
-                                                    RemoteTitleActions.download(movie)
-                                                }
-                                            }
-                                        }
-                                        Button(role: .destructive) {
-                                            pendingDeleteMovie = movie
-                                        } label: {
-                                            Label(movie.isRemote ? String(localized: "Togli dai Film") : String(localized: "Elimina film"), systemImage: "trash")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    #if os(macOS)
+                    // Su iPhone si apre solo tirando la pila a destra.
+                    openLibraryButton
+                    #endif
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 12)
+                // Spazio per la linguetta della Libreria sul bordo destro.
+                .padding(.trailing, 14)
+                .padding(.bottom, downloadManager.hasActiveDownloads ? 70 : 0)
             }
             .safeAreaPadding(.horizontal, 16)
         }
-        .animation(.easeInOut(duration: 0.3), value: allItems.count)
+        .animation(.easeInOut(duration: 0.3), value: recents.map(\.id))
+    }
+
+    @ViewBuilder
+    private func recentCard(_ title: RecentTitle) -> some View {
+        if let movie = title.movie {
+            Button { playingItem = movie } label: {
+                RecentTitleCard(title: title)
+            }
+            .buttonStyle(PressableButtonStyle())
+            // Tap = guarda (in streaming se non è scaricato); tenendo premuto
+            // si scarica o si toglie.
+            .contextMenu { movieMenu(movie) }
+        } else {
+            NavigationLink {
+                // La stessa scheda della Libreria del server.
+                SeriesDetailView(showName: title.name)
+            } label: {
+                RecentTitleCard(title: title)
+            }
+            .buttonStyle(PressableButtonStyle())
+            .contextMenu {
+                Button(role: .destructive) {
+                    pendingDeleteShow = ShowSummary(name: title.name, episodes: allItems.filter { $0.kind == .episode && $0.showName == title.name })
+                } label: {
+                    Label("Togli dai recenti", systemImage: "trash")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func movieMenu(_ movie: MediaItem) -> some View {
+        if CompanionChat.isOffered {
+            Button {
+                companionTarget = CompanionTarget(item: movie)
+            } label: {
+                Label {
+                    Text("Chiedi a Curfs AI")
+                } icon: {
+                    Image(systemName: "sparkles")
+                }
+            }
+        }
+        if movie.isRemote {
+            if RemoteDownloadManager.shared.movieDownload(title: movie.title)?.state.isActive == true {
+                Label("Download in corso", systemImage: "arrow.down.circle.dotted")
+            } else {
+                Button("Scarica per l'offline", systemImage: "arrow.down.circle") {
+                    RemoteTitleActions.download(movie)
+                }
+            }
+        }
+        Button(role: .destructive) {
+            pendingDeleteMovie = movie
+        } label: {
+            Label(movie.isRemote ? String(localized: "Togli dai recenti") : String(localized: "Elimina film"), systemImage: "trash")
+        }
+    }
+
+    /// In fondo ai recenti, per chi non ha ancora scoperto la pila a destra.
+    private var openLibraryButton: some View {
+        Button {
+            drawer.open()
+        } label: {
+            Label("Tutta la libreria", systemImage: "square.stack.3d.up.fill")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.glass)
     }
 
     private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
@@ -268,16 +335,29 @@ struct LibraryHomeView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "film.stack")
+            Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 52, weight: .light))
                 .foregroundStyle(.secondary)
-            Text("Nessun video importato")
+            Text("Ancora niente di recente")
                 .font(.title3.weight(.semibold))
-            Text("Importa film o intere stagioni dai tuoi file.\nRiconosco automaticamente le stagioni dai nomi delle cartelle.")
+            Text("Qui trovi quello che guardi e quello che scarichi. Tira la pila a destra per aprire tutta la libreria, oppure importa video dai tuoi file.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+
+            #if os(macOS)
+            Button {
+                drawer.open()
+            } label: {
+                Label("Apri la libreria", systemImage: "square.stack.3d.up.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 6)
+            }
+            .buttonStyle(.glassProminent)
+            .tint(Color.accentColor)
+            .padding(.top, 6)
+            #endif
 
             Button {
                 showImporter = true
@@ -286,9 +366,7 @@ struct LibraryHomeView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 6)
             }
-            .buttonStyle(.glassProminent)
-            .tint(Color.accentColor)
-            .padding(.top, 6)
+            .buttonStyle(.glass)
         }
         .padding()
     }
