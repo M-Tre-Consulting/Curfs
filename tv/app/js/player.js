@@ -187,8 +187,7 @@ export function openPlayer(title, episode, ui) {
     if (!osdVisible) {
       osdVisible = true;
       root.classList.remove('osd-off');
-      updateClock();
-      clockTimer = setInterval(updateClock, 15000);
+      startClock();
     }
     if (focusOn) focus(focusOn);
     else if (!focused() || !root.contains(focused())) focus(bar);
@@ -207,7 +206,7 @@ export function openPlayer(title, episode, ui) {
     if (!osdVisible || panelOpen) return;
     osdVisible = false;
     clearTimeout(hideTimer);
-    clearInterval(clockTimer);
+    stopClock();
     root.classList.add('osd-off');
     focus(bar);
   }
@@ -221,6 +220,31 @@ export function openPlayer(title, episode, ui) {
   function updateClock() {
     const d = new Date();
     clock.textContent = d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Orologio in alto e "fine alle" scattano insieme, all'inizio di ogni minuto.
+  // In pausa il video non manda `timeupdate`, quindi "fine alle" restava fermo
+  // finché non si riprendeva: ora va avanti in tempo reale come l'orologio.
+  function tickMinute() {
+    updateClock();
+    updateBar();
+  }
+
+  function startClock() {
+    stopClock();
+    tickMinute();
+    const now = new Date();
+    const toNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 50;
+    clockTimer = setTimeout(() => {
+      tickMinute();
+      clockTimer = setInterval(tickMinute, 60000);
+    }, toNextMinute);
+  }
+
+  function stopClock() {
+    clearTimeout(clockTimer);
+    clearInterval(clockTimer);
+    clockTimer = 0;
   }
 
   function pct(x) { return duration > 0 ? Math.max(0, Math.min(1, x / duration)) : 0; }
@@ -572,7 +596,7 @@ export function openPlayer(title, episode, ui) {
     store.flush();
     clearInterval(saveTimer);
     clearInterval(nextTimer);
-    clearInterval(clockTimer);
+    stopClock();
     clearTimeout(hideTimer);
     clearTimeout(toastTimer);
     video.pause();

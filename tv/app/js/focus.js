@@ -93,9 +93,12 @@ function reveal(el) {
 function scrollInto(box, el) {
   const r = el.getBoundingClientRect();
   const c = box.getBoundingClientRect();
-  const margin = 70;
-  if (r.top < c.top + margin) box.scrollTop -= c.top + margin - r.top;
-  else if (r.bottom > c.bottom - margin) box.scrollTop += r.bottom - (c.bottom - margin);
-  if (r.left < c.left + margin) box.scrollLeft -= c.left + margin - r.left;
-  else if (r.right > c.right - margin) box.scrollLeft += r.right - (c.right - margin);
+  // Con lo zoom della pagina (index.html) i rettangoli e lo scroll possono essere in
+  // unità diverse: k converte da rettangolo a scroll.
+  const k = box.offsetWidth && c.width ? c.width / box.offsetWidth : 1;
+  const margin = 70 * k;
+  if (r.top < c.top + margin) box.scrollTop -= (c.top + margin - r.top) / k;
+  else if (r.bottom > c.bottom - margin) box.scrollTop += (r.bottom - (c.bottom - margin)) / k;
+  if (r.left < c.left + margin) box.scrollLeft -= (c.left + margin - r.left) / k;
+  else if (r.right > c.right - margin) box.scrollLeft += (r.right - (c.right - margin)) / k;
 }

@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=1920, initial-scale=1">
 <title>Curfs</title>
+<script>
+  // Alcune TV (Hisense VIDAA) ignorano il viewport e danno 1280x720: l'app e' disegnata
+  // per 1920x1080, quindi la rimpiccioliamo di quanto serve invece di vederla grande x1,5.
+  (function () { var z = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    if (z > 0 && z < 0.99) document.documentElement.style.zoom = z; })();
+</script>
 <link rel="stylesheet" href="css/app.css">
 <link rel="icon" href="icon.png">
 </head>

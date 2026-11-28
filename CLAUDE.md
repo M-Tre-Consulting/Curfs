@@ -381,6 +381,15 @@ non può salvare video sulla TV). Decisioni:
   titoli di coda da `/media/.curfs/intro.json` (vedi sigla sul server sopra). Barra con sigla/coda
   colorate, ora e "fine alle". Provato con Chrome headless + un proxy locale che inoltra `/media/`
   al Pi e **blocca i PUT** (così il minutaggio dei profili non si tocca).
+- **Allineata a iPhone/Mac** (2026-11-28): la Libreria mostra i **Contenuti recenti** (titoli della
+  libreria già guardati, dal più recente: `recentTitles()`; i mai aperti stanno su Server), barra
+  degli episodi sempre visibile (vuota / a metà / piena viola con ✓). Riprendi era già "ultimo
+  toccato, o il successivo se finito" (`continueTarget`/`resumeTarget`), e i titoli tolti dal server
+  spariscono da soli (catalogo). Player: orologio e "fine alle" scattano insieme a ogni minuto
+  (`startClock`/`tickMinute`, allineato al minuto): in pausa "fine alle" prima restava fermo.
+  Sul Pi c'erano due correzioni mai tornate nella repo (zoom per le TV che danno 1280x720 in
+  `index.html`, scroll con lo zoom in `focus.js`): riportate. ⚠️ `deploy.sh` usa `rsync --delete`
+  e sul Pi c'è `diag.html` che non sta in `app/`: copiare i file a mano o aggiungerlo prima.
 - `tv/server/faststart.sh`: sposta il `moov` all'inizio (ffmpeg `-c copy`); senza, sulla TV ~7 s
   per partire. Sul Pi gira anche di notte da cron.
 

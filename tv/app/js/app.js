@@ -192,7 +192,7 @@ const ICONS = {
 
 function renderTabs() {
   const previous = focused()?.dataset.key || state.lastKey;
-  const libraryCount = libraryIdsWithTitles().length;
+  const libraryCount = recentTitles().length;
   app.replaceChildren(h('div', { class: 'shell' },
     h('aside', { class: 'side', dataset: { zone: 'nav' } },
       h('div', { class: 'brand' }, 'Curfs'),
@@ -239,19 +239,33 @@ function libraryIdsWithTitles() {
   return store.libraryIds().map(titleById).filter(Boolean);
 }
 
-/** Libreria: prima i titoli guardati di recente, poi quelli aggiunti. */
+const recencyOf = (t) => store.lastPlayed(t.kind === 'series' ? allEpisodes(t).map((e) => e.id) : [t.id])?.at || 0;
+
+/**
+ * Contenuti recenti (2026-11-28, come su iPhone e Mac): i titoli della
+ * libreria già guardati, dal più recente. Quelli solo aggiunti e mai aperti
+ * stanno su Server; quelli tolti dal server non ci sono (sono nel catalogo).
+ */
+function recentTitles() {
+  return libraryIdsWithTitles()
+    .filter((t) => recencyOf(t) > 0)
+    .sort((a, b) => recencyOf(b) - recencyOf(a));
+}
+
+/** Libreria: Continua a guardare, Contenuti recenti, da scoprire sul server. */
 function libraryView() {
   if (!state.catalog) return loadingView();
-  const titles = libraryIdsWithTitles();
+  const titles = recentTitles();
   if (!titles.length) {
-    return h('div', { class: 'empty' },
-      h('h2', {}, t('La libreria è vuota')),
-      h('p', {}, t('Vai su Server e aggiungi film e serie.')),
-      state.error && h('p', { class: 'error' }, state.error));
+    const suggestions = suggestedTitles(6);
+    return h('div', {},
+      h('div', { class: 'empty' },
+        h('h2', {}, t('Non hai ancora guardato niente')),
+        h('p', {}, t('Scegli qualcosa su Server: lo ritrovi qui.')),
+        state.error && h('p', { class: 'error' }, state.error)),
+      suggestions.length && h('h2', { class: 'section' }, t('Da scoprire sul server')),
+      suggestions.length && h('div', { class: 'grid' }, suggestions.map((t) => card(t))));
   }
-  const recency = (t) => store.lastPlayed(t.kind === 'series' ? allEpisodes(t).map((e) => e.id) : [t.id])?.at || 0;
-  const order = store.libraryIds();
-  titles.sort((a, b) => recency(b) - recency(a) || order.indexOf(a.id) - order.indexOf(b.id));
   if (state.editing) {
     return h('div', {},
       h('p', { class: 'hint' }, t('Premi OK su un titolo per toglierlo dalla libreria.')),
@@ -261,7 +275,7 @@ function libraryView() {
   const suggestions = suggestedTitles(6);
   return h('div', {},
     resume && continueHero(resume),
-    h('h2', { class: 'section' }, t('La tua libreria')),
+    h('h2', { class: 'section' }, t('Contenuti recenti')),
     h('div', { class: 'grid' }, titles.map((t) => card(t, { library: true }))),
     suggestions.length && h('h2', { class: 'section' }, t('Da scoprire sul server')),
     suggestions.length && h('div', { class: 'grid' }, suggestions.map((t) => card(t))));
@@ -359,7 +373,7 @@ function card(title, { library = false } = {}) {
 
 function confirmRemove(title) {
   dialog(t('Togliere "{t}" dalla libreria?', { t: title.name }), t('Si toglie dalla libreria del profilo, anche su iPhone e Mac. I video sul server restano.'), [
-    { label: t('Rimuovi'), danger: true, action: () => { store.removeFromLibrary(title); if (!libraryIdsWithTitles().length) state.editing = false; renderTabs(); } },
+    { label: t('Rimuovi'), danger: true, action: () => { store.removeFromLibrary(title); if (!recentTitles().length) state.editing = false; renderTabs(); } },
     { label: t('Annulla'), action: () => renderTabs() },
   ]);
 }
@@ -404,8 +418,11 @@ function openSeries(title) {
     return h('button', { class: 'f episode', dataset: { key: e.id }, onclick: () => { screen.lastKey = e.id; play(title, { ...e, season: season.number }); } },
       h('span', { class: 'ep-code' }, code(season.number, e.number)),
       h('span', { class: 'ep-title' }, e.title),
-      p?.done ? h('span', { class: 'ep-done' }, '✓')
-        : p?.dur ? h('span', { class: 'ep-bar' }, h('i', { style: `width:${(p.pos / p.dur * 100).toFixed(1)}%` })) : null);
+      // Barra sempre visibile, come su iPhone: vuota, a metà, o piena viola
+      // con la ✓ se l'episodio è finito.
+      p?.done
+        ? h('span', { class: 'ep-bar done' }, h('i', {}), h('b', {}, '✓'))
+        : h('span', { class: 'ep-bar' }, h('i', { style: `width:${p?.dur ? (p.pos / p.dur * 100).toFixed(1) : 0}%` })));
   });
   const showSeason = (number) => {
     clearTimeout(seasonTimer);

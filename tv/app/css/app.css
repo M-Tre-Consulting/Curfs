@@ -159,7 +159,10 @@ main.scroll { padding: 56px 72px 80px; }
 .ep-code { font-size: 24px; color: var(--muted); font-weight: 700; width: 120px; flex: none; }
 .ep-title { font-size: 30px; flex: 1; }
 .ep-done { font-size: 30px; color: var(--accent-2); font-weight: 800; }
-.ep-bar { width: 180px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); }
+.ep-bar { width: 180px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); flex: none; position: relative; }
+.ep-bar.done { background: transparent; display: flex; align-items: center; gap: 10px; height: 26px; }
+.ep-bar.done i { flex: 1; height: 8px; background: rgba(139,77,255,.6); }
+.ep-bar.done b { width: 26px; height: 26px; border-radius: 13px; background: rgba(139,77,255,.6); color: #fff; font-size: 16px; line-height: 26px; text-align: center; }
 
 /* --- Finestra di conferma */
 .dialog-layer { position: fixed; inset: 0; background: rgba(8, 3, 16, .82); display: flex; align-items: center; justify-content: center; z-index: 10; }
