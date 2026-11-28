@@ -172,7 +172,10 @@ Film. Solo iPhone e Mac (la TV resta com'è).
   simbolino scaricato / in parte / streaming (`DownloadStateBadge`). Le voci in streaming solo
   "aggiunte" e mai aperte non ci sono. Serie → la stessa `SeriesDetailView` di prima; film → parte.
   In alto: ✨, profilo, **ingranaggio delle impostazioni del server** (era in Cerca), +.
-  Con una sola scheda la tab bar si nasconde; la scheda si chiama "Recenti".
+  Senza `EXTRA_POSTERS` (versione pubblica) `RootTabView.sections` non usa nemmeno la `TabView`:
+  solo `LibraryHomeView` (niente barra in basso su iPhone né selettore in alto su Mac). Su Mac,
+  cambiando scheda col portale aperto, `LibraryHomeView.onDisappear` → `closeInstantly()` (chiuso
+  senza animazione); non su iPhone (un video a tutto schermo fa "sparire" la home).
 - **Regola**: un episodio/film in streaming il cui file non c'è più sul server e che non è
   scaricato **non compare** (recenti e scheda serie). `Support/ServerAvailability` (stesso
   `ProfileServer.missingFiles`, nel dubbio presente) filtra subito; `removeMissingFromServer` poi
@@ -217,14 +220,17 @@ Film. Solo iPhone e Mac (la TV resta com'è).
   in un globo di luce sulla pila e i dispositivi fanno un piccolo salto fuori prima di partire.
   ⚠️ La prima versione (pagina che entrava da destra ruotando come una
   porta) è stata bocciata: "si apre come una pagina qualsiasi di un sito" — non tornarci. Titolo
-  della home "Libreria" con la sezione "Contenuti recenti"; il tasto "Tutta la libreria" in fondo e
-  "Apri la libreria" nello stato vuoto solo su Mac (su iPhone si apre solo tirando). Chiusura: tasto in alto (Esc), o trascinando dal bordo sinistro (solo
+  della home "Libreria" con la sezione "Contenuti recenti". Nessun tasto per aprirla in fondo alla
+  home (bocciato anche su Mac): si tira/clicca la pila, o ⌘L; "Apri la libreria" solo nello stato vuoto su Mac. Chiusura: tasto in alto (Esc), o trascinando dal bordo sinistro (solo
   alla radice). `ServerLibraryDrawerHost` avvolge la TabView in `RootTabView` (sta sopra anche alla
   tab bar); la pagina ha la sua `NavigationStack(path:)` e resta montata dopo la prima apertura.
   La pila si vede solo sulla radice della home (`handleVisible` da `onAppear`/`onDisappear`).
   Mac: `.ignoresSafeArea()` del cassetto solo su iOS (su Mac il contenuto finiva sotto la barra
   della finestra, titolo sparito); verificato sull'app vera il 2026-11-28 (barra pulita: ✨,
-  profilo, ingranaggio, +). Su Mac la pagina della Libreria si monta solo alla prima apertura.
+  profilo, ingranaggio, +). Su Mac la pagina della Libreria si monta all'apertura e si **smonta a portale chiuso**
+  (`close()` con `completion`): montata e invisibile, i suoi tasti e la ricerca finivano nella barra
+  della finestra sopra la home. E a Libreria montata la home nasconde i suoi tasti (`showsHomeToolbar`),
+  così la barra della finestra non mescola le due schermate.
 - **Riga episodio** (`SeriesEpisodeRow`): barra sempre visibile (vuota / a metà / piena viola
   `EpisodeProgressBar` con la tacca ✓, contorno della miniatura dello stesso viola se visto) e
   miniatura sempre vera: per gli episodi solo sul server `RemoteThumbnailView` (fotogramma dal file

@@ -58,7 +58,31 @@ final class ServerLibraryDrawer {
     }
 
     func close() {
+        #if os(macOS)
+        // Su Mac la barra in alto è della finestra: una pagina rimasta
+        // montata (anche invisibile) ci lasciava i suoi tasti e la ricerca
+        // sopra la home. A portale chiuso la si smonta.
+        withAnimation(settleAnimation(remaining: progress, opening: false)) {
+            progress = 0
+        } completion: {
+            if self.progress == 0 { self.isMounted = false }
+        }
+        #else
         withAnimation(settleAnimation(remaining: progress, opening: false)) { progress = 0 }
+        #endif
+    }
+
+    /// Chiusa di colpo, senza animazione (cambio di scheda).
+    func closeInstantly() {
+        guard progress > 0 || isMounted else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            progress = 0
+            #if os(macOS)
+            isMounted = false
+            #endif
+        }
     }
 
     func settle(open: Bool) {

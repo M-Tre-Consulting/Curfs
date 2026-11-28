@@ -33,6 +33,14 @@ struct LibraryHomeView: View {
     @State private var downloadManager = RemoteDownloadManager.shared
     @State private var profiles = ProfileSync.shared
 
+    private var showsHomeToolbar: Bool {
+        #if os(macOS)
+        !drawer.isMounted
+        #else
+        true
+        #endif
+    }
+
     private var recents: [RecentTitle] {
         RecentTitle.build(from: allItems, isAvailable: availability.isAvailable)
     }
@@ -75,10 +83,6 @@ struct LibraryHomeView: View {
             .animation(.easeInOut(duration: 0.25), value: downloadManager.hasActiveDownloads)
             .navigationTitle("Libreria")
             .cleanWindowToolbar()
-            #if os(iOS) && !EXTRA_POSTERS
-            // Una sola scheda: niente barra in basso.
-            .toolbar(.hidden, for: .tabBar)
-            #endif
             // La pila della Libreria solo qui, sulla radice della home.
             .onAppear { drawer.handleVisible = true }
             // La Libreria si prepara in anticipo (invisibile): catalogo e
@@ -90,7 +94,18 @@ struct LibraryHomeView: View {
                 drawer.mount()
             }
             #endif
-            .onDisappear { drawer.handleVisible = false }
+            .onDisappear {
+                drawer.handleVisible = false
+                #if os(macOS)
+                // Cambiata scheda con la Libreria - Server aperta (su Mac il
+                // selettore in alto resta cliccabile): si chiude all'istante,
+                // senza animazione, e si va dritti alla scheda scelta. Non su
+                // iPhone: lì la barra delle schede è coperta dal portale, e un
+                // video a tutto schermo fa "sparire" la home (si chiuderebbe
+                // la Libreria tornando dal video).
+                drawer.closeInstantly()
+                #endif
+            }
             .task(id: allItems.count) { await availability.refresh(allItems) }
             .onChange(of: profiles.lastSync) { _, _ in
                 Task { await availability.refresh(allItems, force: true) }
@@ -106,37 +121,41 @@ struct LibraryHomeView: View {
                     .accessibilityLabel("Privacy, licenza e contatti")
                 }
                 #endif
-                // Curfs AI in un gruppo a sé (spaziatore fisso): accanto ad
-                // avatar e + macOS 26 non si decideva su come raggrupparli e
-                // ricostruiva la barra di continuo (icone che sparivano, si
-                // fondevano, foto del profilo ricaricata). `isOffered` è
-                // fisso e il tasto c'è sempre, solo disattivato a libreria vuota.
-                if CompanionChat.isOffered {
+                // Su Mac, a Libreria - Server aperta, la barra della finestra è sua:
+                // i tasti della home si nascondono (sennò si mescolavano).
+                if showsHomeToolbar {
+                    // Curfs AI in un gruppo a sé (spaziatore fisso): accanto ad
+                    // avatar e + macOS 26 non si decideva su come raggrupparli e
+                    // ricostruiva la barra di continuo (icone che sparivano, si
+                    // fondevano, foto del profilo ricaricata). `isOffered` è
+                    // fisso e il tasto c'è sempre, solo disattivato a libreria vuota.
+                    if CompanionChat.isOffered {
+                        ToolbarItem(placement: .primaryAction) {
+                            CompanionToolbarButton { showCompanionPicker = true }
+                                .disabled(allItems.isEmpty)
+                        }
+                        ToolbarSpacer(.fixed, placement: .primaryAction)
+                    }
                     ToolbarItem(placement: .primaryAction) {
-                        CompanionToolbarButton { showCompanionPicker = true }
-                            .disabled(allItems.isEmpty)
+                        ProfileToolbarButton()
                     }
-                    ToolbarSpacer(.fixed, placement: .primaryAction)
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    ProfileToolbarButton()
-                }
-                // Impostazioni del server (prima l'ingranaggio stava in Cerca).
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
+                    // Impostazioni del server (prima l'ingranaggio stava in Cerca).
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityLabel("Impostazioni del server")
+                        .help("Impostazioni del server")
                     }
-                    .accessibilityLabel("Impostazioni del server")
-                    .help("Impostazioni del server")
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showImporter = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20))
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showImporter = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 20))
+                        }
                     }
                 }
             }
@@ -239,10 +258,6 @@ struct LibraryHomeView: View {
                         }
                     }
 
-                    #if os(macOS)
-                    // Su iPhone si apre solo tirando la pila a destra.
-                    openLibraryButton
-                    #endif
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 12)
@@ -310,19 +325,6 @@ struct LibraryHomeView: View {
         } label: {
             Label(movie.isRemote ? String(localized: "Togli dai recenti") : String(localized: "Elimina film"), systemImage: "trash")
         }
-    }
-
-    /// In fondo ai recenti, per chi non ha ancora scoperto la pila a destra.
-    private var openLibraryButton: some View {
-        Button {
-            drawer.open()
-        } label: {
-            Label("Tutta la libreria", systemImage: "square.stack.3d.up.fill")
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
-        }
-        .buttonStyle(.glass)
     }
 
     private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {

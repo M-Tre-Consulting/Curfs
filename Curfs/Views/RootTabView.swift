@@ -47,12 +47,23 @@ struct RootTabView: View {
         }
     }
 
-    private var tabView: some View {
+    @ViewBuilder
+    private var sections: some View {
+        #if EXTRA_POSTERS
         TabView {
             Tab("Recenti", systemImage: "clock.arrow.circlepath") {
                 LibraryHomeView()
             }
         }
+        #else
+        // Versione pubblica: una sola schermata, niente schede (né la
+        // barra in basso su iPhone né il selettore in alto su Mac).
+        LibraryHomeView()
+        #endif
+    }
+
+    private var tabView: some View {
+        sections
         #if os(iOS)
         // "Ripristina" dalla finestrella del Picture-in-Picture dopo aver
         // chiuso il player: lo riapre da qui, ovunque si sia nell'app.
